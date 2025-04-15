@@ -103,15 +103,21 @@ class FlowExecutionEngine {
         outputData = null;
     }
     
-    // Store the node's output in the execution context
-    if (outputData !== undefined) {
-      this.executionContext.set(`output-${node.id}`, outputData);
-      
-      // If the node has a specific output handle, store the data for that handle
-      if (node.type === 'apiNode' && outputData) {
-        this.executionContext.set(`${node.id}-output`, outputData);
+      // Store the node's output in the execution context
+      if (outputData !== undefined) {
+        this.executionContext.set(`output-${node.id}`, outputData);
+        
+        // If the node has a specific output handle, store the data for that handle
+        if (node.type === 'apiNode' && outputData) {
+          // Store the complete response
+          this.executionContext.set(`${node.id}-output`, outputData);
+          
+          // Store specific parts of the response for the new output handles
+          this.executionContext.set(`${node.id}-output-response`, outputData);
+          this.executionContext.set(`${node.id}-output-body`, outputData); // For API responses, the data is usually the body
+          this.executionContext.set(`${node.id}-output-status`, 200); // Default to 200 for mock responses
+        }
       }
-    }
     
     // Find and follow outgoing edges
     const outgoingEdges = this.edges.filter(edge => edge.source === node.id);
@@ -150,9 +156,15 @@ class FlowExecutionEngine {
       return node.data.value;
     }
     
-    // For API node output
+    // For API node output - main output handle
     if (handleId === 'output' && node.type === 'apiNode') {
       return this.executionContext.get(`${node.id}-output`);
+    }
+    
+    // For API node specific output handles
+    if (handleId.startsWith('output-') && node.type === 'apiNode') {
+      const outputType = handleId.replace('output-', '');
+      return this.executionContext.get(`${node.id}-output-${outputType}`);
     }
     
     // For text node output
@@ -323,6 +335,12 @@ class FlowExecutionEngine {
       });
       
       console.log(`✅ [FLOW ENGINE] API request successful: ${response.status}`);
+      
+      // Store specific parts of the response in the execution context
+      this.executionContext.set(`${node.id}-output-response`, response.data);
+      this.executionContext.set(`${node.id}-output-body`, response.data);
+      this.executionContext.set(`${node.id}-output-status`, response.status);
+      
       return response.data;
     } catch (error) {
       console.error(`❌ [FLOW ENGINE] API request failed:`, error);

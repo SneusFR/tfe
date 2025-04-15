@@ -25,8 +25,15 @@ const ApiNode = ({ data, id }) => {
   // Determine if the node has inputs (parameters or request body)
   const hasInputs = parameters.length > 0 || requestBody;
   
-  // Determine if the node has outputs (responses)
+  // Determine if the node has outputs (responses) and prepare output data structure
   const hasOutputs = Object.keys(responses).length > 0;
+  
+  // Define possible output data fields based on response
+  const outputFields = [
+    { id: 'response', label: 'Response', description: 'Complete response object' },
+    { id: 'body', label: 'Body', description: 'Response body data' },
+    { id: 'status', label: 'Status', description: 'HTTP status code' }
+  ];
   
   return (
     <div 
@@ -223,7 +230,7 @@ const ApiNode = ({ data, id }) => {
         </div>
       )}
       
-      {/* Output section */}
+      {/* Responses section */}
       {hasOutputs && (
         <div 
           className="api-node-section" 
@@ -284,7 +291,84 @@ const ApiNode = ({ data, id }) => {
         </div>
       )}
       
-      {/* Output handle - only show if there are outputs */}
+      {/* Output section with handles */}
+      {hasOutputs && (
+        <div 
+          className="api-node-section" 
+          style={{ 
+            marginTop: '8px',
+            borderTop: '1px solid #eee',
+            paddingTop: '8px'
+          }}
+        >
+          <div 
+            className="api-node-section-title" 
+            style={{ 
+              fontWeight: '500',
+              fontSize: '11px',
+              marginBottom: '4px'
+            }}
+          >
+            Output
+          </div>
+          <div 
+            className="api-node-section-content" 
+            style={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}
+          >
+            {outputFields.map((field, index) => (
+              <div 
+                key={index} 
+                className="api-node-output-field" 
+                style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '10px',
+                  position: 'relative'
+                }}
+              >
+                <span 
+                  className="output-field-name" 
+                  style={{ 
+                    fontWeight: '500',
+                    marginRight: '4px'
+                  }}
+                >
+                  {field.label}
+                </span>
+                <span 
+                  className="output-field-description" 
+                  style={{ 
+                    color: '#666'
+                  }}
+                >
+                  {field.description}
+                </span>
+                
+                {/* Handle for each output field */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={`output-${field.id}`}
+                  style={{ 
+                    background: methodColors[method] || '#555', 
+                    width: '6px', 
+                    height: '6px',
+                    right: -4,
+                    border: '1px solid white',
+                    boxShadow: '0 0 2px rgba(0,0,0,0.3)'
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Main output handle - only show if there are outputs */}
       {hasOutputs && (
         <Handle
           type="source"
