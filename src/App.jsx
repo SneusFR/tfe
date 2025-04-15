@@ -177,7 +177,7 @@ function App() {
   // Debug output for nodes removed
 
   return (
-    <FlowProvider>
+    <FlowProvider nodes={nodes} edges={edges}>
       <div className="app-container">
       <header className="app-header">
         <h1>API Diagram Tool</h1>

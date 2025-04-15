@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { FlowContext } from '../context/FlowContext';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
 
@@ -37,10 +38,37 @@ const TaskManager = () => {
     setTasks(taskStore.getAllTasks());
   };
   
-  // Handle the "Run" button click - does nothing as execution logic has been removed
-  const handleRun = (id, e) => {
+  // Get the executeFlow function from context
+  const { executeFlowRef } = useContext(FlowContext);
+  
+  // Handle the "Run" button click - execute the flow for this task
+  const handleRun = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
-    console.log(`Task execution functionality has been removed for task ${id}`);
+    
+    // Get the task data
+    const task = taskStore.getTaskById(id);
+    if (!task) {
+      console.error(`Task not found: ${id}`);
+      return;
+    }
+    
+    console.log(`🚀 [TASK MANAGER] Running task: ${id} - ${task.type}`);
+    
+    try {
+      // Execute the flow
+      const result = await executeFlowRef.current(task);
+      
+      if (result.success) {
+        console.log(`✅ [TASK MANAGER] Task executed successfully:`, result);
+        alert(`Task executed successfully!`);
+      } else {
+        console.error(`❌ [TASK MANAGER] Task execution failed:`, result.error);
+        alert(`Task execution failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error(`❌ [TASK MANAGER] Error executing task:`, error);
+      alert(`Error executing task: ${error.message}`);
+    }
   };
 
   // Toggle dropdown
