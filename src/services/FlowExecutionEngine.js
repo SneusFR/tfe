@@ -191,9 +191,35 @@ class FlowExecutionEngine {
       if (node.data.parameters) {
         for (const param of node.data.parameters) {
           if (param.in === 'path') {
-            const paramValue = this.executionContext.get(`param-${param.name}`);
-            if (paramValue) {
+            // Get parameter value from connected handle or execution context
+            let paramValue = this.executionContext.get(`param-${param.name}`);
+            
+            // If not found in execution context, check if there's a direct connection to this parameter
+            if (paramValue === undefined) {
+              // Find edges that target this parameter's handle
+              const targetHandleId = `param-${param.name}`;
+              const incomingEdges = this.edges.filter(edge => 
+                edge.target === node.id && edge.targetHandle === targetHandleId
+              );
+              
+              if (incomingEdges.length > 0) {
+                // Get the source node and handle
+                const sourceEdge = incomingEdges[0];
+                const sourceNode = this.nodes.find(n => n.id === sourceEdge.source);
+                
+                if (sourceNode) {
+                  // Get data from the source node's handle
+                  paramValue = this.getDataForHandle(sourceNode, sourceEdge.sourceHandle);
+                }
+              }
+            }
+            
+            // If we have a value, replace the parameter in the URL
+            if (paramValue !== undefined) {
+              console.log(`🔄 [FLOW ENGINE] Replacing path parameter {${param.name}} with value: ${paramValue}`);
               url = url.replace(`{${param.name}}`, paramValue);
+            } else {
+              console.warn(`⚠️ [FLOW ENGINE] No value found for path parameter: ${param.name}`);
             }
           }
         }
@@ -209,8 +235,32 @@ class FlowExecutionEngine {
       if (node.data.parameters) {
         for (const param of node.data.parameters) {
           if (param.in === 'query') {
-            const paramValue = this.executionContext.get(`param-${param.name}`);
+            // Get parameter value from connected handle or execution context
+            let paramValue = this.executionContext.get(`param-${param.name}`);
+            
+            // If not found in execution context, check if there's a direct connection to this parameter
+            if (paramValue === undefined) {
+              // Find edges that target this parameter's handle
+              const targetHandleId = `param-${param.name}`;
+              const incomingEdges = this.edges.filter(edge => 
+                edge.target === node.id && edge.targetHandle === targetHandleId
+              );
+              
+              if (incomingEdges.length > 0) {
+                // Get the source node and handle
+                const sourceEdge = incomingEdges[0];
+                const sourceNode = this.nodes.find(n => n.id === sourceEdge.source);
+                
+                if (sourceNode) {
+                  // Get data from the source node's handle
+                  paramValue = this.getDataForHandle(sourceNode, sourceEdge.sourceHandle);
+                }
+              }
+            }
+            
+            // If we have a value, add it to the query parameters
             if (paramValue !== undefined) {
+              console.log(`🔄 [FLOW ENGINE] Adding query parameter ${param.name}=${paramValue}`);
               queryParams[param.name] = paramValue;
             }
           }
@@ -220,7 +270,44 @@ class FlowExecutionEngine {
       // Build request body if needed
       let requestBody = null;
       if (['post', 'put', 'patch'].includes(method) && node.data.requestBody) {
+        // Get request body from execution context
         requestBody = this.executionContext.get('param-body');
+        
+        // If not found in execution context, check if there's a direct connection to the body parameter
+        if (requestBody === undefined) {
+          // Find edges that target the body parameter handle
+          const targetHandleId = 'param-body';
+          const incomingEdges = this.edges.filter(edge => 
+            edge.target === node.id && edge.targetHandle === targetHandleId
+          );
+          
+          if (incomingEdges.length > 0) {
+            // Get the source node and handle
+            const sourceEdge = incomingEdges[0];
+            const sourceNode = this.nodes.find(n => n.id === sourceEdge.source);
+            
+            if (sourceNode) {
+              // Get data from the source node's handle
+              requestBody = this.getDataForHandle(sourceNode, sourceEdge.sourceHandle);
+              
+              // If the source is a text node, try to parse it as JSON
+              if (sourceNode.type === 'textNode' && typeof requestBody === 'string') {
+                try {
+                  requestBody = JSON.parse(requestBody);
+                  console.log(`🔄 [FLOW ENGINE] Parsed JSON body from text node`);
+                } catch (e) {
+                  console.warn(`⚠️ [FLOW ENGINE] Failed to parse text node content as JSON, using as string`);
+                }
+              }
+            }
+          }
+        }
+        
+        if (requestBody !== undefined) {
+          console.log(`🔄 [FLOW ENGINE] Using request body:`, requestBody);
+        } else {
+          console.warn(`⚠️ [FLOW ENGINE] No request body found for ${method.toUpperCase()} request`);
+        }
       }
       
       // Execute the API request
