@@ -1,0 +1,309 @@
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useMemo
+} from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  Panel,
+  useNodesState,
+  useEdgesState,
+  applyNodeChanges,
+  applyEdgeChanges,
+  addEdge,
+  MarkerType,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
+import ApiNode from './ApiNode';
+import ConditionNode from './ConditionNode';
+import SendingMailNode from './SendingMailNode';
+import TextNode from './TextNode';
+import conditionStore from '../store/conditionStore';
+// Default connection color
+const DEFAULT_CONNECTION_COLOR = '#555';
+
+// Déclaration des types de nœuds en dehors du composant
+const nodeTypes = {
+  apiNode: ApiNode,
+  conditionNode: ConditionNode,
+  sendingMailNode: SendingMailNode,
+  textNode: TextNode,
+};
+
+const DiagramEditor = ({
+  nodes: initialNodes,
+  edges: initialEdges,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+  onEdgeDelete,
+}) => {
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [nodes, setNodes] = useNodesState(initialNodes || []);
+  const [edges, setEdges] = useEdgesState(initialEdges || []);
+  const reactFlowWrapper = useRef(null);
+
+  // Initialisation des nœuds et des arêtes à partir des props
+  useEffect(() => {
+    if (initialNodes && initialNodes.length > 0) setNodes(initialNodes);
+  }, [initialNodes, setNodes]);
+
+  useEffect(() => {
+    if (initialEdges && initialEdges.length > 0) setEdges(initialEdges);
+  }, [initialEdges, setEdges]);
+
+  const handleNodesChange = useCallback(
+    (changes) => {
+      const updatedNodes = applyNodeChanges(changes, nodes);
+      setNodes(updatedNodes);
+      if (onNodesChange) onNodesChange(updatedNodes);
+    },
+    [nodes, setNodes, onNodesChange]
+  );
+
+  const handleEdgesChange = useCallback(
+    (changes) => {
+      const updatedEdges = applyEdgeChanges(changes, edges);
+      setEdges(updatedEdges);
+      if (onEdgesChange) onEdgesChange(updatedEdges);
+    },
+    [edges, setEdges, onEdgesChange]
+  );
+
+  const handleEdgeClick = useCallback(
+    (event, edge) => {
+      if (window.confirm('Do you want to delete this connection?')) {
+        const updatedEdges = edges.filter((e) => e.id !== edge.id);
+        setEdges(updatedEdges);
+        if (onEdgesChange) onEdgesChange(updatedEdges);
+        if (onEdgeDelete) onEdgeDelete(edge, updatedEdges);
+      }
+    },
+    [edges, setEdges, onEdgesChange, onEdgeDelete]
+  );
+
+  // Tous les handles sont compatibles entre eux
+  const areHandlesCompatible = () => true;
+
+  // Création d'une arête simple, sans mapping ni typage
+  const handleConnect = useCallback(
+    (params) => {
+      // Toujours autoriser la connexion (pas de validation de type)
+      const edgeId = `edge-${Date.now()}`;
+
+      const newEdge = {
+        id: edgeId,
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+        style: {
+          strokeWidth: 2,
+          stroke: DEFAULT_CONNECTION_COLOR,
+        },
+        animated: true,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 15,
+          height: 15,
+          color: DEFAULT_CONNECTION_COLOR,
+        },
+        labelStyle: { fill: '#333', fontWeight: 500, fontSize: 10 },
+        labelBgStyle: { fill: '#fff', fillOpacity: 0.8 },
+      };
+
+      const updatedEdges = addEdge(newEdge, edges);
+      setEdges(updatedEdges);
+      if (onConnect) onConnect(updatedEdges);
+    },
+    [edges, setEdges, onConnect]
+  );
+
+  const onInit = useCallback(
+    (instance) => {
+      setReactFlowInstance(instance);
+      if (nodes.length > 0) {
+        setTimeout(() => {
+          instance.fitView({ padding: 0.2, includeHiddenNodes: true });
+        }, 500);
+      }
+    },
+    [nodes]
+  );
+
+  // Gestion du drop pour ajouter les nœuds
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      if (!reactFlowInstance) return;
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const position = reactFlowInstance.project({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+
+      // Ajout d'un nœud condition
+      const conditionId = event.dataTransfer.getData('application/conditionId');
+      if (conditionId) {
+        const condition = conditionStore.getConditionById(conditionId);
+        if (!condition) return;
+        const newNode = {
+          id: `condition-node-${Date.now()}`,
+          type: 'conditionNode',
+          position,
+          data: {
+            conditionText: condition.conditionText,
+            returnText: condition.returnText,
+            isStartingPoint: true,
+            emailAttributes: {
+              fromEmail: 'sender@example.com',
+              fromDisplayName: 'Sender Name',
+              toEmail: 'recipient@example.com',
+              toDisplayName: 'Recipient Name',
+              subject: 'Email Subject',
+              date: new Date().toISOString(),
+              content: 'Email content preview...',
+              attachments: [],
+              cc: [],
+              bcc: [],
+            },
+          },
+        };
+        let updatedNodes = nodes.concat(newNode);
+        updatedNodes = updatedNodes.map((node) =>
+          node.id !== newNode.id && node.type === 'conditionNode' && node.data.isStartingPoint
+            ? { ...node, data: { ...node.data, isStartingPoint: false } }
+            : node
+        );
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+        return;
+      }
+
+      // Ajout d'un nœud sendingMail ou text
+      const nodeType = event.dataTransfer.getData('application/nodeType');
+      if (nodeType === 'sendingMailNode') {
+        const newNode = {
+          id: `sending-mail-node-${Date.now()}`,
+          type: 'sendingMailNode',
+          position,
+          data: {
+            emailAttributes: {
+              account_id: '',
+              fromEmail: 'sender@example.com',
+              fromDisplayName: 'Sender Name',
+              toEmail: 'recipient@example.com',
+              toDisplayName: 'Recipient Name',
+              subject: 'Email Subject',
+              content: 'Email content...',
+              reply_to: '',
+              cc: [],
+              bcc: [],
+              custom_headers: [],
+            },
+          },
+        };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'textNode') {
+        const newNode = {
+          id: `text-node-${Date.now()}`,
+          type: 'textNode',
+          position,
+          data: {
+            text: 'Enter text here...',
+            onTextChange: (newText) => {
+              setNodes((prevNodes) =>
+                prevNodes.map((n) =>
+                  n.id === newNode.id ? { ...n, data: { ...n.data, text: newText } } : n
+                )
+              );
+              if (onNodesChange) {
+                onNodesChange((prevNodes) =>
+                  prevNodes.map((n) =>
+                    n.id === newNode.id ? { ...n, data: { ...n.data, text: newText } } : n
+                  )
+                );
+              }
+            },
+          },
+        };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      }
+    },
+    [reactFlowInstance, nodes, setNodes, onNodesChange]
+  );
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const startingPointNode = useMemo(
+    () =>
+      nodes.find(
+        (node) =>
+          node.type === 'conditionNode' && node.data.isStartingPoint === true
+      ),
+    [nodes]
+  );
+
+  return (
+    <div
+      ref={reactFlowWrapper}
+      className="diagram-editor"
+      style={{ width: '100%', height: '100%' }}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+    >
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
+        onEdgeClick={handleEdgeClick}
+        nodeTypes={nodeTypes}
+        onInit={onInit}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+        minZoom={0.1}
+        maxZoom={4}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        style={{ background: '#f5f5f5' }}
+        connectionLineStyle={{ stroke: '#888', strokeWidth: 2 }}
+        connectionLineType="smoothstep"
+      >
+        <Controls />
+        <MiniMap />
+        <Background variant="dots" gap={12} size={1} />
+        <Panel position="top-right">
+          <div className="diagram-info">
+            <h3>API Diagram</h3>
+            <p>{nodes.length} endpoints loaded</p>
+            {nodes.length > 0 && (
+              <button
+                className="fit-view-button"
+                onClick={() => {
+                  document.querySelector('.react-flow__controls-fitview')?.click();
+                }}
+              >
+                Fit View
+              </button>
+            )}
+          </div>
+        </Panel>
+      </ReactFlow>
+    </div>
+  );
+};
+
+export default DiagramEditor;

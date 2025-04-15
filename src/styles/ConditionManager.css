@@ -1,0 +1,33 @@
+/* ConditionManager styles */
+
+.draggable-condition {
+  cursor: grab;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.draggable-condition:hover {
+  background-color: #f0f0f0;
+}
+
+.draggable-condition:active {
+  cursor: grabbing;
+  background-color: #e8e8e8;
+  transform: scale(0.98);
+}
+
+.draggable-condition td {
+  user-select: none; /* Prevent text selection while dragging */
+}
+
+/* Add a visual hint when dragging */
+.draggable-condition[draggable="true"]:hover::before {
+  content: "Drag to diagram ↔";
+  position: absolute;
+  background-color: rgba(142, 68, 173, 0.8); /* Purple with transparency */
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  pointer-events: none;
+  transform: translateY(-25px);
+}
