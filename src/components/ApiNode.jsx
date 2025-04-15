@@ -44,13 +44,18 @@ const ApiNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
-      {/* Input handle - only show if there are inputs */}
+      {/* Main input handle - only show if there are inputs */}
       {hasInputs && (
         <Handle
           type="target"
           position={Position.Left}
           id="input"
-          style={{ background: '#555', width: '10px', height: '10px' }}
+          style={{ 
+            background: '#555', 
+            width: '10px', 
+            height: '10px',
+            top: 20 // Position at the top near the header
+          }}
         />
       )}
       
@@ -132,9 +137,24 @@ const ApiNode = ({ data, id }) => {
                 style={{ 
                   display: 'flex',
                   alignItems: 'center',
-                  fontSize: '10px'
+                  fontSize: '10px',
+                  position: 'relative'
                 }}
               >
+                {/* Individual handle for each parameter */}
+                <Handle
+                  type="target"
+                  position={Position.Left}
+                  id={`param-${param.name}`}
+                  style={{ 
+                    background: methodColors[method] || '#555', 
+                    width: '6px', 
+                    height: '6px',
+                    left: -4,
+                    border: '1px solid white',
+                    boxShadow: '0 0 2px rgba(0,0,0,0.3)'
+                  }}
+                />
                 <span 
                   className="param-name" 
                   style={{ 
@@ -171,9 +191,24 @@ const ApiNode = ({ data, id }) => {
                 style={{ 
                   display: 'flex',
                   alignItems: 'center',
-                  fontSize: '10px'
+                  fontSize: '10px',
+                  position: 'relative'
                 }}
               >
+                {/* Handle for request body */}
+                <Handle
+                  type="target"
+                  position={Position.Left}
+                  id="param-body"
+                  style={{ 
+                    background: methodColors[method] || '#555', 
+                    width: '6px', 
+                    height: '6px',
+                    left: -4,
+                    border: '1px solid white',
+                    boxShadow: '0 0 2px rgba(0,0,0,0.3)'
+                  }}
+                />
                 <span 
                   className="request-body-label" 
                   style={{ 
@@ -255,7 +290,12 @@ const ApiNode = ({ data, id }) => {
           type="source"
           position={Position.Right}
           id="output"
-          style={{ background: '#555', width: '10px', height: '10px' }}
+          style={{ 
+            background: '#555', 
+            width: '10px', 
+            height: '10px',
+            top: 20 // Position at the top near the header to match the main input handle
+          }}
         />
       )}
     </div>

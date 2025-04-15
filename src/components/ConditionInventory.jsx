@@ -56,6 +56,12 @@ const ConditionInventory = () => {
             >
               Text Nodes
             </button>
+            <button 
+              className={`inventory-tab ${activeCategory === 'int-nodes' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('int-nodes')}
+            >
+              Int Nodes
+            </button>
           </div>
           {activeCategory === 'starting-points' && (
             <span className="inventory-count">{conditions.length} conditions available</span>
@@ -139,6 +145,29 @@ const ConditionInventory = () => {
                 </div>
                 <div className="condition-description">
                   Add text content that can connect to colored attribute handles
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeCategory === 'int-nodes' && (
+            <div className="condition-items">
+              <div 
+                className="condition-item int-node-item"
+                draggable={true}
+                onDragStart={(e) => {
+                  // Set the node type as drag data
+                  e.dataTransfer.setData('application/nodeType', 'intNode');
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                style={{ borderTop: '3px solid #2196F3' }}
+              >
+                <div className="condition-item-header">
+                  <div className="condition-badge" style={{ backgroundColor: '#2196F3' }}>INT</div>
+                  <div className="condition-return">Int Node</div>
+                </div>
+                <div className="condition-description">
+                  Add integer values that can connect to colored attribute handles
                 </div>
               </div>
             </div>

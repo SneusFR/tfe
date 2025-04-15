@@ -23,6 +23,7 @@ import ApiNode from './ApiNode';
 import ConditionNode from './ConditionNode';
 import SendingMailNode from './SendingMailNode';
 import TextNode from './TextNode';
+import IntNode from './IntNode';
 import conditionStore from '../store/conditionStore';
 // Default connection color
 const DEFAULT_CONNECTION_COLOR = '#555';
@@ -33,6 +34,7 @@ const nodeTypes = {
   conditionNode: ConditionNode,
   sendingMailNode: SendingMailNode,
   textNode: TextNode,
+  intNode: IntNode,
 };
 
 const DiagramEditor = ({
@@ -228,6 +230,32 @@ const DiagramEditor = ({
                 onNodesChange((prevNodes) =>
                   prevNodes.map((n) =>
                     n.id === newNode.id ? { ...n, data: { ...n.data, text: newText } } : n
+                  )
+                );
+              }
+            },
+          },
+        };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'intNode') {
+        const newNode = {
+          id: `int-node-${Date.now()}`,
+          type: 'intNode',
+          position,
+          data: {
+            value: 0,
+            onValueChange: (newValue) => {
+              setNodes((prevNodes) =>
+                prevNodes.map((n) =>
+                  n.id === newNode.id ? { ...n, data: { ...n.data, value: newValue } } : n
+                )
+              );
+              if (onNodesChange) {
+                onNodesChange((prevNodes) =>
+                  prevNodes.map((n) =>
+                    n.id === newNode.id ? { ...n, data: { ...n.data, value: newValue } } : n
                   )
                 );
               }
