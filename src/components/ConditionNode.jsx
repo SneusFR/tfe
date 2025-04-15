@@ -1,6 +1,10 @@
 import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 
+// Connection colors
+const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
+const DATA_LINK_COLOR = '#3498db';    // Blue for data links
+
 const ConditionNode = ({ data, id }) => {
   // ConditionNode component initialization
   
@@ -51,12 +55,37 @@ const ConditionNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
-      {/* Input handle */}
+      {/* Execution flow handles (triangles) - better integrated with the node */}
       <Handle
         type="target"
         position={Position.Left}
-        id="input"
-        style={{ background: '#555', width: '10px', height: '10px' }}
+        id="execution"
+        style={{ 
+          background: 'transparent', 
+          width: 0,
+          height: 0,
+          borderTop: '6px solid transparent',
+          borderBottom: '6px solid transparent',
+          borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
+          top: 0,
+          left: -10,
+        }}
+      />
+      
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="execution"
+        style={{ 
+          background: 'transparent', 
+          width: 0,
+          height: 0,
+          borderTop: '6px solid transparent',
+          borderBottom: '6px solid transparent',
+          borderLeft: '10px solid ' + EXECUTION_LINK_COLOR,
+          top: 0,
+          right: -10,
+        }}
       />
       
       {/* Node header with condition type */}
@@ -136,13 +165,6 @@ const ConditionNode = ({ data, id }) => {
         <strong>Return:</strong> {returnText}
       </div>
       
-      {/* Main output handle (still present for backward compatibility) */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{ background: '#555', width: '10px', height: '10px' }}
-      />
       
       {/* Email attributes section for starting points */}
       {isStartingPoint && emailAttributes && (

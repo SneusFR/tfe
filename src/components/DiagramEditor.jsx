@@ -25,8 +25,10 @@ import SendingMailNode from './SendingMailNode';
 import TextNode from './TextNode';
 import IntNode from './IntNode';
 import conditionStore from '../store/conditionStore';
-// Default connection color
-const DEFAULT_CONNECTION_COLOR = '#555';
+
+// Connection colors
+const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
+const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 
 // Déclaration des types de nœuds en dehors du composant
 const nodeTypes = {
@@ -92,12 +94,19 @@ const DiagramEditor = ({
   // Tous les handles sont compatibles entre eux
   const areHandlesCompatible = () => true;
 
-  // Création d'une arête simple, sans mapping ni typage
+  // Création d'une arête avec distinction entre lien d'exécution et lien de données
   const handleConnect = useCallback(
     (params) => {
-      // Toujours autoriser la connexion (pas de validation de type)
       const edgeId = `edge-${Date.now()}`;
-
+      
+      // Determine if this is an execution link or a data link
+      // Execution links connect handles with IDs 'execution'
+      const isExecutionLink = 
+        params.sourceHandle === 'execution' && 
+        params.targetHandle === 'execution';
+      
+      const linkColor = isExecutionLink ? EXECUTION_LINK_COLOR : DATA_LINK_COLOR;
+      
       const newEdge = {
         id: edgeId,
         source: params.source,
@@ -105,15 +114,19 @@ const DiagramEditor = ({
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
         style: {
-          strokeWidth: 2,
-          stroke: DEFAULT_CONNECTION_COLOR,
+          strokeWidth: isExecutionLink ? 2.5 : 2,
+          stroke: linkColor,
         },
-        animated: true,
+        animated: isExecutionLink, // Only animate execution links
+        type: isExecutionLink ? 'default' : 'step', // Different line style for data links
+        data: {
+          isExecutionLink: isExecutionLink,
+        },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: 15,
-          height: 15,
-          color: DEFAULT_CONNECTION_COLOR,
+          width: isExecutionLink ? 15 : 12,
+          height: isExecutionLink ? 15 : 12,
+          color: linkColor,
         },
         labelStyle: { fill: '#333', fontWeight: 500, fontSize: 10 },
         labelBgStyle: { fill: '#fff', fillOpacity: 0.8 },

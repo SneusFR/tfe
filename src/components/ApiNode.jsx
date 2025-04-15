@@ -11,6 +11,72 @@ const methodColors = {
   head: '#9012fe',   // Purple
 };
 
+// Connection colors
+const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
+const DATA_LINK_COLOR = '#3498db';    // Blue for data links
+
+// Custom triangle handle component for execution flow
+const TriangleHandle = ({ type, position, id, style }) => {
+  const baseStyle = {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    position: 'absolute',
+    ...style
+  };
+
+  // Adjust the triangle shape based on the position
+  let triangleStyle;
+  if (position === Position.Top) {
+    triangleStyle = {
+      ...baseStyle,
+      borderWidth: '0 8px 8px 8px',
+      borderColor: 'transparent transparent #555 transparent',
+      top: -8,
+      left: '50%',
+      transform: 'translateX(-50%)',
+    };
+  } else if (position === Position.Right) {
+    triangleStyle = {
+      ...baseStyle,
+      borderWidth: '8px 0 8px 8px',
+      borderColor: 'transparent transparent transparent #555',
+      right: -8,
+      top: '50%',
+      transform: 'translateY(-50%)',
+    };
+  } else if (position === Position.Bottom) {
+    triangleStyle = {
+      ...baseStyle,
+      borderWidth: '8px 8px 0 8px',
+      borderColor: '#555 transparent transparent transparent',
+      bottom: -8,
+      left: '50%',
+      transform: 'translateX(-50%)',
+    };
+  } else if (position === Position.Left) {
+    triangleStyle = {
+      ...baseStyle,
+      borderWidth: '8px 8px 8px 0',
+      borderColor: 'transparent #555 transparent transparent',
+      left: -8,
+      top: '50%',
+      transform: 'translateY(-50%)',
+    };
+  }
+
+  return (
+    <div 
+      className={`react-flow__handle react-flow__handle-${position} triangle-handle`} 
+      style={triangleStyle}
+      data-handleid={id}
+      data-nodeid={id}
+      data-handlepos={position}
+    />
+  );
+};
+
 const ApiNode = ({ data, id }) => {
   // ApiNode component initialization
   
@@ -51,20 +117,38 @@ const ApiNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
-      {/* Main input handle - only show if there are inputs */}
-      {hasInputs && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="input"
-          style={{ 
-            background: '#555', 
-            width: '10px', 
-            height: '10px',
-            top: 20 // Position at the top near the header
-          }}
-        />
-      )}
+      {/* Execution flow handles (triangles) - better integrated with the node */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="execution"
+        style={{ 
+          background: 'transparent', 
+          width: 0,
+          height: 0,
+          borderTop: '6px solid transparent',
+          borderBottom: '6px solid transparent',
+          borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
+          top: 0,
+          left: -10,
+        }}
+      />
+      
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="execution"
+        style={{ 
+          background: 'transparent', 
+          width: 0,
+          height: 0,
+          borderTop: '6px solid transparent',
+          borderBottom: '6px solid transparent',
+          borderLeft: '10px solid ' + EXECUTION_LINK_COLOR,
+          top: 0,
+          right: -10,
+        }}
+      />
       
       {/* Node header with method and path */}
       <div className="api-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
@@ -368,20 +452,6 @@ const ApiNode = ({ data, id }) => {
         </div>
       )}
       
-      {/* Main output handle - only show if there are outputs */}
-      {hasOutputs && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="output"
-          style={{ 
-            background: '#555', 
-            width: '10px', 
-            height: '10px',
-            top: 20 // Position at the top near the header to match the main input handle
-          }}
-        />
-      )}
     </div>
   );
 };

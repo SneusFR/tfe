@@ -77,6 +77,7 @@ class FlowExecutionEngine {
 
   // Execute a single node and follow its outgoing edges
   async executeNode(node) {
+    console.trace("executeApiNode called for node:", node.id);
     console.log(`🔄 [FLOW ENGINE] Executing node: ${node.id} (${node.type})`);
     
     let outputData;
@@ -103,38 +104,47 @@ class FlowExecutionEngine {
         outputData = null;
     }
     
-      // Store the node's output in the execution context
-      if (outputData !== undefined) {
-        this.executionContext.set(`output-${node.id}`, outputData);
+    // Store the node's output in the execution context
+    if (outputData !== undefined) {
+      this.executionContext.set(`output-${node.id}`, outputData);
+      
+      // If the node has a specific output handle, store the data for that handle
+      if (node.type === 'apiNode' && outputData) {
+        // Store the complete response
+        this.executionContext.set(`${node.id}-output`, outputData);
         
-        // If the node has a specific output handle, store the data for that handle
-        if (node.type === 'apiNode' && outputData) {
-          // Store the complete response
-          this.executionContext.set(`${node.id}-output`, outputData);
-          
-          // Store specific parts of the response for the new output handles
-          this.executionContext.set(`${node.id}-output-response`, outputData);
-          this.executionContext.set(`${node.id}-output-body`, outputData); // For API responses, the data is usually the body
-          this.executionContext.set(`${node.id}-output-status`, 200); // Default to 200 for mock responses
-        }
+        // Store specific parts of the response for the new output handles
+        this.executionContext.set(`${node.id}-output-response`, outputData);
+        this.executionContext.set(`${node.id}-output-body`, outputData); // For API responses, the data is usually the body
+        this.executionContext.set(`${node.id}-output-status`, 200); // Default to 200 for mock responses
       }
+    }
     
-    // Find and follow outgoing edges
+    // Process all outgoing edges to transfer data
     const outgoingEdges = this.edges.filter(edge => edge.source === node.id);
-    
-    // Process each outgoing edge
-    const results = [];
     for (const edge of outgoingEdges) {
       const targetNode = this.nodes.find(n => n.id === edge.target);
-      if (targetNode) {
-        // Pass data from source handle to target handle if specified
-        if (edge.sourceHandle && edge.targetHandle) {
-          const sourceData = this.getDataForHandle(node, edge.sourceHandle);
-          if (sourceData !== undefined) {
-            this.executionContext.set(edge.targetHandle, sourceData);
-          }
+      if (targetNode && edge.sourceHandle && edge.targetHandle) {
+        const sourceData = this.getDataForHandle(node, edge.sourceHandle);
+        if (sourceData !== undefined) {
+          this.executionContext.set(edge.targetHandle, sourceData);
+          console.log(`🔄 [FLOW ENGINE] Passing data from ${node.id}.${edge.sourceHandle} to ${targetNode.id}.${edge.targetHandle}`);
         }
-        
+      }
+    }
+    
+    // Only follow execution links for flow execution
+    const executionEdges = this.edges.filter(edge => 
+      edge.source === node.id && 
+      edge.data?.isExecutionLink === true
+    );
+    
+    // Process each execution edge
+    const results = [];
+    for (const edge of executionEdges) {
+      const targetNode = this.nodes.find(n => n.id === edge.target);
+      if (targetNode) {
+        console.log(`🔄 [FLOW ENGINE] Following execution link to node: ${targetNode.id}`);
         // Execute the target node
         const result = await this.executeNode(targetNode);
         results.push(result);

@@ -1,6 +1,10 @@
 import { memo, useState, useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
 
+// Connection colors
+const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
+const DATA_LINK_COLOR = '#3498db';    // Blue for data links
+
 const IntNode = ({ data, id }) => {
   // IntNode component initialization
   
@@ -122,7 +126,40 @@ const IntNode = ({ data, id }) => {
         )}
       </div>
       
-      {/* Output handle */}
+      {/* Execution flow handles (triangles) - better integrated with the node */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="execution"
+        style={{ 
+          background: 'transparent', 
+          width: 0,
+          height: 0,
+          borderTop: '6px solid transparent',
+          borderBottom: '6px solid transparent',
+          borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
+          top: 0,
+          left: -10,
+        }}
+      />
+      
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="execution"
+        style={{ 
+          background: 'transparent', 
+          width: 0,
+          height: 0,
+          borderTop: '6px solid transparent',
+          borderBottom: '6px solid transparent',
+          borderLeft: '10px solid ' + EXECUTION_LINK_COLOR,
+          top: 0,
+          right: -10,
+        }}
+      />
+      
+      {/* Output handle for data */}
       <Handle
         type="source"
         position={Position.Right}
