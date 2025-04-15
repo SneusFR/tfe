@@ -374,17 +374,99 @@ class FlowExecutionEngine {
   async executeSendingMailNode(node) {
     console.log(`🔄 [FLOW ENGINE] Executing sending mail node: ${node.id}`);
     
-    // In a real implementation, this would send an email
-    // For now, we'll just log the email details
-    const emailData = {
-      from: node.data.emailAttributes.fromEmail,
-      to: node.data.emailAttributes.toEmail,
-      subject: node.data.emailAttributes.subject,
-      content: node.data.emailAttributes.content,
-    };
-    
-    console.log(`📧 [FLOW ENGINE] Would send email:`, emailData);
-    return { sent: true, email: emailData };
+    try {
+      // Get email attributes from the node or from the execution context
+      const emailAttributes = node.data.emailAttributes || {};
+      
+      // Get values from execution context if they were passed via connections
+      const account_id = import.meta.env.VITE_UNIPILE_EMAIL_ACCOUNT_ID;
+      
+      const fromEmail = this.executionContext.get('attr-fromEmail') || emailAttributes.fromEmail;
+      const fromDisplayName = this.executionContext.get('attr-fromDisplayName') || emailAttributes.fromDisplayName;
+      
+      const toEmail = this.executionContext.get('attr-toEmail') || emailAttributes.toEmail;
+      const toDisplayName = this.executionContext.get('attr-toDisplayName') || emailAttributes.toDisplayName;
+      
+      const subject = this.executionContext.get('attr-subject') || emailAttributes.subject;
+      const body = this.executionContext.get('attr-body') || emailAttributes.content;
+      
+      const reply_to = this.executionContext.get('attr-reply_to') || emailAttributes.reply_to;
+      const cc = this.executionContext.get('attr-cc') || emailAttributes.cc;
+      const bcc = this.executionContext.get('attr-bcc') || emailAttributes.bcc;
+      const custom_headers = this.executionContext.get('attr-custom_headers') || emailAttributes.custom_headers;
+      
+      console.log (toEmail)
+      console.log(fromEmail)
+      // Format the email data according to Unipile API requirements
+      const email = {
+        account_id: account_id,
+        to: [
+          {
+            display_name: toDisplayName,
+            identifier: toEmail,
+          },
+        ],
+        subject: subject,
+        body: body,
+      };
+      
+      // Add optional fields if they exist
+      if (fromEmail) {
+        email.from = {
+          display_name: fromDisplayName,
+          identifier: fromEmail,
+        };
+      }
+      
+      if (reply_to) {
+        email.reply_to = {
+          identifier: reply_to,
+        };
+      }
+      
+      // Add CC recipients if they exist
+      if (cc && cc.length > 0) {
+        email.cc = cc.map(recipient => ({
+          display_name: recipient.displayName || '',
+          identifier: recipient.email,
+        }));
+      }
+      
+      // Add BCC recipients if they exist
+      if (bcc && bcc.length > 0) {
+        email.bcc = bcc.map(recipient => ({
+          display_name: recipient.displayName || '',
+          identifier: recipient.email,
+        }));
+      }
+      
+      // Add custom headers if they exist
+      if (custom_headers && custom_headers.length > 0) {
+        email.custom_headers = custom_headers;
+      }
+      
+      console.log(`📧 [FLOW ENGINE] Sending email via Unipile:`, email);
+      
+      // Make the API request to Unipile
+      const unipileBaseUrl = import.meta.env.VITE_UNIPILE_BASE_URL;
+      const unipileApiKey = import.meta.env.VITE_UNIPILE_EMAIL_API_KEY;
+      
+      const response = await axios({
+        method: 'post',
+        url: `${unipileBaseUrl}/emails`,
+        data: email,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': unipileApiKey,
+        },
+      });
+      
+      console.log(`✅ [FLOW ENGINE] Email sent successfully:`, response.data);
+      return { sent: true, email: email, response: response.data };
+    } catch (error) {
+      console.error(`❌ [FLOW ENGINE] Failed to send email:`, error);
+      return { sent: false, error: error.message };
+    }
   }
 }
 
