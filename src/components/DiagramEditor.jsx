@@ -198,11 +198,8 @@ const DiagramEditor = ({
           },
         };
         let updatedNodes = nodes.concat(newNode);
-        updatedNodes = updatedNodes.map((node) =>
-          node.id !== newNode.id && node.type === 'conditionNode' && node.data.isStartingPoint
-            ? { ...node, data: { ...node.data, isStartingPoint: false } }
-            : node
-        );
+        // Removed the code that sets other condition nodes' isStartingPoint to false
+        // This allows multiple starting points to be active simultaneously
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
         return;
@@ -296,9 +293,9 @@ const DiagramEditor = ({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const startingPointNode = useMemo(
+  const startingPointNodes = useMemo(
     () =>
-      nodes.find(
+      nodes.filter(
         (node) =>
           node.type === 'conditionNode' && node.data.isStartingPoint === true
       ),

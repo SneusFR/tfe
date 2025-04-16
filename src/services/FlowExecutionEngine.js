@@ -28,6 +28,19 @@ class FlowExecutionEngine {
        node.data.conditionText.includes(task.description))
     );
     
+    // If no specific starting node is found, find any starting point
+    if (!startingNode) {
+      const anyStartingNode = this.nodes.find(node => 
+        node.type === 'conditionNode' && 
+        node.data.isStartingPoint === true
+      );
+      
+      if (anyStartingNode) {
+        console.log(`⚠️ [FLOW ENGINE] No specific starting node found for task type "${task.type}", using generic starting point: ${anyStartingNode.id}`);
+        return anyStartingNode;
+      }
+    }
+    
     return startingNode;
   }
 
@@ -35,14 +48,14 @@ class FlowExecutionEngine {
   async executeFlow(task) {
     console.log(`🔄 [FLOW ENGINE] Starting execution for task: ${task.id} - ${task.type}`);
     
-    // Find the starting node
+    // Find the starting node that matches the task type or description
     const startingNode = this.findStartingNode(task);
     if (!startingNode) {
       console.error(`❌ [FLOW ENGINE] No starting node found for task: ${task.type}`);
       return { success: false, error: 'No starting node found for this task type' };
     }
     
-    console.log(`✅ [FLOW ENGINE] Found starting node: ${startingNode.id}`);
+    console.log(`✅ [FLOW ENGINE] Found starting node: ${startingNode.id} with condition: ${startingNode.data.conditionText}`);
     
     // Initialize execution context with task data
     this.executionContext.clear();
