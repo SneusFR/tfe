@@ -26,6 +26,7 @@ import EmailAttachmentNode from './EmailAttachmentNode';
 import TextNode from './TextNode';
 import IntNode from './IntNode';
 import OcrNode from './OcrNode';
+import ConsoleLogNode from './ConsoleLogNode';
 import conditionStore from '../store/conditionStore';
 
 // Connection colors and styles
@@ -52,6 +53,7 @@ const nodeTypes = {
   textNode: TextNode,
   intNode: IntNode,
   ocrNode: OcrNode,
+  consoleLogNode: ConsoleLogNode,
 };
 
 const DiagramEditor = ({
@@ -316,6 +318,16 @@ const DiagramEditor = ({
               enhance_image: false
             },
           },
+        };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'consoleLogNode') {
+        const newNode = {
+          id: `console-log-node-${Date.now()}`,
+          type: 'consoleLogNode',
+          position,
+          data: {},
         };
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);

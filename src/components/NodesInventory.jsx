@@ -6,6 +6,7 @@ const NodesInventory = ({ apiNodes = [] }) => {
   const [conditions, setConditions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('starting-points');
+  
   const [apiNodesCount, setApiNodesCount] = useState(0);
   const [textNodeContent, setTextNodeContent] = useState('');
   const [showTextNodeModal, setShowTextNodeModal] = useState(false);
@@ -81,6 +82,12 @@ const NodesInventory = ({ apiNodes = [] }) => {
               onClick={() => setActiveCategory('int-nodes')}
             >
               Int Nodes
+            </button>
+            <button 
+              className={`inventory-tab ${activeCategory === 'debug' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('debug')}
+            >
+              Debug
             </button>
             <button 
               className={`inventory-tab ${activeCategory === 'api-nodes' ? 'active' : ''}`}
@@ -258,6 +265,29 @@ const NodesInventory = ({ apiNodes = [] }) => {
                 </div>
                 <div className="condition-description">
                   Add integer values that can connect to colored attribute handles
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeCategory === 'debug' && (
+            <div className="condition-items">
+              <div 
+                className="condition-item console-log-node-item"
+                draggable={true}
+                onDragStart={(e) => {
+                  // Set the node type as drag data
+                  e.dataTransfer.setData('application/nodeType', 'consoleLogNode');
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                style={{ borderTop: '3px solid #FF5722' }}
+              >
+                <div className="condition-item-header">
+                  <div className="condition-badge" style={{ backgroundColor: '#FF5722' }}>DEBUG</div>
+                  <div className="condition-return">Console.log</div>
+                </div>
+                <div className="condition-description">
+                  Logs input value to the console when connected to an execution flow
                 </div>
               </div>
             </div>

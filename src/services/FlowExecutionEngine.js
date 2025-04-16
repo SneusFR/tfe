@@ -2,6 +2,7 @@
 // This service handles the execution of a flow diagram by traversing nodes and edges
 
 import axios from 'axios';
+import { createWorker } from 'tesseract.js';
 
 class FlowExecutionEngine {
   constructor() {
@@ -148,6 +149,9 @@ class FlowExecutionEngine {
         break;
       case 'ocrNode':
         outputData = await this.executeOcrNode(node);
+        break;
+      case 'consoleLogNode':
+        outputData = await this.executeConsoleLogNode(node);
         break;
       default:
         console.warn(`⚠️ [FLOW ENGINE] Unknown node type: ${node.type}`);
@@ -620,24 +624,38 @@ class FlowExecutionEngine {
         return { success: false, error: 'Missing required parameter: attachment_data' };
       }
       
-      console.log(`🔄 [FLOW ENGINE] Processing image with OCR:`, {
+      console.log(`🔄 [FLOW ENGINE] Processing image with OCR using Tesseract.js:`, {
         language,
         enhance_image
       });
       
-      // In a real implementation, we would call an OCR API here
-      // For this example, we'll simulate OCR processing with a mock response
+      // Create a Tesseract worker
+      const worker = await createWorker(language !== 'auto' ? language : undefined);
       
-      // Simulate OCR processing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get the image data from the attachment
+      // Assuming attachment_data contains the image data in base64 format or a URL
+      let imageData = attachment_data;
       
-      // Mock OCR result
+      // If attachment_data is an object with a data property (common for API responses)
+      if (typeof attachment_data === 'object' && attachment_data.data) {
+        imageData = attachment_data.data;
+      }
+      
+      // Process the image with Tesseract.js
+      const startTime = Date.now();
+      const result = await worker.recognize(imageData);
+      const processingTimeMs = Date.now() - startTime;
+      
+      // Terminate the worker to free up resources
+      await worker.terminate();
+      
+      // Create the OCR result object
       const ocrResult = {
         success: true,
-        text: "This is a simulated OCR result. In a real implementation, this would be the text extracted from the image attachment.",
-        confidence: 0.95,
+        text: result.data.text,
+        confidence: result.data.confidence / 100, // Convert to 0-1 scale
         language: language,
-        processingTimeMs: 856,
+        processingTimeMs: processingTimeMs,
         enhancedImage: enhance_image
       };
       
@@ -650,6 +668,24 @@ class FlowExecutionEngine {
     } catch (error) {
       console.error(`❌ [FLOW ENGINE] Failed to process image with OCR:`, error);
       return { success: false, error: error.message };
+    }
+  }
+  
+  // Execute a console.log node
+  async executeConsoleLogNode(node) {
+    console.log(`🔄 [FLOW ENGINE] Executing console.log node: ${node.id}`);
+    
+    try {
+      // Get the input value from the connected handle
+      const inputValue = this.executionContext.get('input-value');
+      
+      // Log the input value to the console
+      console.log(`📝 [CONSOLE.LOG NODE] Value:`, inputValue);
+      
+      return { logged: true, value: inputValue };
+    } catch (error) {
+      console.error(`❌ [FLOW ENGINE] Failed to execute console.log node:`, error);
+      return { logged: false, error: error.message };
     }
   }
 }
