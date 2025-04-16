@@ -26,9 +26,20 @@ import TextNode from './TextNode';
 import IntNode from './IntNode';
 import conditionStore from '../store/conditionStore';
 
-// Connection colors
+// Connection colors and styles
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
 const DATA_LINK_COLOR = '#3498db';    // Blue for data links
+const EXECUTION_LINK_STYLE = {
+  strokeWidth: 2.5,
+  stroke: EXECUTION_LINK_COLOR,
+  strokeDasharray: '0',
+  opacity: 0.9,
+};
+const DATA_LINK_STYLE = {
+  strokeWidth: 2,
+  stroke: DATA_LINK_COLOR,
+  opacity: 0.8,
+};
 
 // Déclaration des types de nœuds en dehors du composant
 const nodeTypes = {
@@ -113,12 +124,9 @@ const DiagramEditor = ({
         target: params.target,
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
-        style: {
-          strokeWidth: isExecutionLink ? 2.5 : 2,
-          stroke: linkColor,
-        },
+        style: isExecutionLink ? EXECUTION_LINK_STYLE : DATA_LINK_STYLE,
         animated: isExecutionLink, // Only animate execution links
-        type: isExecutionLink ? 'default' : 'step', // Different line style for data links
+        type: isExecutionLink ? 'smoothstep' : 'default', // Smoother curves for execution links
         data: {
           isExecutionLink: isExecutionLink,
         },
@@ -320,8 +328,17 @@ const DiagramEditor = ({
         fitView
         fitViewOptions={{ padding: 0.2 }}
         style={{ background: '#f5f5f5' }}
-        connectionLineStyle={{ stroke: '#888', strokeWidth: 2 }}
+        connectionLineStyle={{ 
+          stroke: DATA_LINK_COLOR, 
+          strokeWidth: 2.5,
+          opacity: 0.6,
+          strokeDasharray: '5,5'
+        }}
         connectionLineType="smoothstep"
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          animated: false,
+        }}
       >
         <Controls />
         <MiniMap />
