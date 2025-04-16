@@ -232,18 +232,24 @@ const EmailBrowser = () => {
         const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';
         const senderName = email.from_attendee?.display_name || senderEmail;
         const recipientEmail = email.to_attendees?.[0]?.identifier || 'unknown@example.com';
-
         
-        // Créer la tâche en utilisant senderEmail
+        // Extraire les informations des pièces jointes si elles existent
+        const attachments = email.attachments || [];
+        console.log(`📎 [EMAIL ATTACHMENTS] Found ${attachments.length} attachments in email:`, 
+          attachments.map(a => ({ id: a.id, name: a.name })));
+        
+        // Créer la tâche en utilisant les données de l'email
         const taskData = {
           type: condition.returnText,
           description: `Email de ${senderName}: ${email.subject || "(Sans objet)"}`,
           source: 'email',
-          sourceId: email.id,
+          sourceId: email.id, // ID de l'email pour récupérer les pièces jointes
           senderEmail: senderEmail,
-          recipientEmail: recipientEmail // ← ligne à ajouter
-
+          recipientEmail: recipientEmail,
+          attachments: attachments // Ajouter les pièces jointes à la tâche
         };
+        
+        console.log(`📧 [EMAIL DATA] Using email ID: ${email.id} for task creation`);
         
         // Ajouter la tâche
         const newTask = taskStore.addTask(taskData);

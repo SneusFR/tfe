@@ -13,9 +13,14 @@ const taskStore = {
       status: 'pending',
       createdAt: new Date().toISOString(),
       senderEmail: taskData.senderEmail || '',
-      recipientEmail: taskData.recipientEmail || ''
+      recipientEmail: taskData.recipientEmail || '',
+      attachments: taskData.attachments || []
     };
-    console.log("📧 [TASK STORE] Creating task with sender email:", taskData.senderEmail);
+    console.log("📧 [TASK STORE] Creating task with email ID:", taskData.sourceId);
+    if (taskData.attachments && taskData.attachments.length > 0) {
+      console.log("📎 [TASK STORE] Task includes attachments:", 
+        taskData.attachments.map(a => ({ id: a.id, name: a.name })));
+    }
     tasks.push(newTask);
     this.saveToLocalStorage();
     return newTask;

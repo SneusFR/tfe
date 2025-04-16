@@ -176,6 +176,25 @@ const NodesInventory = ({ apiNodes = [] }) => {
                   Send emails using the Unipile API with customizable parameters
                 </div>
               </div>
+              
+              <div 
+                className="condition-item email-attachment-item"
+                draggable={true}
+                onDragStart={(e) => {
+                  // Set the node type as drag data
+                  e.dataTransfer.setData('application/nodeType', 'emailAttachmentNode');
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                style={{ borderTop: '3px solid #9C27B0' }}
+              >
+                <div className="condition-item-header">
+                  <div className="condition-badge" style={{ backgroundColor: '#9C27B0' }}>EMAIL ATTACHMENT</div>
+                  <div className="condition-return">Get Attachment</div>
+                </div>
+                <div className="condition-description">
+                  Retrieve email attachments using the Unipile API
+                </div>
+              </div>
             </div>
           )}
           

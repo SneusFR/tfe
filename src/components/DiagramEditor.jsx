@@ -22,6 +22,7 @@ import 'reactflow/dist/style.css';
 import ApiNode from './ApiNode';
 import ConditionNode from './ConditionNode';
 import SendingMailNode from './SendingMailNode';
+import EmailAttachmentNode from './EmailAttachmentNode';
 import TextNode from './TextNode';
 import IntNode from './IntNode';
 import conditionStore from '../store/conditionStore';
@@ -46,6 +47,7 @@ const nodeTypes = {
   apiNode: ApiNode,
   conditionNode: ConditionNode,
   sendingMailNode: SendingMailNode,
+  emailAttachmentNode: EmailAttachmentNode,
   textNode: TextNode,
   intNode: IntNode,
 };
@@ -184,6 +186,7 @@ const DiagramEditor = ({
             returnText: condition.returnText,
             isStartingPoint: true,
             emailAttributes: {
+              email_id: 'email-123', // Added email_id field
               fromEmail: 'sender@example.com',
               fromDisplayName: 'Sender Name',
               toEmail: 'recipient@example.com',
@@ -277,6 +280,22 @@ const DiagramEditor = ({
                   )
                 );
               }
+            },
+          },
+        };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'emailAttachmentNode') {
+        const newNode = {
+          id: `email-attachment-node-${Date.now()}`,
+          type: 'emailAttachmentNode',
+          position,
+          data: {
+            emailAttributes: {
+              account_id: '',
+              email_id: '',
+              attachment_id: ''
             },
           },
         };

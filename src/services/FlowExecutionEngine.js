@@ -49,6 +49,7 @@ class FlowExecutionEngine {
     }
     
     console.log(`✅ [FLOW ENGINE] Found starting node: ${startingNode.id} with condition: ${startingNode.data.conditionText}`);
+    console.log(`📧 [FLOW ENGINE] Task email ID: ${task.sourceId}`);
     
     // Initialize execution context with task data
     this.executionContext.clear();
@@ -59,15 +60,52 @@ class FlowExecutionEngine {
       // Map task data to email attributes
       const emailAttributes = {
         ...startingNode.data.emailAttributes,
+        email_id: task.sourceId || startingNode.data.emailAttributes.email_id, // Map task sourceId to email_id
         fromEmail: task.senderEmail || startingNode.data.emailAttributes.fromEmail,
         toEmail: task.recipientEmail || startingNode.data.emailAttributes.toEmail,
         // Add other mappings as needed
       };
       
+      console.log(`📧 [FLOW ENGINE] Mapped email ID to execution context: ${emailAttributes.email_id}`);
+      
+      // Handle attachments if they exist in the task
+      if (task.attachments && Array.isArray(task.attachments)) {
+        emailAttributes.attachments = task.attachments.map(attachment => ({
+          id: attachment.id,
+          name: attachment.name,
+          size: attachment.size,
+          extension: attachment.extension,
+          mime: attachment.mime,
+          cid: attachment.cid
+        }));
+        
+        console.log(`📎 [FLOW ENGINE] Found ${emailAttributes.attachments.length} attachments in task:`);
+        emailAttributes.attachments.forEach((attachment, index) => {
+          console.log(`  - Attachment ${index + 1}: ID=${attachment.id}, Name=${attachment.name}`);
+        });
+      }
+      
       // Store each attribute in the execution context
       Object.entries(emailAttributes).forEach(([key, value]) => {
         this.executionContext.set(`attr-${key}`, value);
       });
+      
+      // Store individual attachment IDs in the execution context for direct access
+      if (emailAttributes.attachments && emailAttributes.attachments.length > 0) {
+        // Store the first attachment ID as the main attachment_id attribute
+        if (emailAttributes.attachments[0].id) {
+          this.executionContext.set('attr-attachment_id', emailAttributes.attachments[0].id);
+          console.log(`✅ [FLOW ENGINE] Stored first attachment ID ${emailAttributes.attachments[0].id} in execution context as attr-attachment_id`);
+        }
+        
+        // Store each attachment ID individually
+        emailAttributes.attachments.forEach((attachment, index) => {
+          if (attachment.id) {
+            this.executionContext.set(`attr-attachment-${index}`, attachment.id);
+            console.log(`✅ [FLOW ENGINE] Stored attachment ID ${attachment.id} in execution context as attr-attachment-${index}`);
+          }
+        });
+      }
     }
     
     // Execute the flow starting from the starting node
@@ -104,6 +142,9 @@ class FlowExecutionEngine {
         break;
       case 'sendingMailNode':
         outputData = await this.executeSendingMailNode(node);
+        break;
+      case 'emailAttachmentNode':
+        outputData = await this.executeEmailAttachmentNode(node);
         break;
       default:
         console.warn(`⚠️ [FLOW ENGINE] Unknown node type: ${node.type}`);
@@ -164,6 +205,12 @@ class FlowExecutionEngine {
   getDataForHandle(node, handleId) {
     // For condition node attributes
     if (handleId.startsWith('attr-') && node.type === 'conditionNode') {
+      // Special case for individual attachment handles
+      if (handleId.match(/^attr-attachment-\d+$/)) {
+        const attachmentId = this.executionContext.get(handleId);
+        console.log(`🔄 [FLOW ENGINE] Getting attachment ID from handle ${handleId}: ${attachmentId}`);
+        return attachmentId;
+      }
       return this.executionContext.get(handleId);
     }
     
@@ -181,6 +228,11 @@ class FlowExecutionEngine {
     if (handleId.startsWith('output-') && node.type === 'apiNode') {
       const outputType = handleId.replace('output-', '');
       return this.executionContext.get(`${node.id}-output-${outputType}`);
+    }
+    
+    // For email attachment node output
+    if (handleId === 'output-attachment' && node.type === 'emailAttachmentNode') {
+      return this.executionContext.get(`${node.id}-output-attachment`);
     }
     
     // For text node output
@@ -472,6 +524,72 @@ class FlowExecutionEngine {
     } catch (error) {
       console.error(`❌ [FLOW ENGINE] Failed to send email:`, error);
       return { sent: false, error: error.message };
+    }
+  }
+  
+  // Execute an email attachment node
+  async executeEmailAttachmentNode(node) {
+    console.log(`🔄 [FLOW ENGINE] Executing email attachment node: ${node.id}`);
+    
+    try {
+      // Get email attributes from the node or from the execution context
+      const emailAttributes = node.data.emailAttributes || {};
+      
+      // Get values from execution context if they were passed via connections
+      const account_id = this.executionContext.get('attr-account_id') || emailAttributes.account_id || import.meta.env.VITE_UNIPILE_EMAIL_ACCOUNT_ID;
+      const email_id = this.executionContext.get('attr-email_id') || emailAttributes.email_id;
+      const attachment_id = this.executionContext.get('attr-attachment_id') || emailAttributes.attachment_id;
+      
+      // Validate required parameters
+      if (!email_id) {
+        console.error(`❌ [FLOW ENGINE] Missing required parameter: email_id`);
+        return { success: false, error: 'Missing required parameter: email_id' };
+      }
+      
+      if (!attachment_id) {
+        console.error(`❌ [FLOW ENGINE] Missing required parameter: attachment_id`);
+        return { success: false, error: 'Missing required parameter: attachment_id' };
+      }
+      
+      console.log(`📧 [FLOW ENGINE] Retrieving email attachment via Unipile:`, {
+        account_id,
+        email_id,
+        attachment_id
+      });
+      
+      // Make the API request to Unipile
+      const unipileBaseUrl = import.meta.env.VITE_UNIPILE_BASE_URL;
+      const unipileApiKey = import.meta.env.VITE_UNIPILE_EMAIL_API_KEY;
+      
+      // Construct the URL for retrieving the attachment
+      // Format: https://[subdomain].unipile.com:[port]/api/v1/emails/{email_id}/attachments/{attachment_id}
+      const url = `${unipileBaseUrl}/emails/${email_id}/attachments/${attachment_id}`;
+      
+      // Add account_id as a query parameter if it exists
+      const params = {};
+      if (account_id) {
+        params.account_id = account_id;
+      }
+      
+      const response = await axios({
+        method: 'get',
+        url: url,
+        params: params,
+        headers: {
+          'Accept': 'application/json',
+          'X-API-KEY': unipileApiKey,
+        },
+      });
+      
+      console.log(`✅ [FLOW ENGINE] Email attachment retrieved successfully`);
+      
+      // Store the attachment data in the execution context for the output handle
+      this.executionContext.set(`${node.id}-output-attachment`, response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error(`❌ [FLOW ENGINE] Failed to retrieve email attachment:`, error);
+      return { success: false, error: error.message };
     }
   }
 }

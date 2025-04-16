@@ -16,6 +16,7 @@ const ConditionNode = ({ data, id }) => {
   
   // Email attributes for starting point nodes
   const emailAttributes = isStartingPoint ? (data?.emailAttributes || {
+    email_id: 'email-123', // Added email_id field
     fromEmail: 'sender@example.com',
     fromDisplayName: 'Sender Name',
     toEmail: 'recipient@example.com',
@@ -224,6 +225,41 @@ const ConditionNode = ({ data, id }) => {
           </div>
           
           <div className="attribute-list" style={{ fontSize: '10px' }}>
+            {/* Email ID attribute */}
+            <div className="attribute-item" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              marginBottom: '4px', 
+              position: 'relative',
+              padding: '2px 4px',
+              borderRadius: '3px',
+              backgroundColor: hoveredHandle === 'attr-email_id' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+              transition: 'background-color 0.2s ease'
+            }}>
+              <div 
+                className="attribute-badge"
+                style={{ 
+                  backgroundColor: attributeColors.from,
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  marginRight: '4px'
+                }}
+              ></div>
+              <div style={{ flex: 1 }}>
+                <strong>Email ID:</strong> {emailAttributes.email_id}
+              </div>
+              {/* Handle for Email ID attribute */}
+              <Handle
+                type="source"
+                position={Position.Right}
+                id="attr-email_id"
+                style={getDataHandleStyle(attributeColors.from, 'attr-email_id')}
+                onMouseEnter={() => handleMouseEnter('attr-email_id')}
+                onMouseLeave={handleMouseLeave}
+              />
+            </div>
+            
             {/* FromEmail attribute */}
             <div className="attribute-item" style={{ 
               display: 'flex', 
@@ -469,41 +505,123 @@ const ConditionNode = ({ data, id }) => {
               />
             </div>
             
+            {/* Attachment ID attribute */}
+            <div className="attribute-item" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              marginBottom: '4px', 
+              position: 'relative',
+              padding: '2px 4px',
+              borderRadius: '3px',
+              backgroundColor: hoveredHandle === 'attr-attachment_id' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
+              transition: 'background-color 0.2s ease'
+            }}>
+              <div 
+                className="attribute-badge"
+                style={{ 
+                  backgroundColor: attributeColors.attachments,
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  marginRight: '4px'
+                }}
+              ></div>
+              <div style={{ flex: 1 }}>
+                <strong>Attachment ID:</strong> {emailAttributes.attachments && emailAttributes.attachments.length > 0 ? 
+                  emailAttributes.attachments[0].id || 'Available' : 'None'}
+              </div>
+              {/* Handle for Attachment ID attribute */}
+              <Handle
+                type="source"
+                position={Position.Right}
+                id="attr-attachment_id"
+                style={getDataHandleStyle(attributeColors.attachments, 'attr-attachment_id')}
+                onMouseEnter={() => handleMouseEnter('attr-attachment_id')}
+                onMouseLeave={handleMouseLeave}
+              />
+            </div>
+            
             {/* Attachments attribute (if any) */}
             {emailAttributes.attachments && emailAttributes.attachments.length > 0 && (
-              <div className="attribute-item" style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                marginBottom: '4px', 
-                position: 'relative',
-                padding: '2px 4px',
-                borderRadius: '3px',
-                backgroundColor: hoveredHandle === 'attr-attachments' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
-                transition: 'background-color 0.2s ease'
-              }}>
-                <div 
-                  className="attribute-badge"
-                  style={{ 
-                    backgroundColor: attributeColors.attachments,
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    marginRight: '4px'
-                  }}
-                ></div>
-                <div style={{ flex: 1 }}>
-                  <strong>Attachments:</strong> {emailAttributes.attachments.length} files
+              <>
+                <div className="attribute-item" style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '4px', 
+                  position: 'relative',
+                  padding: '2px 4px',
+                  borderRadius: '3px',
+                  backgroundColor: hoveredHandle === 'attr-attachments' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
+                  transition: 'background-color 0.2s ease'
+                }}>
+                  <div 
+                    className="attribute-badge"
+                    style={{ 
+                      backgroundColor: attributeColors.attachments,
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      marginRight: '4px'
+                    }}
+                  ></div>
+                  <div style={{ flex: 1 }}>
+                    <strong>Attachments:</strong> {emailAttributes.attachments.length} files
+                  </div>
+                  {/* Handle for Attachments attribute */}
+                  <Handle
+                    type="source"
+                    position={Position.Right}
+                    id="attr-attachments"
+                    style={getDataHandleStyle(attributeColors.attachments, 'attr-attachments')}
+                    onMouseEnter={() => handleMouseEnter('attr-attachments')}
+                    onMouseLeave={handleMouseLeave}
+                  />
                 </div>
-                {/* Handle for Attachments attribute */}
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id="attr-attachments"
-                  style={getDataHandleStyle(attributeColors.attachments, 'attr-attachments')}
-                  onMouseEnter={() => handleMouseEnter('attr-attachments')}
-                  onMouseLeave={handleMouseLeave}
-                />
-              </div>
+                
+                {/* Individual attachment items with ID handles */}
+                {emailAttributes.attachments.map((attachment, index) => (
+                  <div 
+                    key={`attachment-${index}`}
+                    className="attribute-item attachment-item" 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      marginBottom: '4px',
+                      marginLeft: '12px',
+                      position: 'relative',
+                      padding: '2px 4px',
+                      borderRadius: '3px',
+                      backgroundColor: hoveredHandle === `attr-attachment-${index}` ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
+                      transition: 'background-color 0.2s ease',
+                      fontSize: '9px'
+                    }}
+                  >
+                    <div 
+                      className="attribute-badge"
+                      style={{ 
+                        backgroundColor: attributeColors.attachments,
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        marginRight: '4px'
+                      }}
+                    ></div>
+                    <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <strong>File:</strong> {attachment.name || `Attachment ${index + 1}`}
+                      {attachment.id && <span style={{ marginLeft: '4px', color: '#777' }}>(ID: {attachment.id})</span>}
+                    </div>
+                    {/* Handle for individual attachment ID */}
+                    <Handle
+                      type="source"
+                      position={Position.Right}
+                      id={`attr-attachment-${index}`}
+                      style={getDataHandleStyle(attributeColors.attachments, `attr-attachment-${index}`)}
+                      onMouseEnter={() => handleMouseEnter(`attr-attachment-${index}`)}
+                      onMouseLeave={handleMouseLeave}
+                    />
+                  </div>
+                ))}
+              </>
             )}
             
             {/* CC attribute (if any) */}
