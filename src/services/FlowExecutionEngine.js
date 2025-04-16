@@ -20,27 +20,20 @@ class FlowExecutionEngine {
   // Find the starting point node for a given task
   findStartingNode(task) {
     // Look for a condition node marked as starting point
-    // that matches the task type or description
+    // that has a returnText matching the task type
     const startingNode = this.nodes.find(node => 
       node.type === 'conditionNode' && 
       node.data.isStartingPoint === true &&
-      (node.data.conditionText.includes(task.type) || 
-       node.data.conditionText.includes(task.description))
+      node.data.returnText === task.type
     );
     
-    // If no specific starting node is found, find any starting point
+    // If no specific starting node is found, log an error but don't fall back to any starting point
     if (!startingNode) {
-      const anyStartingNode = this.nodes.find(node => 
-        node.type === 'conditionNode' && 
-        node.data.isStartingPoint === true
-      );
-      
-      if (anyStartingNode) {
-        console.log(`⚠️ [FLOW ENGINE] No specific starting node found for task type "${task.type}", using generic starting point: ${anyStartingNode.id}`);
-        return anyStartingNode;
-      }
+      console.error(`❌ [FLOW ENGINE] No matching starting node found for task type "${task.type}". Tasks must have a corresponding starting point with the same return value.`);
+      return null;
     }
     
+    console.log(`✅ [FLOW ENGINE] Found starting node with return value "${startingNode.data.returnText}" matching task type "${task.type}"`);
     return startingNode;
   }
 

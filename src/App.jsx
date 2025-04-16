@@ -13,6 +13,7 @@ import { FlowProvider } from './context/FlowContext';
 function App() {
   const [apiSpec, setApiSpec] = useState(null);
   const [nodes, setNodes] = useState([]);
+  const [apiInventoryNodes, setApiInventoryNodes] = useState([]); // Separate state for API nodes in inventory
   const [edges, setEdges] = useState([]);
   const [activeTab, setActiveTab] = useState('diagram'); // 'diagram' or 'emails'
   
@@ -21,6 +22,7 @@ function App() {
     // Initialize with empty diagram
     setNodes([]);
     setEdges([]);
+    setApiInventoryNodes([]);
   }, []);
 
   const handleApiImport = (spec) => {
@@ -29,14 +31,12 @@ function App() {
     
     // Generate nodes from the API spec
     const generatedNodes = generateNodesFromApiSpec(spec);
-    // Generated nodes from API spec
     
-    // Clear previous nodes before setting new ones
-    setNodes([]);
-    setTimeout(() => {
-      setNodes(generatedNodes.nodes);
-      setEdges(generatedNodes.edges);
-    }, 50);
+    // Store API nodes in inventory only, not in the diagram
+    setApiInventoryNodes(generatedNodes.nodes);
+    
+    // No longer automatically adding API nodes to the diagram
+    // Just keep existing nodes and edges
   };
 
   // Function to generate nodes from API spec
@@ -44,15 +44,6 @@ function App() {
     const nodes = [];
     const edges = [];
     let nodeId = 1;
-    
-    // Calculate grid layout - more compact
-    const nodeWidth = 200;
-    const nodeHeight = 150;
-    const horizontalGap = 50;
-    const verticalGap = 50;
-    const nodesPerRow = 3;
-    const startX = 100;
-    const startY = 100;
     
     // Process paths and their operations
     if (spec.paths) {
@@ -67,8 +58,6 @@ function App() {
         });
       });
       
-      // Found endpoints in API spec
-      
       // Sort endpoints by path and method for better organization
       endpoints.sort((a, b) => {
         if (a.path === b.path) {
@@ -79,20 +68,14 @@ function App() {
         return a.path.localeCompare(b.path);
       });
       
-      // Create nodes for each endpoint
+      // Create nodes for each endpoint - no position needed for inventory
       endpoints.forEach(({ path, method, operation }, index) => {
-        // Calculate position based on grid layout
-        const row = Math.floor(index / nodesPerRow);
-        const col = index % nodesPerRow;
-        
-        const xPos = startX + col * (nodeWidth + horizontalGap);
-        const yPos = startY + row * (nodeHeight + verticalGap);
         
         // Create a node for this endpoint
         const node = {
           id: `node-${nodeId}`,
           type: 'apiNode', // This must match the key in nodeTypes in DiagramEditor
-          position: { x: xPos, y: yPos },
+          // No position is needed for inventory nodes
           data: {
             label: `${method.toUpperCase()} ${path}`,
             method,
@@ -214,7 +197,7 @@ function App() {
               <h3>Loaded API: {apiSpec.info?.title || 'Untitled API'}</h3>
               <p>{apiSpec.info?.description || ''}</p>
               <p>Version: {apiSpec.info?.version || 'Unknown'}</p>
-              <p>Endpoints: {nodes.length}</p>
+              <p>Endpoints: {apiInventoryNodes.length}</p>
             </div>
           )}
         </div>
@@ -229,7 +212,7 @@ function App() {
                 onConnect={handleConnect}
                 onEdgeDelete={handleEdgeDelete}
               />
-              <NodesInventory apiNodes={nodes.filter(node => node.type === 'apiNode')} />
+              <NodesInventory apiNodes={apiInventoryNodes} />
             </div>
           ) : (
             <EmailBrowser />
