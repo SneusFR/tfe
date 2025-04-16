@@ -229,7 +229,7 @@ function App() {
                 onConnect={handleConnect}
                 onEdgeDelete={handleEdgeDelete}
               />
-              <NodesInventory />
+              <NodesInventory apiNodes={nodes.filter(node => node.type === 'apiNode')} />
             </div>
           ) : (
             <EmailBrowser />

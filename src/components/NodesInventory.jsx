@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import conditionStore from '../store/conditionStore';
 import '../styles/NodesInventory.css';
 
-const NodesInventory = () => {
+const NodesInventory = ({ apiNodes = [] }) => {
   const [conditions, setConditions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('starting-points');
+  const [apiNodesCount, setApiNodesCount] = useState(0);
   const [textNodeContent, setTextNodeContent] = useState('');
   const [showTextNodeModal, setShowTextNodeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,11 +25,23 @@ const NodesInventory = () => {
     
     return () => clearInterval(intervalId);
   }, []);
+  
+  // Update API nodes count when apiNodes prop changes
+  useEffect(() => {
+    setApiNodesCount(apiNodes.length);
+  }, [apiNodes]);
 
   // Filter nodes based on search query
   const filteredConditions = conditions.filter(condition => 
     condition.conditionText.toLowerCase().includes(searchQuery.toLowerCase()) ||
     condition.returnText.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Filter API nodes based on search query
+  const filteredApiNodes = apiNodes.filter(node => 
+    node.data.path.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (node.data.summary && node.data.summary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    node.data.method.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -69,9 +82,18 @@ const NodesInventory = () => {
             >
               Int Nodes
             </button>
+            <button 
+              className={`inventory-tab ${activeCategory === 'api-nodes' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('api-nodes')}
+            >
+              API Nodes
+            </button>
           </div>
           {activeCategory === 'starting-points' && (
             <span className="inventory-count">{conditions.length} conditions available</span>
+          )}
+          {activeCategory === 'api-nodes' && (
+            <span className="inventory-count">{apiNodesCount} API endpoints available</span>
           )}
         </div>
         
@@ -202,10 +224,67 @@ const NodesInventory = () => {
               </div>
             </div>
           )}
+          
+          {activeCategory === 'api-nodes' && (
+            <>
+              {filteredApiNodes.length === 0 ? (
+                <div className="empty-inventory">
+                  {searchQuery ? (
+                    <p>No API endpoints match your search. Try a different search term.</p>
+                  ) : (
+                    <p>No API endpoints imported yet. Import an API specification to see endpoints here.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="condition-items">
+                  {filteredApiNodes.map((node) => (
+                    <div 
+                      key={`${node.id}-${Math.random().toString(36).substr(2, 9)}`}
+                      className="condition-item"
+                      draggable={true}
+                      onDragStart={(e) => {
+                        // Set the node type as apiNode
+                        e.dataTransfer.setData('application/nodeType', 'apiNode');
+                        // Set the API node data as drag data
+                        e.dataTransfer.setData('application/apiNodeData', JSON.stringify(node.data));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      style={{ borderTop: `3px solid ${getMethodColor(node.data.method)}` }}
+                    >
+                      <div className="condition-item-header">
+                        <div className="condition-badge" style={{ backgroundColor: getMethodColor(node.data.method) }}>
+                          {node.data.method.toUpperCase()}
+                        </div>
+                        <div className="condition-return">{node.data.path}</div>
+                      </div>
+                      <div className="condition-description">
+                        {node.data.summary || `${node.data.method.toUpperCase()} ${node.data.path}`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
   );
+};
+
+// Helper function to get color based on HTTP method
+const getMethodColor = (method) => {
+  const methodColors = {
+    get: '#61affe',    // Blue
+    post: '#49cc90',   // Green
+    put: '#fca130',    // Orange
+    delete: '#f93e3e', // Red
+    patch: '#50e3c2',  // Teal
+    options: '#0d5aa7', // Dark Blue
+    head: '#9012fe',   // Purple
+  };
+  
+  return methodColors[method] || '#999';
 };
 
 export default NodesInventory;

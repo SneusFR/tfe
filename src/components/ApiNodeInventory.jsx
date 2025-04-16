@@ -46,7 +46,7 @@ const ApiNodeInventory = ({ apiNodes }) => {
                     e.dataTransfer.setData('application/nodeType', 'apiNode');
                     // Set the API node data as drag data
                     e.dataTransfer.setData('application/apiNodeData', JSON.stringify(node.data));
-                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.effectAllowed = 'move';
                   }}
                   style={{ borderTop: `3px solid ${getMethodColor(node.data.method)}` }}
                 >

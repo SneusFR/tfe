@@ -283,6 +283,25 @@ const DiagramEditor = ({
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'apiNode') {
+        // Get the API node data from the dataTransfer
+        const apiNodeDataString = event.dataTransfer.getData('application/apiNodeData');
+        if (apiNodeDataString) {
+          try {
+            const apiNodeData = JSON.parse(apiNodeDataString);
+            const newNode = {
+              id: `api-node-${Date.now()}`,
+              type: 'apiNode',
+              position,
+              data: apiNodeData
+            };
+            const updatedNodes = nodes.concat(newNode);
+            setNodes(updatedNodes);
+            if (onNodesChange) onNodesChange(updatedNodes);
+          } catch (error) {
+            console.error('Error parsing API node data:', error);
+          }
+        }
       }
     },
     [reactFlowInstance, nodes, setNodes, onNodesChange]
