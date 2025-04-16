@@ -583,22 +583,35 @@ class FlowExecutionEngine {
         params.account_id = account_id;
       }
       
+      // Add responseType: 'arraybuffer' to get binary data instead of JSON
       const response = await axios({
         method: 'get',
         url: url,
         params: params,
         headers: {
-          'Accept': 'application/json',
           'X-API-KEY': unipileApiKey,
         },
+        responseType: 'arraybuffer', // Get binary data instead of JSON
       });
       
       console.log(`✅ [FLOW ENGINE] Email attachment retrieved successfully`);
       
-      // Store the attachment data in the execution context for the output handle
-      this.executionContext.set(`${node.id}-output-attachment`, response.data);
+      // Convert the ArrayBuffer to a base64 Data URL
+      const bytes = new Uint8Array(response.data);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64String = window.btoa(binary);
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+      const dataUrl = `data:${contentType};base64,${base64String}`;
       
-      return response.data;
+      console.log(`✅ [FLOW ENGINE] Converted attachment to base64 Data URL`);
+      
+      // Store the data URL in the execution context for the output handle
+      this.executionContext.set(`${node.id}-output-attachment`, dataUrl);
+      
+      return dataUrl;
     } catch (error) {
       console.error(`❌ [FLOW ENGINE] Failed to retrieve email attachment:`, error);
       return { success: false, error: error.message };
@@ -614,6 +627,7 @@ class FlowExecutionEngine {
       const ocrAttributes = node.data.ocrAttributes || {};
       
       // Get values from execution context if they were passed via connections
+      // Now expecting a base64 Data URL from the EmailAttachmentNode
       const attachment_data = this.executionContext.get('attr-attachment_data');
       const language = this.executionContext.get('attr-language') || ocrAttributes.language || 'auto';
       const enhance_image = this.executionContext.get('attr-enhance_image') || ocrAttributes.enhance_image || false;
@@ -626,24 +640,17 @@ class FlowExecutionEngine {
       
       console.log(`🔄 [FLOW ENGINE] Processing image with OCR using Tesseract.js:`, {
         language,
-        enhance_image
+        enhance_image,
+        dataUrlProvided: attachment_data.startsWith('data:')
       });
       
       // Create a Tesseract worker
       const worker = await createWorker(language !== 'auto' ? language : undefined);
       
-      // Get the image data from the attachment
-      // Assuming attachment_data contains the image data in base64 format or a URL
-      let imageData = attachment_data;
-      
-      // If attachment_data is an object with a data property (common for API responses)
-      if (typeof attachment_data === 'object' && attachment_data.data) {
-        imageData = attachment_data.data;
-      }
-      
-      // Process the image with Tesseract.js
+      // Process the image with Tesseract.js directly using the data URL
+      // No need to fetch external URLs anymore
       const startTime = Date.now();
-      const result = await worker.recognize(imageData);
+      const result = await worker.recognize(attachment_data);
       const processingTimeMs = Date.now() - startTime;
       
       // Terminate the worker to free up resources
