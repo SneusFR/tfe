@@ -195,6 +195,25 @@ const NodesInventory = ({ apiNodes = [] }) => {
                   Retrieve email attachments using the Unipile API
                 </div>
               </div>
+              
+              <div 
+                className="condition-item ocr-item"
+                draggable={true}
+                onDragStart={(e) => {
+                  // Set the node type as drag data
+                  e.dataTransfer.setData('application/nodeType', 'ocrNode');
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                style={{ borderTop: '3px solid #009688' }}
+              >
+                <div className="condition-item-header">
+                  <div className="condition-badge" style={{ backgroundColor: '#009688' }}>OCR</div>
+                  <div className="condition-return">Extract Text from Image</div>
+                </div>
+                <div className="condition-description">
+                  Convert image attachments to text using OCR technology
+                </div>
+              </div>
             </div>
           )}
           

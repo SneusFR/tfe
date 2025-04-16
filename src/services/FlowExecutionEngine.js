@@ -146,6 +146,9 @@ class FlowExecutionEngine {
       case 'emailAttachmentNode':
         outputData = await this.executeEmailAttachmentNode(node);
         break;
+      case 'ocrNode':
+        outputData = await this.executeOcrNode(node);
+        break;
       default:
         console.warn(`⚠️ [FLOW ENGINE] Unknown node type: ${node.type}`);
         outputData = null;
@@ -233,6 +236,11 @@ class FlowExecutionEngine {
     // For email attachment node output
     if (handleId === 'output-attachment' && node.type === 'emailAttachmentNode') {
       return this.executionContext.get(`${node.id}-output-attachment`);
+    }
+    
+    // For OCR node output
+    if (handleId === 'output-text' && node.type === 'ocrNode') {
+      return this.executionContext.get(`${node.id}-output-text`);
     }
     
     // For text node output
@@ -589,6 +597,58 @@ class FlowExecutionEngine {
       return response.data;
     } catch (error) {
       console.error(`❌ [FLOW ENGINE] Failed to retrieve email attachment:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+  
+  // Execute an OCR node
+  async executeOcrNode(node) {
+    console.log(`🔄 [FLOW ENGINE] Executing OCR node: ${node.id}`);
+    
+    try {
+      // Get OCR attributes from the node or from the execution context
+      const ocrAttributes = node.data.ocrAttributes || {};
+      
+      // Get values from execution context if they were passed via connections
+      const attachment_data = this.executionContext.get('attr-attachment_data');
+      const language = this.executionContext.get('attr-language') || ocrAttributes.language || 'auto';
+      const enhance_image = this.executionContext.get('attr-enhance_image') || ocrAttributes.enhance_image || false;
+      
+      // Validate required parameters
+      if (!attachment_data) {
+        console.error(`❌ [FLOW ENGINE] Missing required parameter: attachment_data`);
+        return { success: false, error: 'Missing required parameter: attachment_data' };
+      }
+      
+      console.log(`🔄 [FLOW ENGINE] Processing image with OCR:`, {
+        language,
+        enhance_image
+      });
+      
+      // In a real implementation, we would call an OCR API here
+      // For this example, we'll simulate OCR processing with a mock response
+      
+      // Simulate OCR processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock OCR result
+      const ocrResult = {
+        success: true,
+        text: "This is a simulated OCR result. In a real implementation, this would be the text extracted from the image attachment.",
+        confidence: 0.95,
+        language: language,
+        processingTimeMs: 856,
+        enhancedImage: enhance_image
+      };
+      
+      console.log(`✅ [FLOW ENGINE] OCR processing completed successfully`);
+      
+      // Store the OCR result in the execution context for the output handle
+      this.executionContext.set(`${node.id}-output-text`, ocrResult.text);
+      
+      return ocrResult;
+    } catch (error) {
+      console.error(`❌ [FLOW ENGINE] Failed to process image with OCR:`, error);
       return { success: false, error: error.message };
     }
   }

@@ -25,6 +25,7 @@ import SendingMailNode from './SendingMailNode';
 import EmailAttachmentNode from './EmailAttachmentNode';
 import TextNode from './TextNode';
 import IntNode from './IntNode';
+import OcrNode from './OcrNode';
 import conditionStore from '../store/conditionStore';
 
 // Connection colors and styles
@@ -50,6 +51,7 @@ const nodeTypes = {
   emailAttachmentNode: EmailAttachmentNode,
   textNode: TextNode,
   intNode: IntNode,
+  ocrNode: OcrNode,
 };
 
 const DiagramEditor = ({
@@ -296,6 +298,22 @@ const DiagramEditor = ({
               account_id: '',
               email_id: '',
               attachment_id: ''
+            },
+          },
+        };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'ocrNode') {
+        const newNode = {
+          id: `ocr-node-${Date.now()}`,
+          type: 'ocrNode',
+          position,
+          data: {
+            ocrAttributes: {
+              attachment_data: null,
+              language: 'auto',
+              enhance_image: false
             },
           },
         };
