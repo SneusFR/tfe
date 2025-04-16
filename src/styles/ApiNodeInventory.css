@@ -1,0 +1,51 @@
+/* API Node Inventory Styles */
+
+/* Override the position of the toggle button to avoid overlap with ConditionInventory */
+.api-inventory-container .inventory-toggle-button {
+  right: 20px;
+  left: auto;
+  transform: none;
+  background-color: #2196F3;
+}
+
+.api-inventory-container .inventory-toggle-button:hover {
+  background-color: #1976D2;
+}
+
+.api-inventory-container .inventory-toggle-button.open {
+  background-color: #0D47A1;
+  bottom: 250px; /* Position above the inventory when open (matching max-height of inventory) */
+}
+
+/* Override the inventory panel border color */
+.api-inventory-container .nodes-inventory {
+  border-top: 3px solid #2196F3;
+}
+
+/* Override tab colors */
+.api-inventory-container .inventory-tab.active {
+  color: #2196F3;
+  border-bottom-color: #2196F3;
+}
+
+.api-inventory-container .inventory-tab:hover {
+  color: #1976D2;
+}
+
+/* API node item styling */
+.api-node-item {
+  border-top: 3px solid #2196F3;
+}
+
+.api-node-item .condition-badge {
+  background-color: #2196F3;
+}
+
+/* Adjust z-index to ensure proper layering with NodesInventory */
+.api-inventory-container {
+  z-index: 100;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+}

@@ -4,7 +4,7 @@ import ApiImporter from './components/ApiImporter';
 import DiagramEditor from './components/DiagramEditor';
 import ConditionCreator from './components/ConditionCreator';
 import ConditionManager from './components/ConditionManager';
-import ConditionInventory from './components/ConditionInventory';
+import NodesInventory from './components/NodesInventory';
 import TaskManager from './components/TaskManager';
 import EmailBrowser from './components/EmailBrowser';
 import conditionStore from './store/conditionStore';
@@ -229,7 +229,7 @@ function App() {
                 onConnect={handleConnect}
                 onEdgeDelete={handleEdgeDelete}
               />
-              <ConditionInventory />
+              <NodesInventory />
             </div>
           ) : (
             <EmailBrowser />
