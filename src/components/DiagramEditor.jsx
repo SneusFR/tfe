@@ -5,6 +5,7 @@ import React, {
   useState,
   useMemo
 } from 'react';
+import { useFlowManager } from '../context/FlowManagerContext';
 import ReactFlow, {
   Background,
   Controls,
@@ -64,27 +65,43 @@ const DiagramEditor = ({
   onConnect,
   onEdgeDelete,
 }) => {
+  const { currentFlow, saveCurrentFlow } = useFlowManager();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [nodes, setNodes] = useNodesState(initialNodes || []);
   const [edges, setEdges] = useEdgesState(initialEdges || []);
   const reactFlowWrapper = useRef(null);
 
-  // Initialisation des nœuds et des arêtes à partir des props
+  // Initialisation des nœuds et des arêtes à partir des props ou du flow courant
   useEffect(() => {
-    if (initialNodes && initialNodes.length > 0) setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
+    if (initialNodes && initialNodes.length > 0) {
+      setNodes(initialNodes);
+    } else if (currentFlow && currentFlow.nodes && currentFlow.nodes.length > 0) {
+      setNodes(currentFlow.nodes);
+      if (onNodesChange) onNodesChange(currentFlow.nodes);
+    }
+  }, [initialNodes, currentFlow, setNodes, onNodesChange]);
 
   useEffect(() => {
-    if (initialEdges && initialEdges.length > 0) setEdges(initialEdges);
-  }, [initialEdges, setEdges]);
+    if (initialEdges && initialEdges.length > 0) {
+      setEdges(initialEdges);
+    } else if (currentFlow && currentFlow.edges && currentFlow.edges.length > 0) {
+      setEdges(currentFlow.edges);
+      if (onEdgesChange) onEdgesChange(currentFlow.edges);
+    }
+  }, [initialEdges, currentFlow, setEdges, onEdgesChange]);
 
   const handleNodesChange = useCallback(
     (changes) => {
       const updatedNodes = applyNodeChanges(changes, nodes);
       setNodes(updatedNodes);
       if (onNodesChange) onNodesChange(updatedNodes);
+      
+      // Save flow when nodes change
+      if (currentFlow) {
+        saveCurrentFlow(updatedNodes, edges);
+      }
     },
-    [nodes, setNodes, onNodesChange]
+    [nodes, edges, setNodes, onNodesChange, currentFlow, saveCurrentFlow]
   );
 
   const handleEdgesChange = useCallback(
@@ -92,8 +109,13 @@ const DiagramEditor = ({
       const updatedEdges = applyEdgeChanges(changes, edges);
       setEdges(updatedEdges);
       if (onEdgesChange) onEdgesChange(updatedEdges);
+      
+      // Save flow when edges change
+      if (currentFlow) {
+        saveCurrentFlow(nodes, updatedEdges);
+      }
     },
-    [edges, setEdges, onEdgesChange]
+    [nodes, edges, setEdges, onEdgesChange, currentFlow, saveCurrentFlow]
   );
 
   const handleEdgeClick = useCallback(
@@ -103,9 +125,14 @@ const DiagramEditor = ({
         setEdges(updatedEdges);
         if (onEdgesChange) onEdgesChange(updatedEdges);
         if (onEdgeDelete) onEdgeDelete(edge, updatedEdges);
+        
+        // Save flow when an edge is deleted
+        if (currentFlow) {
+          saveCurrentFlow(nodes, updatedEdges);
+        }
       }
     },
-    [edges, setEdges, onEdgesChange, onEdgeDelete]
+    [edges, nodes, setEdges, onEdgesChange, onEdgeDelete, currentFlow, saveCurrentFlow]
   );
 
   // Tous les handles sont compatibles entre eux
@@ -149,8 +176,13 @@ const DiagramEditor = ({
       const updatedEdges = addEdge(newEdge, edges);
       setEdges(updatedEdges);
       if (onConnect) onConnect(updatedEdges);
+      
+      // Save flow when a new connection is made
+      if (currentFlow) {
+        saveCurrentFlow(nodes, updatedEdges);
+      }
     },
-    [edges, setEdges, onConnect]
+    [edges, nodes, setEdges, onConnect, currentFlow, saveCurrentFlow]
   );
 
   const onInit = useCallback(

@@ -49,9 +49,11 @@ const ConditionCreator = ({ onCreateCondition }) => {
 
   return (
     <div className="condition-creator">
-      <motion.button 
+      <motion.button
+       
         className="open-condition-creator" 
         onClick={() => setIsOpen(true)}
+        
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.98 }}
       >

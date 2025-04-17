@@ -9,8 +9,11 @@ import NodesInventory from './components/NodesInventory';
 import TaskManager from './components/TaskManager';
 import EmailBrowser from './components/EmailBrowser';
 import HomePage from './components/HomePage';
+import FlowModal from './components/FlowModal';
+import FlowMenuButton from './components/FlowMenuButton';
 import conditionStore from './store/conditionStore';
 import { FlowProvider } from './context/FlowContext';
+import { FlowManagerProvider } from './context/FlowManagerContext';
 import { useAuth } from './context/AuthContext';
 import LoginButton from './components/auth/LoginButton';
 import UserMenu from './components/auth/UserMenu';
@@ -166,8 +169,9 @@ const EditorApp = () => {
   // Debug output for nodes removed
 
   return (
-    <FlowProvider nodes={nodes} edges={edges}>
-      <div className="app-container">
+    <FlowManagerProvider>
+      <FlowProvider nodes={nodes} edges={edges}>
+        <div className="app-container">
       <header className="app-header">
         <h1>Mailflow Editor</h1>
         <div className="header-right">
@@ -228,8 +232,11 @@ const EditorApp = () => {
           )}
         </div>
       </main>
-      </div>
-    </FlowProvider>
+          <FlowModal />
+          <FlowMenuButton />
+        </div>
+      </FlowProvider>
+    </FlowManagerProvider>
   );
 };
 

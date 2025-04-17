@@ -1,0 +1,79 @@
+/* Flow Menu Button Styles */
+.flow-menu-button-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 900;
+}
+
+.flow-menu-button {
+  display: flex;
+  align-items: center;
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.flow-menu-button:hover {
+  background-color: #7d3c98;
+  box-shadow: 0 6px 16px rgba(142, 68, 173, 0.4);
+}
+
+.flow-menu-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+}
+
+.flow-menu-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.flow-menu-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.current-flow-name {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .flow-menu-button-container {
+    bottom: 15px;
+    right: 15px;
+  }
+  
+  .flow-menu-button {
+    padding: 10px 16px;
+  }
+  
+  .flow-menu-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+  }
+  
+  .flow-menu-label {
+    font-size: 0.8rem;
+  }
+  
+  .current-flow-name {
+    font-size: 0.7rem;
+    max-width: 120px;
+  }
+}
