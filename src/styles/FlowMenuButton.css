@@ -6,7 +6,13 @@
   z-index: 900;
 }
 
-.flow-menu-button {
+.flow-buttons-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.flow-menu-button, .flow-save-button {
   display: flex;
   align-items: center;
   background-color: #8e44ad;
@@ -22,6 +28,23 @@
 .flow-menu-button:hover {
   background-color: #7d3c98;
   box-shadow: 0 6px 16px rgba(142, 68, 173, 0.4);
+}
+
+.flow-save-button {
+  background-color: #27ae60;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  padding: 12px 16px;
+}
+
+.flow-save-button:hover {
+  background-color: #219955;
+  box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
+}
+
+.save-button-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-left: 5px;
 }
 
 .flow-menu-icon {
@@ -58,7 +81,11 @@
     right: 15px;
   }
   
-  .flow-menu-button {
+  .flow-buttons-wrapper {
+    gap: 8px;
+  }
+  
+  .flow-menu-button, .flow-save-button {
     padding: 10px 16px;
   }
   
@@ -68,12 +95,16 @@
     margin-right: 8px;
   }
   
-  .flow-menu-label {
+  .flow-menu-label, .save-button-label {
     font-size: 0.8rem;
   }
   
   .current-flow-name {
     font-size: 0.7rem;
     max-width: 120px;
+  }
+  
+  .flow-save-button {
+    padding: 10px 14px;
   }
 }

@@ -1,0 +1,52 @@
+/* Flow Version Selector Styles */
+.flow-version-selector {
+  position: fixed;
+  bottom: 20px;
+  right: 280px; /* Adjusted position to account for save button */
+  z-index: 900;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.version-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #9b59b6; /* Lighter purple */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+  transition: all 0.2s ease;
+}
+
+.version-circle:hover {
+  background-color: #8e44ad; /* Darker purple on hover */
+  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.4);
+}
+
+.version-circle.active {
+  background-color: #8e44ad; /* Same as flow menu button */
+  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.5);
+  transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .flow-version-selector {
+    bottom: 15px;
+    right: 240px;
+    gap: 8px;
+  }
+  
+  .version-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+}

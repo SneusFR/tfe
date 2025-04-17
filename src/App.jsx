@@ -11,6 +11,7 @@ import EmailBrowser from './components/EmailBrowser';
 import HomePage from './components/HomePage';
 import FlowModal from './components/FlowModal';
 import FlowMenuButton from './components/FlowMenuButton';
+import FlowVersionSelector from './components/FlowVersionSelector';
 import conditionStore from './store/conditionStore';
 import { FlowProvider } from './context/FlowContext';
 import { FlowManagerProvider } from './context/FlowManagerContext';
@@ -233,6 +234,7 @@ const EditorApp = () => {
         </div>
       </main>
           <FlowModal />
+          <FlowVersionSelector />
           <FlowMenuButton />
         </div>
       </FlowProvider>

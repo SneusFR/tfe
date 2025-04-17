@@ -75,18 +75,38 @@ const DiagramEditor = ({
   useEffect(() => {
     if (initialNodes && initialNodes.length > 0) {
       setNodes(initialNodes);
-    } else if (currentFlow && currentFlow.nodes && currentFlow.nodes.length > 0) {
-      setNodes(currentFlow.nodes);
-      if (onNodesChange) onNodesChange(currentFlow.nodes);
+    } else if (currentFlow) {
+      // Check if the flow has versions
+      if (currentFlow.versions) {
+        const currentVersion = currentFlow.versions[currentFlow.currentVersionIndex];
+        if (currentVersion && currentVersion.nodes && currentVersion.nodes.length > 0) {
+          setNodes(currentVersion.nodes);
+          if (onNodesChange) onNodesChange(currentVersion.nodes);
+        }
+      } else if (currentFlow.nodes && currentFlow.nodes.length > 0) {
+        // Backward compatibility for flows without versions
+        setNodes(currentFlow.nodes);
+        if (onNodesChange) onNodesChange(currentFlow.nodes);
+      }
     }
   }, [initialNodes, currentFlow, setNodes, onNodesChange]);
 
   useEffect(() => {
     if (initialEdges && initialEdges.length > 0) {
       setEdges(initialEdges);
-    } else if (currentFlow && currentFlow.edges && currentFlow.edges.length > 0) {
-      setEdges(currentFlow.edges);
-      if (onEdgesChange) onEdgesChange(currentFlow.edges);
+    } else if (currentFlow) {
+      // Check if the flow has versions
+      if (currentFlow.versions) {
+        const currentVersion = currentFlow.versions[currentFlow.currentVersionIndex];
+        if (currentVersion && currentVersion.edges && currentVersion.edges.length > 0) {
+          setEdges(currentVersion.edges);
+          if (onEdgesChange) onEdgesChange(currentVersion.edges);
+        }
+      } else if (currentFlow.edges && currentFlow.edges.length > 0) {
+        // Backward compatibility for flows without versions
+        setEdges(currentFlow.edges);
+        if (onEdgesChange) onEdgesChange(currentFlow.edges);
+      }
     }
   }, [initialEdges, currentFlow, setEdges, onEdgesChange]);
 
