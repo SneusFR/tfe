@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import ApiImporter from './components/ApiImporter';
 import DiagramEditor from './components/DiagramEditor';
@@ -7,13 +8,14 @@ import ConditionManager from './components/ConditionManager';
 import NodesInventory from './components/NodesInventory';
 import TaskManager from './components/TaskManager';
 import EmailBrowser from './components/EmailBrowser';
+import HomePage from './components/HomePage';
 import conditionStore from './store/conditionStore';
 import { FlowProvider } from './context/FlowContext';
 import { useAuth } from './context/AuthContext';
 import LoginButton from './components/auth/LoginButton';
 import UserMenu from './components/auth/UserMenu';
 
-function App() {
+const EditorApp = () => {
   const { isAuthenticated } = useAuth();
   const [apiSpec, setApiSpec] = useState(null);
   const [nodes, setNodes] = useState([]);
@@ -167,7 +169,7 @@ function App() {
     <FlowProvider nodes={nodes} edges={edges}>
       <div className="app-container">
       <header className="app-header">
-        <h1>API Diagram Tool</h1>
+        <h1>Mailflow Editor</h1>
         <div className="header-right">
           <div className="tab-navigation">
             <button 
@@ -228,6 +230,16 @@ function App() {
       </main>
       </div>
     </FlowProvider>
+  );
+};
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/editor" element={<EditorApp />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
