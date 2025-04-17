@@ -9,8 +9,12 @@ import TaskManager from './components/TaskManager';
 import EmailBrowser from './components/EmailBrowser';
 import conditionStore from './store/conditionStore';
 import { FlowProvider } from './context/FlowContext';
+import { useAuth } from './context/AuthContext';
+import LoginButton from './components/auth/LoginButton';
+import UserMenu from './components/auth/UserMenu';
 
 function App() {
+  const { isAuthenticated } = useAuth();
   const [apiSpec, setApiSpec] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [apiInventoryNodes, setApiInventoryNodes] = useState([]); // Separate state for API nodes in inventory
@@ -164,19 +168,22 @@ function App() {
       <div className="app-container">
       <header className="app-header">
         <h1>API Diagram Tool</h1>
-        <div className="tab-navigation">
-          <button 
-            className={`tab-button ${activeTab === 'diagram' ? 'active' : ''}`}
-            onClick={() => setActiveTab('diagram')}
-          >
-            Diagram Editor
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'emails' ? 'active' : ''}`}
-            onClick={() => setActiveTab('emails')}
-          >
-            Emails
-          </button>
+        <div className="header-right">
+          <div className="tab-navigation">
+            <button 
+              className={`tab-button ${activeTab === 'diagram' ? 'active' : ''}`}
+              onClick={() => setActiveTab('diagram')}
+            >
+              Diagram Editor
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'emails' ? 'active' : ''}`}
+              onClick={() => setActiveTab('emails')}
+            >
+              Emails
+            </button>
+          </div>
+          {isAuthenticated ? <UserMenu /> : <LoginButton />}
         </div>
       </header>
       <main className="app-content">
