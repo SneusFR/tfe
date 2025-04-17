@@ -1,11 +1,23 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Typography,
+  TextField,
+  Button,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import '../styles/ConditionCreator.css';
 
 const ConditionCreator = ({ onCreateCondition }) => {
   const [conditionText, setConditionText] = useState('');
   const [returnText, setReturnText] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!conditionText.trim() || !returnText.trim()) {
@@ -13,137 +25,112 @@ const ConditionCreator = ({ onCreateCondition }) => {
       return;
     }
 
-    onCreateCondition({
-      type: 'conditionNode',
-      data: {
-        conditionText,
-        returnText
-      }
-    });
+    setIsSubmitting(true);
+    
+    try {
+      onCreateCondition({
+        type: 'conditionNode',
+        data: {
+          conditionText,
+          returnText
+        }
+      });
 
-    // Reset form and close
-    setConditionText('');
-    setReturnText('');
-    setIsOpen(false);
+      // Reset form and close
+      setConditionText('');
+      setReturnText('');
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error creating condition:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="condition-creator">
-      <button 
+      <motion.button 
         className="open-condition-creator" 
         onClick={() => setIsOpen(true)}
-        style={{
-          padding: '8px 12px',
-          backgroundColor: '#8e44ad',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          marginBottom: '10px',
-          fontWeight: 'bold'
-        }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
       >
-        + Create Condition
-      </button>
+        <AddIcon fontSize="small" />
+        Create Condition
+      </motion.button>
 
-      {isOpen && (
-        <div 
-          className="condition-creator-modal"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}
-        >
-          <div 
-            className="condition-creator-content"
-            style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              width: '400px',
-              maxWidth: '90%',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
-            }}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            className="condition-creator-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <h3 style={{ marginTop: 0 }}>Create Mail Condition</h3>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Type of mail:
-                </label>
-                <textarea
-                  value={conditionText}
-                  onChange={(e) => setConditionText(e.target.value)}
-                  placeholder="Describe the type of mail this condition should match..."
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                    minHeight: '80px'
-                  }}
-                />
+            <motion.div 
+              className="condition-creator-content"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <div className="condition-creator-header">
+                <Typography variant="h6" className="condition-creator-title">
+                  Create Mail Condition
+                </Typography>
               </div>
               
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Return:
-                </label>
-                <textarea
-                  value={returnText}
-                  onChange={(e) => setReturnText(e.target.value)}
-                  placeholder="Enter the text to return when this condition matches..."
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                    minHeight: '80px'
-                  }}
-                />
-              </div>
-              
-              <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#8e44ad',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Create Node
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <form onSubmit={handleSubmit} className="condition-creator-form">
+                <div className="form-group">
+                  <label className="form-label">
+                    Type of mail:
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    value={conditionText}
+                    onChange={(e) => setConditionText(e.target.value)}
+                    placeholder="Describe the type of mail this condition should match..."
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">
+                    Return:
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    value={returnText}
+                    onChange={(e) => setReturnText(e.target.value)}
+                    placeholder="Enter the text to return when this condition matches..."
+                  />
+                </div>
+                
+                <div className="form-actions">
+                  <motion.button
+                    type="button"
+                    className="cancel-button"
+                    onClick={() => setIsOpen(false)}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    type="submit"
+                    className="create-button"
+                    disabled={isSubmitting || !conditionText.trim() || !returnText.trim()}
+                    whileHover={!isSubmitting ? { y: -2 } : {}}
+                    whileTap={!isSubmitting ? { scale: 0.95 } : {}}
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Node'}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

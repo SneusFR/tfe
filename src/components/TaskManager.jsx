@@ -1,4 +1,16 @@
 import { useState, useEffect, useContext } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Typography,
+  Tooltip,
+  Badge
+} from '@mui/material';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import CheckIcon from '@mui/icons-material/Check';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
+import CategoryIcon from '@mui/icons-material/Category';
 import { FlowContext } from '../context/FlowContext';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
@@ -6,6 +18,7 @@ import '../styles/TaskManager.css';
 const TaskManager = () => {
   const [tasks, setTasks] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [runningTask, setRunningTask] = useState(null);
 
   // Load tasks from store
   useEffect(() => {
@@ -52,6 +65,7 @@ const TaskManager = () => {
       return;
     }
     
+    setRunningTask(id);
     console.log(`🚀 [TASK MANAGER] Running task: ${id} - ${task.type}`);
     
     try {
@@ -68,6 +82,8 @@ const TaskManager = () => {
     } catch (error) {
       console.error(`❌ [TASK MANAGER] Error executing task:`, error);
       alert(`Error executing task: ${error.message}`);
+    } finally {
+      setRunningTask(null);
     }
   };
 
@@ -75,70 +91,129 @@ const TaskManager = () => {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+  
+  // Get task count with badge
+  const getTaskCount = () => {
+    const pendingTasks = tasks.filter(task => task.status !== 'completed').length;
+    return pendingTasks;
+  };
 
   return (
     <div className="task-manager">
       <div className="task-dropdown">
-        <button 
+        <motion.button 
           className="task-dropdown-button"
           onClick={toggleDropdown}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.98 }}
         >
+          <Badge 
+            badgeContent={getTaskCount()} 
+            color="error"
+            max={99}
+            sx={{ 
+              '& .MuiBadge-badge': {
+                fontSize: '10px',
+                height: '18px',
+                minWidth: '18px',
+                padding: '0 4px'
+              }
+            }}
+          >
+            <AssignmentIcon fontSize="small" style={{ marginRight: '4px' }} />
+          </Badge>
           Tasks ({tasks.length})
-        </button>
+        </motion.button>
         
-        {isDropdownOpen && (
-          <div className="task-dropdown-content">
-            <div className="task-header">
-              <h3>Tasks</h3>
-              <button 
-                className="close-button"
-                onClick={toggleDropdown}
-              >
-                ×
-              </button>
-            </div>
-            
-            {tasks.length === 0 ? (
-              <p className="no-tasks-message">No tasks available</p>
-            ) : (
-              <ul className="task-list">
-                {tasks.map((task) => (
-                  <li 
-                    key={task.id} 
-                    className={`task-item ${task.status === 'completed' ? 'completed' : ''}`}
-                  >
-                    <div className="task-content">
-                      <div className="task-type">{task.type}</div>
-                      <div className="task-description">{task.description}</div>
-                    </div>
-                    <div className="task-actions">
-                      <button 
-                        className="run-button"
-                        onClick={(e) => handleRun(task.id, e)}
-                        disabled={task.status === 'completed'}
-                      >
-                        Run
-                      </button>
-                      <button 
-                        className="complete-button"
-                        onClick={(e) => handleComplete(task.id, e)}
-                        disabled={task.status === 'completed'}
-                      >
-                        ✓
-                      </button>
-                      <button 
-                        className="delete-button"
-                        onClick={(e) => handleDelete(task.id, e)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        <AnimatePresence>
+          {isDropdownOpen && (
+            <motion.div 
+              className="task-dropdown-content"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="task-header">
+                <h3>Tasks</h3>
+                <motion.button 
+                  className="close-button"
+                  onClick={toggleDropdown}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <CloseIcon fontSize="small" />
+                </motion.button>
+              </div>
+              
+              {tasks.length === 0 ? (
+                <div className="no-tasks-message">No tasks available</div>
+              ) : (
+                <ul className="task-list">
+                  {tasks.map((task) => (
+                    <motion.li 
+                      key={task.id} 
+                      className={`task-item ${task.status === 'completed' ? 'completed' : ''}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      whileHover={task.status !== 'completed' ? { x: 3 } : {}}
+                    >
+                      <div className="task-content">
+                        <div className="task-type">
+                          <CategoryIcon fontSize="small" />
+                          {task.type}
+                        </div>
+                        <div className="task-description">{task.description}</div>
+                      </div>
+                      <div className="task-actions">
+                        <Tooltip title="Run task" arrow placement="top">
+                          <motion.button 
+                            className="run-button"
+                            onClick={(e) => handleRun(task.id, e)}
+                            disabled={task.status === 'completed' || runningTask === task.id}
+                            whileHover={task.status !== 'completed' && runningTask !== task.id ? { y: -2 } : {}}
+                            whileTap={task.status !== 'completed' && runningTask !== task.id ? { scale: 0.95 } : {}}
+                          >
+                            {runningTask === task.id ? (
+                              'Running...'
+                            ) : (
+                              <>
+                                <PlayArrowIcon fontSize="small" />
+                                Run
+                              </>
+                            )}
+                          </motion.button>
+                        </Tooltip>
+                        <Tooltip title="Mark as completed" arrow placement="top">
+                          <motion.button 
+                            className="complete-button"
+                            onClick={(e) => handleComplete(task.id, e)}
+                            disabled={task.status === 'completed'}
+                            whileHover={task.status !== 'completed' ? { y: -2 } : {}}
+                            whileTap={task.status !== 'completed' ? { scale: 0.95 } : {}}
+                          >
+                            <CheckIcon fontSize="small" />
+                          </motion.button>
+                        </Tooltip>
+                        <Tooltip title="Delete task" arrow placement="top">
+                          <motion.button 
+                            className="delete-button"
+                            onClick={(e) => handleDelete(task.id, e)}
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </motion.button>
+                        </Tooltip>
+                      </div>
+                    </motion.li>
+                  ))}
+                </ul>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

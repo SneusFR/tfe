@@ -1,4 +1,19 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Tooltip, 
+  Button,
+  IconButton,
+  Typography,
+  Paper,
+  Badge
+} from '@mui/material';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import CodeIcon from '@mui/icons-material/Code';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CloseIcon from '@mui/icons-material/Close';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import DeleteIcon from '@mui/icons-material/Delete';
 import conditionStore from '../store/conditionStore';
 import '../styles/ConditionManager.css';
 
@@ -6,6 +21,7 @@ const ConditionManager = () => {
   const [conditions, setConditions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [promptView, setPromptView] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Load conditions from store
   useEffect(() => {
@@ -35,7 +51,8 @@ const ConditionManager = () => {
     const prompt = conditionStore.generateOpenAIPrompt();
     navigator.clipboard.writeText(prompt)
       .then(() => {
-        alert('Prompt copied to clipboard!');
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
       })
       .catch(err => {
         console.error('Failed to copy prompt: ', err);
@@ -45,193 +62,174 @@ const ConditionManager = () => {
 
   return (
     <div className="condition-manager">
-      <button 
+      <motion.button 
+        className="condition-manager-button"
         onClick={() => setIsOpen(true)}
-        style={{
-          padding: '8px 12px',
-          backgroundColor: '#3498db',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          marginBottom: '10px',
-          fontWeight: 'bold'
-        }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
       >
+        <ListAltIcon fontSize="small" />
         Manage Conditions ({conditions.length})
-      </button>
+      </motion.button>
 
-      {isOpen && (
-        <div 
-          className="condition-manager-modal"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}
-        >
-          <div 
-            className="condition-manager-content"
-            style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              width: '600px',
-              maxWidth: '90%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
-            }}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            className="condition-manager-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0 }}>Mail Conditions</h3>
-              <div>
-                <button
-                  onClick={() => setPromptView(!promptView)}
-                  style={{
-                    padding: '5px 10px',
-                    backgroundColor: '#8e44ad',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    marginRight: '10px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {promptView ? 'View List' : 'View Prompt'}
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  style={{
-                    padding: '5px 10px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
+            <motion.div 
+              className="condition-manager-content"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <div className="condition-manager-header">
+                <Typography variant="h6" className="condition-manager-title">
+                  Mail Conditions
+                </Typography>
+                <div className="condition-manager-actions">
+                  <motion.button
+                    className="view-toggle-button"
+                    onClick={() => setPromptView(!promptView)}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {promptView ? (
+                      <>
+                        <ListAltIcon fontSize="small" style={{ marginRight: '4px' }} />
+                        View List
+                      </>
+                    ) : (
+                      <>
+                        <CodeIcon fontSize="small" style={{ marginRight: '4px' }} />
+                        View Prompt
+                      </>
+                    )}
+                  </motion.button>
+                  <motion.button
+                    className="close-button"
+                    onClick={() => setIsOpen(false)}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <CloseIcon fontSize="small" style={{ marginRight: '4px' }} />
+                    Close
+                  </motion.button>
+                </div>
               </div>
-            </div>
 
-            {promptView ? (
-              <div className="prompt-view">
-                <textarea
-                  readOnly
-                  value={conditionStore.generateOpenAIPrompt()}
-                  style={{
-                    width: '100%',
-                    minHeight: '200px',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                    fontFamily: 'monospace',
-                    marginBottom: '10px'
-                  }}
-                />
-                <button
-                  onClick={copyPromptToClipboard}
-                  style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#27ae60',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Copy to Clipboard
-                </button>
-              </div>
-            ) : (
-              <>
-                {conditions.length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>No conditions created yet.</p>
-                ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Mail Type</th>
-                        <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Return</th>
-                        <th style={{ textAlign: 'center', padding: '8px', borderBottom: '2px solid #ddd' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {conditions.map((condition) => (
-                        <tr 
-                          key={condition.id} 
-                          style={{ borderBottom: '1px solid #eee' }}
-                          draggable={true}
-                          onDragStart={(e) => {
-                            // Set the condition ID as drag data
-                            e.dataTransfer.setData('application/conditionId', condition.id);
-                            e.dataTransfer.effectAllowed = 'move';
-                          }}
-                          className="draggable-condition"
-                        >
-                          <td style={{ padding: '8px', maxWidth: '40%' }}>
-                            <div style={{ maxHeight: '80px', overflow: 'auto' }}>
-                              {condition.conditionText}
-                            </div>
-                          </td>
-                          <td style={{ padding: '8px', maxWidth: '40%' }}>
-                            <div style={{ maxHeight: '80px', overflow: 'auto' }}>
-                              {condition.returnText}
-                            </div>
-                          </td>
-                          <td style={{ padding: '8px', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '5px' }}>
-                              <button
-                                title="Drag to add to diagram"
-                                style={{
-                                  padding: '3px 8px',
-                                  backgroundColor: '#8e44ad',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '3px',
-                                  cursor: 'grab'
-                                }}
-                                onMouseDown={(e) => {
-                                  // Prevent button click when starting drag
-                                  e.stopPropagation();
-                                }}
-                              >
-                                ↔
-                              </button>
-                              <button
-                                onClick={() => handleDelete(condition.id)}
-                                title="Delete condition"
-                                style={{
-                                  padding: '3px 8px',
-                                  backgroundColor: '#e74c3c',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '3px',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </td>
+              {promptView ? (
+                <div className="prompt-view">
+                  <textarea
+                    readOnly
+                    value={conditionStore.generateOpenAIPrompt()}
+                    className="prompt-textarea"
+                  />
+                  <motion.button
+                    className="copy-button"
+                    onClick={copyPromptToClipboard}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={copySuccess ? { backgroundColor: '#27ae60' } : {}}
+                  >
+                    {copySuccess ? (
+                      <>
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <ContentCopyIcon fontSize="small" />
+                        Copy to Clipboard
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              ) : (
+                <>
+                  {conditions.length === 0 ? (
+                    <div className="empty-conditions">
+                      <Typography variant="body1">
+                        No conditions created yet.
+                      </Typography>
+                    </div>
+                  ) : (
+                    <table className="conditions-table">
+                      <thead>
+                        <tr>
+                          <th>Mail Type</th>
+                          <th>Return</th>
+                          <th>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+                      </thead>
+                      <tbody>
+                        {conditions.map((condition) => (
+                          <motion.tr 
+                            key={condition.id} 
+                            draggable={true}
+                            onDragStart={(e) => {
+                              // Set the condition ID as drag data
+                              e.dataTransfer.setData('application/conditionId', condition.id);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            className="draggable-condition"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2 }}
+                            whileHover={{ backgroundColor: '#f5f5f5' }}
+                          >
+                            <td className="condition-text-cell">
+                              <div className="condition-text-content">
+                                {condition.conditionText}
+                              </div>
+                            </td>
+                            <td className="condition-text-cell">
+                              <div className="condition-text-content">
+                                {condition.returnText}
+                              </div>
+                            </td>
+                            <td>
+                              <div className="condition-actions">
+                                <Tooltip title="Drag to add to diagram" arrow>
+                                  <motion.button
+                                    className="drag-button"
+                                    onMouseDown={(e) => {
+                                      // Prevent button click when starting drag
+                                      e.stopPropagation();
+                                    }}
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <DragIndicatorIcon fontSize="small" />
+                                  </motion.button>
+                                </Tooltip>
+                                <Tooltip title="Delete condition" arrow>
+                                  <motion.button
+                                    className="delete-button"
+                                    onClick={() => handleDelete(condition.id)}
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </motion.button>
+                                </Tooltip>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-/* TaskManager styles */
+/* TaskManager Styles - Modern Design */
 
 .task-manager {
   position: relative;
@@ -8,48 +8,83 @@
 .task-dropdown {
   position: relative;
   display: inline-block;
+  width: 100%;
 }
 
 .task-dropdown-button {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 10px 16px;
   background-color: #e67e22;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .task-dropdown-button:hover {
   background-color: #d35400;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.task-dropdown-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .task-dropdown-content {
   position: absolute;
   left: 0;
-  top: 40px;
+  top: 48px;
   background-color: white;
-  min-width: 300px;
+  min-width: 320px;
   max-width: 400px;
-  border-radius: 6px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   z-index: 1010;
   max-height: 500px;
   overflow-y: auto;
+  overflow-x: hidden;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .task-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
+  padding: 16px 20px;
   border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 1;
+  border-radius: 12px 12px 0 0;
 }
 
 .task-header h3 {
   margin: 0;
   color: #333;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .close-button {
@@ -58,10 +93,18 @@
   font-size: 20px;
   cursor: pointer;
   color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
 .close-button:hover {
   color: #333;
+  background-color: #f0f0f0;
 }
 
 .task-list {
@@ -71,12 +114,12 @@
 }
 
 .task-item {
-  padding: 10px 15px;
+  padding: 12px 20px;
   border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .task-item:hover {
@@ -84,90 +127,149 @@
 }
 
 .task-item.completed {
-  opacity: 0.6;
+  opacity: 0.7;
+  background-color: #f5f5f5;
 }
 
 .task-content {
   flex: 1;
-  padding-right: 10px;
+  padding-right: 16px;
   overflow: hidden;
 }
 
 .task-type {
-  font-weight: bold;
+  font-weight: 600;
   font-size: 14px;
   color: #e67e22;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .task-description {
-  font-size: 12px;
+  font-size: 13px;
   color: #555;
   word-break: break-word;
+  line-height: 1.4;
 }
 
 .task-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .run-button {
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 3px;
-  padding: 3px 8px;
-  margin-right: 5px;
+  border-radius: 6px;
+  padding: 6px 12px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .run-button:hover {
   background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+.run-button:active {
+  transform: translateY(0);
 }
 
 .run-button:disabled {
   background-color: #bdc3c7;
   cursor: not-allowed;
+  transform: none;
 }
 
 .complete-button {
   background-color: #27ae60;
   color: white;
   border: none;
-  border-radius: 3px;
-  margin-right: 5px;
-  padding: 3px 5px;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .complete-button:hover {
   background-color: #219653;
+  transform: translateY(-2px);
+}
+
+.complete-button:active {
+  transform: translateY(0);
 }
 
 .complete-button:disabled {
   background-color: #bdc3c7;
   cursor: not-allowed;
+  transform: none;
 }
 
 .delete-button {
   background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 3px;
-  padding: 3px 6px;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .delete-button:hover {
   background-color: #c0392b;
+  transform: translateY(-2px);
+}
+
+.delete-button:active {
+  transform: translateY(0);
 }
 
 .no-tasks-message {
-  padding: 15px;
+  padding: 30px 20px;
   text-align: center;
   color: #888;
   font-style: italic;
+  background-color: #f9f9f9;
+  margin: 10px;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+}
+
+/* Scrollbar styling */
+.task-dropdown-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.task-dropdown-content::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.task-dropdown-content::-webkit-scrollbar-thumb {
+  background-color: #d0d0d0;
+  border-radius: 4px;
+}
+
+.task-dropdown-content::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0;
 }
