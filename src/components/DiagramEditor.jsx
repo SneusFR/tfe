@@ -19,6 +19,7 @@ import ReactFlow, {
   MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import '../styles/DiagramEditor.css';
 
 import ApiNode from './ApiNode';
 import ConditionNode from './ConditionNode';
@@ -43,6 +44,13 @@ const DATA_LINK_STYLE = {
   strokeWidth: 2,
   stroke: DATA_LINK_COLOR,
   opacity: 0.8,
+};
+const CONNECTED_EXECUTION_LINK_STYLE = {
+  ...EXECUTION_LINK_STYLE,
+  stroke: '#4CAF50', // Green for connected execution links
+  strokeWidth: 3,
+  opacity: 1,
+  animation: 'flowPulse 2s infinite',
 };
 
 // Déclaration des types de nœuds en dehors du composant
@@ -70,6 +78,8 @@ const DiagramEditor = ({
   const [nodes, setNodes] = useNodesState(initialNodes || []);
   const [edges, setEdges] = useEdgesState(initialEdges || []);
   const reactFlowWrapper = useRef(null);
+  const [connectedNodeIds, setConnectedNodeIds] = useState(new Set());
+  const [animatingEdgeId, setAnimatingEdgeId] = useState(null);
 
   // Initialisation des nœuds et des arêtes à partir des props ou du flow courant
   useEffect(() => {
@@ -158,6 +168,84 @@ const DiagramEditor = ({
   // Tous les handles sont compatibles entre eux
   const areHandlesCompatible = () => true;
 
+  // Function to check if a node is connected to a starting node
+  const isConnectedToStartingNode = useCallback((nodeId, visitedNodes = new Set()) => {
+    // Prevent infinite loops from circular connections
+    if (visitedNodes.has(nodeId)) return false;
+    visitedNodes.add(nodeId);
+    
+    // Check if this is a starting node
+    const node = nodes.find(n => n.id === nodeId);
+    if (node?.type === 'conditionNode' && node.data.isStartingPoint === true) {
+      return true;
+    }
+    
+    // Check all incoming execution edges
+    const incomingExecutionEdges = edges.filter(
+      edge => edge.target === nodeId && 
+              edge.targetHandle === 'execution' && 
+              edge.sourceHandle === 'execution'
+    );
+    
+    // Recursively check if any source node is connected to a starting node
+    return incomingExecutionEdges.some(edge => 
+      isConnectedToStartingNode(edge.source, new Set(visitedNodes))
+    );
+  }, [nodes, edges]);
+  
+  // Update connected nodes whenever nodes or edges change
+  useEffect(() => {
+    // Only run this effect if we have nodes and edges
+    if (nodes.length === 0) return;
+    
+    const connected = new Set();
+    
+    // Check each node to see if it's connected to a starting node
+    nodes.forEach(node => {
+      if (node.type === 'conditionNode' && node.data.isStartingPoint === true) {
+        connected.add(node.id); // Starting nodes are always "connected"
+      } else if (isConnectedToStartingNode(node.id)) {
+        connected.add(node.id);
+      }
+    });
+    
+    // Only update if the connected nodes have changed
+    const connectedArray = Array.from(connected);
+    const prevConnectedArray = Array.from(connectedNodeIds);
+    
+    if (JSON.stringify(connectedArray.sort()) !== JSON.stringify(prevConnectedArray.sort())) {
+      setConnectedNodeIds(connected);
+      
+      // Update nodes with connected status
+      setNodes(nodes => 
+        nodes.map(node => ({
+          ...node,
+          className: connected.has(node.id) ? 'connected-node' : '',
+          data: {
+            ...node.data,
+            isConnectedToStartingNode: connected.has(node.id)
+          }
+        }))
+      );
+      
+      // Update edges to show connection status
+      setEdges(edges => 
+        edges.map(edge => {
+          if (edge.data?.isExecutionLink) {
+            const isConnected = connected.has(edge.source) && connected.has(edge.target);
+            return {
+              ...edge,
+              style: isConnected ? CONNECTED_EXECUTION_LINK_STYLE : EXECUTION_LINK_STYLE,
+              animated: isConnected, // Only animate connected execution links
+              className: isConnected ? 'connected-edge' : ''
+            };
+          }
+          return edge;
+        })
+      );
+    }
+  }, [nodes, edges, isConnectedToStartingNode, connectedNodeIds, setNodes, setEdges]);
+  
   // Création d'une arête avec distinction entre lien d'exécution et lien de données
   const handleConnect = useCallback(
     (params) => {
@@ -171,27 +259,50 @@ const DiagramEditor = ({
       
       const linkColor = isExecutionLink ? EXECUTION_LINK_COLOR : DATA_LINK_COLOR;
       
+      // Check if the source node is connected to a starting node
+      const isSourceConnected = connectedNodeIds.has(params.source);
+      
       const newEdge = {
         id: edgeId,
         source: params.source,
         target: params.target,
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
-        style: isExecutionLink ? EXECUTION_LINK_STYLE : DATA_LINK_STYLE,
-        animated: isExecutionLink, // Only animate execution links
+        style: isExecutionLink && isSourceConnected ? CONNECTED_EXECUTION_LINK_STYLE : 
+               isExecutionLink ? EXECUTION_LINK_STYLE : DATA_LINK_STYLE,
+        animated: isExecutionLink && isSourceConnected, // Only animate connected execution links
         type: isExecutionLink ? 'smoothstep' : 'default', // Smoother curves for execution links
         data: {
           isExecutionLink: isExecutionLink,
+          isConnected: isSourceConnected,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: isExecutionLink ? 15 : 12,
           height: isExecutionLink ? 15 : 12,
-          color: linkColor,
+          color: isExecutionLink && isSourceConnected ? '#4CAF50' : linkColor,
         },
         labelStyle: { fill: '#333', fontWeight: 500, fontSize: 10 },
         labelBgStyle: { fill: '#fff', fillOpacity: 0.8 },
+        className: 'new-connection', // Add class for connection animation
       };
+
+      // Set the animating edge ID to trigger the connection animation
+      if (isExecutionLink) {
+        setAnimatingEdgeId(edgeId);
+        
+        // Clear the animation after a delay
+        setTimeout(() => {
+          // Remove the new-connection class after animation completes
+          setEdges(eds => 
+            eds.map(e => 
+              e.id === edgeId ? { ...e, className: isSourceConnected ? 'connected-edge' : '' } : e
+            )
+          );
+          
+          setAnimatingEdgeId(null);
+        }, 1000);
+      }
 
       const updatedEdges = addEdge(newEdge, edges);
       setEdges(updatedEdges);
@@ -201,8 +312,21 @@ const DiagramEditor = ({
       if (currentFlow) {
         saveCurrentFlow(nodes, updatedEdges);
       }
+      
+      // If this is an execution link and the source is connected to a starting node,
+      // check if the target node is now connected and update it
+      if (isExecutionLink && isSourceConnected) {
+        setTimeout(() => {
+          // Trigger a re-evaluation of connected nodes
+          const targetNode = nodes.find(n => n.id === params.target);
+          if (targetNode && !connectedNodeIds.has(targetNode.id)) {
+            // Force update to trigger the connected nodes effect
+            setNodes([...nodes]);
+          }
+        }, 100);
+      }
     },
-    [edges, nodes, setEdges, onConnect, currentFlow, saveCurrentFlow]
+    [edges, nodes, setEdges, setNodes, onConnect, currentFlow, saveCurrentFlow, connectedNodeIds]
   );
 
   const onInit = useCallback(
@@ -422,6 +546,22 @@ const DiagramEditor = ({
     [nodes]
   );
 
+  // Add a connection indicator element to the DOM for each connected node
+  useEffect(() => {
+    // Clean up any existing indicators
+    document.querySelectorAll('.connection-indicator').forEach(el => el.remove());
+    
+    // Add indicators for connected nodes
+    setTimeout(() => {
+      document.querySelectorAll('.connected-node').forEach(nodeEl => {
+        const indicator = document.createElement('div');
+        indicator.className = 'connection-indicator';
+        indicator.title = 'Connected to starting node';
+        nodeEl.appendChild(indicator);
+      });
+    }, 100);
+  }, [connectedNodeIds]);
+
   return (
     <div
       ref={reactFlowWrapper}
@@ -445,6 +585,9 @@ const DiagramEditor = ({
         fitView
         fitViewOptions={{ padding: 0.2 }}
         style={{ background: '#f5f5f5' }}
+        edgeUpdaterRadius={10} // Increase the edge updater radius for easier edge manipulation
+        edgesFocusable={true} // Make edges focusable
+        edgesUpdatable={true} // Allow edges to be updated
         connectionLineStyle={{ 
           stroke: DATA_LINK_COLOR, 
           strokeWidth: 2.5,

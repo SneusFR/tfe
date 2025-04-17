@@ -13,6 +13,8 @@ const ConditionNode = ({ data, id }) => {
   const returnText = data?.returnText || 'Condition Output';
   const conditionText = data?.conditionText || 'Mail condition';
   const isStartingPoint = data?.isStartingPoint || false;
+  const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
+  const connectionIndicator = data?.connectionIndicator;
   
   // Email attributes for starting point nodes
   const emailAttributes = isStartingPoint ? (data?.emailAttributes || {
@@ -110,7 +112,8 @@ const ConditionNode = ({ data, id }) => {
         minHeight: isStartingPoint ? '200px' : '100px', // Taller for starting points with attributes
         boxShadow: isStartingPoint ? '0 4px 12px rgba(231, 76, 60, 0.25)' : '0 4px 8px rgba(0, 0, 0, 0.2)',
         zIndex: isStartingPoint ? 15 : 10, // Higher z-index for starting points
-        position: 'relative'
+        position: 'relative',
+        transition: 'box-shadow 0.3s ease, transform 0.2s ease'
       }}
     >
       {/* Execution flow handles (triangles) - better integrated with the node */}
@@ -131,6 +134,9 @@ const ConditionNode = ({ data, id }) => {
         onMouseEnter={() => handleMouseEnter('execution-right')}
         onMouseLeave={handleMouseLeave}
       />
+      
+      {/* Connection indicator */}
+      {connectionIndicator}
       
       {/* Node header with condition type */}
       <div className="condition-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>

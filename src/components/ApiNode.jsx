@@ -87,6 +87,8 @@ const ApiNode = ({ data, id }) => {
   const parameters = data?.parameters || [];
   const requestBody = data?.requestBody || null;
   const responses = data?.responses || {};
+  const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
+  const connectionIndicator = data?.connectionIndicator;
   
   // Determine if the node has inputs (parameters or request body)
   const hasInputs = parameters.length > 0 || requestBody;
@@ -114,9 +116,12 @@ const ApiNode = ({ data, id }) => {
         minHeight: '100px',
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
         zIndex: 10,
-        position: 'relative'
+        position: 'relative',
+        transition: 'box-shadow 0.3s ease, transform 0.2s ease'
       }}
     >
+      {/* Connection indicator */}
+      {connectionIndicator}
       {/* Execution flow handles (triangles) - better integrated with the node */}
       <Handle
         type="target"

@@ -1,0 +1,126 @@
+/* Styles for the diagram editor */
+
+/* Animation for connected execution links */
+@keyframes flowPulse {
+  0% {
+    stroke-opacity: 0.7;
+    stroke-width: 2.5;
+  }
+  50% {
+    stroke-opacity: 1;
+    stroke-width: 3.5;
+  }
+  100% {
+    stroke-opacity: 0.7;
+    stroke-width: 2.5;
+  }
+}
+
+/* Style for nodes connected to a starting node */
+.connected-node {
+  box-shadow: 0 0 0 2px #4CAF50, 0 4px 10px rgba(0, 0, 0, 0.2) !important;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.connected-node:hover {
+  box-shadow: 0 0 0 3px #4CAF50, 0 6px 15px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+/* Connection animation effect */
+.react-flow__edge.connecting-edge path {
+  stroke-dasharray: 5;
+  animation: flowDash 1s linear infinite;
+}
+
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Connection animation when a new edge is created */
+.react-flow__edge.new-connection path {
+  stroke: #4CAF50;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 5px rgba(76, 175, 80, 0.7));
+  animation: connectionPulse 0.5s ease-in-out;
+}
+
+@keyframes connectionPulse {
+  0% {
+    stroke-opacity: 0.3;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 2px rgba(76, 175, 80, 0.3));
+  }
+  50% {
+    stroke-opacity: 1;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.9));
+  }
+  100% {
+    stroke-opacity: 0.8;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 5px rgba(76, 175, 80, 0.7));
+  }
+}
+
+/* Glow effect for connected nodes */
+.connected-node::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 8px;
+  background: radial-gradient(circle at center, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0) 70%);
+  z-index: -1;
+  pointer-events: none;
+  animation: glowPulse 2s infinite;
+}
+
+@keyframes glowPulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+}
+
+/* Connection indicator dot */
+.connection-indicator {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4CAF50;
+  top: 5px;
+  right: 5px;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.8);
+  animation: indicatorPulse 2s infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes indicatorPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.8);
+  }
+  50% {
+    transform: scale(1.3);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 1);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.8);
+  }
+}

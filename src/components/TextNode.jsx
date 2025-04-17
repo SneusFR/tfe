@@ -18,6 +18,8 @@ const TextNode = ({ data, id }) => {
     }
   }, [data?.text]);
   const [isEditing, setIsEditing] = useState(false);
+  const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
+  const connectionIndicator = data?.connectionIndicator;
   
   // Define attribute colors for handles - matching the colors from other nodes
   const attributeColor = '#9C27B0'; // Purple - same as content/body
@@ -57,10 +59,13 @@ const TextNode = ({ data, id }) => {
         minHeight: '80px',
         boxShadow: '0 4px 8px rgba(156, 39, 176, 0.25)',
         zIndex: 10,
-        position: 'relative'
+        position: 'relative',
+        transition: 'box-shadow 0.3s ease, transform 0.2s ease'
       }}
       onDoubleClick={handleDoubleClick}
     >
+      {/* Connection indicator */}
+      {connectionIndicator}
       {/* Node header */}
       <div className="text-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
         <div 
