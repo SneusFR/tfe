@@ -168,33 +168,37 @@ const TaskManager = () => {
                       </div>
                       <div className="task-actions">
                         <Tooltip title="Run task" arrow placement="top">
-                          <motion.button 
-                            className="run-button"
-                            onClick={(e) => handleRun(task.id, e)}
-                            disabled={task.status === 'completed' || runningTask === task.id}
-                            whileHover={task.status !== 'completed' && runningTask !== task.id ? { y: -2 } : {}}
-                            whileTap={task.status !== 'completed' && runningTask !== task.id ? { scale: 0.95 } : {}}
-                          >
-                            {runningTask === task.id ? (
-                              'Running...'
-                            ) : (
-                              <>
-                                <PlayArrowIcon fontSize="small" />
-                                Run
-                              </>
-                            )}
-                          </motion.button>
+                          <span>
+                            <motion.button 
+                              className="run-button"
+                              onClick={(e) => handleRun(task.id, e)}
+                              disabled={task.status === 'completed' || runningTask === task.id}
+                              whileHover={task.status !== 'completed' && runningTask !== task.id ? { y: -2 } : {}}
+                              whileTap={task.status !== 'completed' && runningTask !== task.id ? { scale: 0.95 } : {}}
+                            >
+                              {runningTask === task.id ? (
+                                'Running...'
+                              ) : (
+                                <>
+                                  <PlayArrowIcon fontSize="small" />
+                                  Run
+                                </>
+                              )}
+                            </motion.button>
+                          </span>
                         </Tooltip>
                         <Tooltip title="Mark as completed" arrow placement="top">
-                          <motion.button 
-                            className="complete-button"
-                            onClick={(e) => handleComplete(task.id, e)}
-                            disabled={task.status === 'completed'}
-                            whileHover={task.status !== 'completed' ? { y: -2 } : {}}
-                            whileTap={task.status !== 'completed' ? { scale: 0.95 } : {}}
-                          >
-                            <CheckIcon fontSize="small" />
-                          </motion.button>
+                          <span>
+                            <motion.button 
+                              className="complete-button"
+                              onClick={(e) => handleComplete(task.id, e)}
+                              disabled={task.status === 'completed'}
+                              whileHover={task.status !== 'completed' ? { y: -2 } : {}}
+                              whileTap={task.status !== 'completed' ? { scale: 0.95 } : {}}
+                            >
+                              <CheckIcon fontSize="small" />
+                            </motion.button>
+                          </span>
                         </Tooltip>
                         <Tooltip title="Delete task" arrow placement="top">
                           <motion.button 

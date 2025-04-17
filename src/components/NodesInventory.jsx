@@ -27,18 +27,28 @@ const NodesInventory = ({ apiNodes = [] }) => {
       setConditions(allConditions);
     };
 
+    // Initial load
     loadConditions();
     
-    // Set up an interval to refresh conditions regularly
-    const intervalId = setInterval(loadConditions, 3000);
+    // Only set up the interval if the starting-points tab is active
+    let intervalId;
+    if (activeCategory === 'starting-points') {
+      intervalId = setInterval(loadConditions, 3000);
+    }
     
-    return () => clearInterval(intervalId);
-  }, []);
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [activeCategory]);
   
-  // Update API nodes count when apiNodes prop changes
+  // Update API nodes count only when the length actually changes
   useEffect(() => {
-    setApiNodesCount(apiNodes.length);
-  }, [apiNodes]);
+    if (apiNodesCount !== apiNodes.length) {
+      setApiNodesCount(apiNodes.length);
+    }
+  }, [apiNodes, apiNodesCount]);
 
   // Filter nodes based on search query
   const filteredConditions = conditions.filter(condition => 
@@ -441,7 +451,7 @@ const NodesInventory = ({ apiNodes = [] }) => {
                   <div className="condition-items">
                     {filteredApiNodes.map((node) => (
                       <motion.div 
-                        key={`${node.id}-${Math.random().toString(36).substr(2, 9)}`}
+                        key={node.id}
                         className="condition-item"
                         draggable={true}
                         onDragStart={(e) => {
