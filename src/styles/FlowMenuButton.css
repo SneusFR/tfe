@@ -1,9 +1,10 @@
 /* Flow Menu Button Styles */
 .flow-menu-button-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 900;
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  /* même z‑index que les controls React‑Flow */
+  z-index: 5;
 }
 
 .flow-buttons-wrapper {
@@ -41,6 +42,35 @@
   box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
 }
 
+/* Disabled state */
+.flow-menu-button:disabled, .flow-save-button:disabled {
+  background-color: #aaa;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Loading state */
+.flow-save-button.loading {
+  background-color: #27ae60;
+  opacity: 0.8;
+  cursor: wait;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .save-button-label {
   font-weight: 500;
   font-size: 0.9rem;
@@ -51,6 +81,9 @@
   width: 24px;
   height: 24px;
   margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .flow-menu-text {
@@ -106,5 +139,10 @@
   
   .flow-save-button {
     padding: 10px 14px;
+  }
+  
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
   }
 }

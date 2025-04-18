@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
 // Connection colors
@@ -11,12 +11,25 @@ const IntNode = ({ data, id }) => {
   // Default values if data is missing
   const [value, setValue] = useState(data?.value || 0);
   
+  // Store callback in a ref to prevent recreation on each render
+  const callbacksRef = useRef({});
+  
+  // Update callback ref when id changes
+  useEffect(() => {
+    callbacksRef.current[id] = (newValue) => {
+      if (data.onValueChange) {
+        data.onValueChange(newValue);
+      }
+    };
+  }, [id, data.onValueChange]);
+  
   // Update local state when data.value changes
   useEffect(() => {
     if (data?.value !== undefined) {
       setValue(data.value);
     }
   }, [data?.value]);
+  
   const [isEditing, setIsEditing] = useState(false);
   
   // Define attribute colors for handles - using blue for int nodes
@@ -26,25 +39,22 @@ const IntNode = ({ data, id }) => {
     setIsEditing(true);
   };
   
-  const handleBlur = () => {
+  // Memoized handlers to prevent recreation on each render
+  const handleBlur = useCallback(() => {
     setIsEditing(false);
-    // Update the node data if needed
-    if (data.onValueChange) {
-      data.onValueChange(value);
-    }
-  };
+    // Use the callback from ref instead of directly from props
+    callbacksRef.current[id]?.(value);
+  }, [id, value]);
   
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       setIsEditing(false);
-      // Update the node data if needed
-      if (data.onValueChange) {
-        data.onValueChange(value);
-      }
+      // Use the callback from ref instead of directly from props
+      callbacksRef.current[id]?.(value);
     }
-  };
+  }, [id, value]);
   
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     // Ensure only integers are entered
     const newValue = parseInt(e.target.value, 10);
     if (!isNaN(newValue)) {
@@ -53,7 +63,7 @@ const IntNode = ({ data, id }) => {
       // Allow empty input for typing purposes
       setValue('');
     }
-  };
+  }, []);
   
   return (
     <div 

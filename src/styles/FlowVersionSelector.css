@@ -36,6 +36,39 @@
   transform: scale(1.1);
 }
 
+/* Loading state */
+.version-circle.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.loading-indicator {
+  animation: pulse 1.5s infinite;
+}
+
+/* Error indicator */
+.version-error {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #e74c3c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+  cursor: pointer;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
   .flow-version-selector {
@@ -47,6 +80,12 @@
   .version-circle {
     width: 26px;
     height: 26px;
+    font-size: 12px;
+  }
+  
+  .version-error {
+    width: 20px;
+    height: 20px;
     font-size: 12px;
   }
 }

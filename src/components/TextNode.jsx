@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
 // Connection colors
@@ -11,12 +11,25 @@ const TextNode = ({ data, id }) => {
   // Default values if data is missing
   const [text, setText] = useState(data?.text || 'Text content');
   
+  // Store callback in a ref to prevent recreation on each render
+  const callbacksRef = useRef({});
+  
+  // Update callback ref when id changes
+  useEffect(() => {
+    callbacksRef.current[id] = (newText) => {
+      if (data.onTextChange) {
+        data.onTextChange(newText);
+      }
+    };
+  }, [id, data.onTextChange]);
+  
   // Update local state when data.text changes
   useEffect(() => {
     if (data?.text) {
       setText(data.text);
     }
   }, [data?.text]);
+  
   const [isEditing, setIsEditing] = useState(false);
   const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
   const connectionIndicator = data?.connectionIndicator;
@@ -28,23 +41,20 @@ const TextNode = ({ data, id }) => {
     setIsEditing(true);
   };
   
-  const handleBlur = () => {
+  // Memoized handlers to prevent recreation on each render
+  const handleBlur = useCallback(() => {
     setIsEditing(false);
-    // Update the node data if needed
-    if (data.onTextChange) {
-      data.onTextChange(text);
-    }
-  };
+    // Use the callback from ref instead of directly from props
+    callbacksRef.current[id]?.(text);
+  }, [id, text]);
   
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       setIsEditing(false);
-      // Update the node data if needed
-      if (data.onTextChange) {
-        data.onTextChange(text);
-      }
+      // Use the callback from ref instead of directly from props
+      callbacksRef.current[id]?.(text);
     }
-  };
+  }, [id, text]);
   
   return (
     <div 
@@ -163,6 +173,33 @@ const TextNode = ({ data, id }) => {
           width: '8px', 
           height: '8px',
           right: 0
+        }}
+      />
+      
+      {/* Default handles for connections */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="default-out"
+        style={{ 
+          background: DATA_LINK_COLOR, 
+          width: '6px', 
+          height: '6px',
+          bottom: 0,
+          right: '30%'
+        }}
+      />
+      
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="default-in"
+        style={{ 
+          background: DATA_LINK_COLOR, 
+          width: '6px', 
+          height: '6px',
+          top: 0,
+          left: '30%'
         }}
       />
     </div>

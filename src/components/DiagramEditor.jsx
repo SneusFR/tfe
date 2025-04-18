@@ -5,6 +5,9 @@ import React, {
   useState,
   useMemo
 } from 'react';
+import { throttle } from 'lodash';
+import { buildAdjacency, markReachable } from '../utils/graph';
+import FlowMenuButton from './FlowMenuButton';
 import { useFlowManager } from '../context/FlowManagerContext';
 import ReactFlow, {
   Background,
@@ -17,6 +20,7 @@ import ReactFlow, {
   applyEdgeChanges,
   addEdge,
   MarkerType,
+  ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import '../styles/DiagramEditor.css';
@@ -53,7 +57,7 @@ const CONNECTED_EXECUTION_LINK_STYLE = {
   animation: 'flowPulse 2s infinite',
 };
 
-// Déclaration des types de nœuds en dehors du composant
+// Déclaration des types de nœuds et d'arêtes en dehors du composant
 const nodeTypes = {
   apiNode: ApiNode,
   conditionNode: ConditionNode,
@@ -64,6 +68,12 @@ const nodeTypes = {
   ocrNode: OcrNode,
   consoleLogNode: ConsoleLogNode,
 };
+
+// Define edge types outside the component
+const edgeTypes = Object.freeze({});
+
+// Tous les handles sont compatibles entre eux - défini au niveau module pour éviter la recréation
+const areHandlesCompatible = () => true;
 
 const DiagramEditor = ({
   nodes: initialNodes,
@@ -78,61 +88,80 @@ const DiagramEditor = ({
   const [nodes, setNodes] = useNodesState(initialNodes || []);
   const [edges, setEdges] = useEdgesState(initialEdges || []);
   const reactFlowWrapper = useRef(null);
-  const [connectedNodeIds, setConnectedNodeIds] = useState(new Set());
+  // Use refs for adjacency and connected nodes to avoid unnecessary re-renders
+  const adjacencyRef = useRef(buildAdjacency(edges));
+  const connectedIdsRef = useRef(new Set());
+  // Keep a state version for components that need to re-render when connections change
+  const [connectedIds, setConnectedIds] = useState(new Set());
   const [animatingEdgeId, setAnimatingEdgeId] = useState(null);
+  
+  // Store node callbacks in a ref to prevent recreation on each render
+  const nodeCallbacksRef = useRef({});
+  
+  // Reference to track current nodes state
+  const nodesRef = useRef([]);
+  
+  // Reference to track previous flow ID
+  const prevFlowId = useRef();
 
-  // Initialisation des nœuds et des arêtes à partir des props ou du flow courant
+  // Effet pour charger les nœuds et les arêtes lorsque le flow courant change
   useEffect(() => {
-    if (initialNodes && initialNodes.length > 0) {
-      setNodes(initialNodes);
-    } else if (currentFlow) {
-      // Check if the flow has versions
-      if (currentFlow.versions) {
-        const currentVersion = currentFlow.versions[currentFlow.currentVersionIndex];
-        if (currentVersion && currentVersion.nodes && currentVersion.nodes.length > 0) {
-          setNodes(currentVersion.nodes);
-          if (onNodesChange) onNodesChange(currentVersion.nodes);
-        }
-      } else if (currentFlow.nodes && currentFlow.nodes.length > 0) {
-        // Backward compatibility for flows without versions
-        setNodes(currentFlow.nodes);
-        if (onNodesChange) onNodesChange(currentFlow.nodes);
-      }
-    }
-  }, [initialNodes, currentFlow, setNodes, onNodesChange]);
+    if (!currentFlow) return;
+    if (currentFlow.id === prevFlowId.current) return;
+    prevFlowId.current = currentFlow.id;
 
-  useEffect(() => {
-    if (initialEdges && initialEdges.length > 0) {
-      setEdges(initialEdges);
-    } else if (currentFlow) {
-      // Check if the flow has versions
-      if (currentFlow.versions) {
-        const currentVersion = currentFlow.versions[currentFlow.currentVersionIndex];
-        if (currentVersion && currentVersion.edges && currentVersion.edges.length > 0) {
-          setEdges(currentVersion.edges);
-          if (onEdgesChange) onEdgesChange(currentVersion.edges);
-        }
-      } else if (currentFlow.edges && currentFlow.edges.length > 0) {
-        // Backward compatibility for flows without versions
-        setEdges(currentFlow.edges);
-        if (onEdgesChange) onEdgesChange(currentFlow.edges);
-      }
+    // Get the version to use (either the current version or the flow itself for backward compatibility)
+    const version = currentFlow.versions?.[currentFlow.currentVersionIndex] || currentFlow;
+    
+    // Load nodes
+    if (version.nodes) {
+      setNodes(version.nodes);
+      if (onNodesChange) onNodesChange(version.nodes);
+    } else {
+      setNodes([]);
+      if (onNodesChange) onNodesChange([]);
     }
-  }, [initialEdges, currentFlow, setEdges, onEdgesChange]);
-
-  const handleNodesChange = useCallback(
-    (changes) => {
-      const updatedNodes = applyNodeChanges(changes, nodes);
-      setNodes(updatedNodes);
-      if (onNodesChange) onNodesChange(updatedNodes);
+    
+    // Load edges with default sourceHandle/targetHandle if needed
+    if (version.edges) {
+      const processedEdges = version.edges.map(edge => {
+        // If sourceHandle or targetHandle is missing, add default values based on the edge type
+        if (!edge.sourceHandle || !edge.targetHandle) {
+          const isExecutionLink = edge.data?.isExecutionLink;
+          return {
+            ...edge,
+            sourceHandle: edge.sourceHandle || (isExecutionLink ? 'execution' : `${edge.source}-out`),
+            targetHandle: edge.targetHandle || (isExecutionLink ? 'execution' : `${edge.target}-in`)
+          };
+        }
+        return edge;
+      });
       
-      // Save flow when nodes change
-      if (currentFlow) {
-        saveCurrentFlow(updatedNodes, edges);
+      // Clean up edges without handles to eliminate warnings
+      const sanitisedEdges = processedEdges.filter(e => e.sourceHandle && e.targetHandle);
+      setEdges(sanitisedEdges);
+      if (onEdgesChange) onEdgesChange(sanitisedEdges);
+    } else {
+      setEdges([]);
+      if (onEdgesChange) onEdgesChange([]);
+    }
+  }, [currentFlow?.id, setNodes, setEdges, onNodesChange, onEdgesChange]);
+
+  // Throttled version of node changes to improve performance during dragging
+  const throttledApply = useRef(
+    throttle((changes) => {
+      setNodes(prev => {
+        const next = applyNodeChanges(changes, prev);
+        nodesRef.current = next;            // garde la référence à jour
+        return next;
+      });
+
+      // on ne notifie le parent qu'à la fin du drag
+      if (changes.some(c => c.type === 'position' && c.dragging === false)) {
+        onNodesChange?.(nodesRef.current);
       }
-    },
-    [nodes, edges, setNodes, onNodesChange, currentFlow, saveCurrentFlow]
-  );
+    }, 16)                                  // ~60 fps
+  ).current;
 
   const handleEdgesChange = useCallback(
     (changes) => {
@@ -140,12 +169,9 @@ const DiagramEditor = ({
       setEdges(updatedEdges);
       if (onEdgesChange) onEdgesChange(updatedEdges);
       
-      // Save flow when edges change
-      if (currentFlow) {
-        saveCurrentFlow(nodes, updatedEdges);
-      }
+      // No automatic saving - changes are stored in local state only
     },
-    [nodes, edges, setEdges, onEdgesChange, currentFlow, saveCurrentFlow]
+    [edges, setEdges, onEdgesChange]
   );
 
   const handleEdgeClick = useCallback(
@@ -156,118 +182,59 @@ const DiagramEditor = ({
         if (onEdgesChange) onEdgesChange(updatedEdges);
         if (onEdgeDelete) onEdgeDelete(edge, updatedEdges);
         
-        // Save flow when an edge is deleted
-        if (currentFlow) {
-          saveCurrentFlow(nodes, updatedEdges);
-        }
+        // No automatic saving - changes are stored in local state only
       }
     },
-    [edges, nodes, setEdges, onEdgesChange, onEdgeDelete, currentFlow, saveCurrentFlow]
+    [edges, setEdges, onEdgesChange, onEdgeDelete]
   );
 
-  // Tous les handles sont compatibles entre eux
-  const areHandlesCompatible = () => true;
-
-  // Function to check if a node is connected to a starting node
-  const isConnectedToStartingNode = useCallback((nodeId, visitedNodes = new Set()) => {
-    // Prevent infinite loops from circular connections
-    if (visitedNodes.has(nodeId)) return false;
-    visitedNodes.add(nodeId);
-    
-    // Check if this is a starting node
-    const node = nodes.find(n => n.id === nodeId);
-    if (node?.type === 'conditionNode' && node.data.isStartingPoint === true) {
-      return true;
-    }
-    
-    // Check all incoming execution edges
-    const incomingExecutionEdges = edges.filter(
-      edge => edge.target === nodeId && 
-              edge.targetHandle === 'execution' && 
-              edge.sourceHandle === 'execution'
-    );
-    
-    // Recursively check if any source node is connected to a starting node
-    return incomingExecutionEdges.some(edge => 
-      isConnectedToStartingNode(edge.source, new Set(visitedNodes))
-    );
-  }, [nodes, edges]);
+  // Calculate starting points only when nodes with isStartingPoint change
+  const startingIds = useMemo(
+    () => nodes.filter(n => n.type === 'conditionNode' && n.data.isStartingPoint)
+               .map(n => n.id),
+    [nodes]
+  );
   
-  // Update connected nodes whenever nodes or edges change
+  // Update adjacency and connected nodes ONLY when edges or starting points change
+  // This is a critical optimization that prevents recalculation during node dragging
   useEffect(() => {
-    // Only run this effect if we have nodes and edges
-    if (nodes.length === 0) return;
+    // Update adjacency when edges change
+    adjacencyRef.current = buildAdjacency(edges);
     
-    const connected = new Set();
+    // Update connected nodes
+    const newConnectedIds = markReachable(startingIds, adjacencyRef.current);
+    connectedIdsRef.current = newConnectedIds;
     
-    // Check each node to see if it's connected to a starting node
-    nodes.forEach(node => {
-      if (node.type === 'conditionNode' && node.data.isStartingPoint === true) {
-        connected.add(node.id); // Starting nodes are always "connected"
-      } else if (isConnectedToStartingNode(node.id)) {
-        connected.add(node.id);
-      }
-    });
-    
-    // Only update if the connected nodes have changed
-    const connectedArray = Array.from(connected);
-    const prevConnectedArray = Array.from(connectedNodeIds);
-    
-    if (JSON.stringify(connectedArray.sort()) !== JSON.stringify(prevConnectedArray.sort())) {
-      setConnectedNodeIds(connected);
-      
-      // Update nodes with connected status
-      setNodes(nodes => 
-        nodes.map(node => ({
-          ...node,
-          className: connected.has(node.id) ? 'connected-node' : '',
-          data: {
-            ...node.data,
-            isConnectedToStartingNode: connected.has(node.id)
-          }
-        }))
-      );
-      
-      // Update edges to show connection status
-      setEdges(edges => 
-        edges.map(edge => {
-          if (edge.data?.isExecutionLink) {
-            const isConnected = connected.has(edge.source) && connected.has(edge.target);
-            return {
-              ...edge,
-              style: isConnected ? CONNECTED_EXECUTION_LINK_STYLE : EXECUTION_LINK_STYLE,
-              animated: isConnected, // Only animate connected execution links
-              className: isConnected ? 'connected-edge' : ''
-            };
-          }
-          return edge;
-        })
-      );
-    }
-  }, [nodes, edges, isConnectedToStartingNode, connectedNodeIds, setNodes, setEdges]);
+    // Update state version to trigger re-renders where needed
+    setConnectedIds(newConnectedIds);
+  }, [edges, startingIds]);
   
   // Création d'une arête avec distinction entre lien d'exécution et lien de données
   const handleConnect = useCallback(
     (params) => {
       const edgeId = `edge-${Date.now()}`;
       
+      // Add default handles if missing
+      const sourceHandle = params.sourceHandle ?? 'default-out';
+      const targetHandle = params.targetHandle ?? 'default-in';
+      
       // Determine if this is an execution link or a data link
       // Execution links connect handles with IDs 'execution'
       const isExecutionLink = 
-        params.sourceHandle === 'execution' && 
-        params.targetHandle === 'execution';
+        sourceHandle === 'execution' && 
+        targetHandle === 'execution';
       
       const linkColor = isExecutionLink ? EXECUTION_LINK_COLOR : DATA_LINK_COLOR;
       
       // Check if the source node is connected to a starting node
-      const isSourceConnected = connectedNodeIds.has(params.source);
+      const isSourceConnected = connectedIdsRef.current.has(params.source);
       
       const newEdge = {
         id: edgeId,
         source: params.source,
         target: params.target,
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle,
+        sourceHandle,
+        targetHandle,
         style: isExecutionLink && isSourceConnected ? CONNECTED_EXECUTION_LINK_STYLE : 
                isExecutionLink ? EXECUTION_LINK_STYLE : DATA_LINK_STYLE,
         animated: isExecutionLink && isSourceConnected, // Only animate connected execution links
@@ -308,25 +275,27 @@ const DiagramEditor = ({
       setEdges(updatedEdges);
       if (onConnect) onConnect(updatedEdges);
       
-      // Save flow when a new connection is made
-      if (currentFlow) {
-        saveCurrentFlow(nodes, updatedEdges);
-      }
+      // No automatic saving - changes are stored in local state only
       
       // If this is an execution link and the source is connected to a starting node,
       // check if the target node is now connected and update it
       if (isExecutionLink && isSourceConnected) {
         setTimeout(() => {
-          // Trigger a re-evaluation of connected nodes
-          const targetNode = nodes.find(n => n.id === params.target);
-          if (targetNode && !connectedNodeIds.has(targetNode.id)) {
-            // Force update to trigger the connected nodes effect
-            setNodes([...nodes]);
+          // Manually update connected nodes after connection without triggering a full re-render
+          const newAdjacency = buildAdjacency(updatedEdges);
+          adjacencyRef.current = newAdjacency;
+          
+          const newConnectedIds = markReachable(startingIds, newAdjacency);
+          connectedIdsRef.current = newConnectedIds;
+          
+          // Only update state if the connected nodes actually changed
+          if (!connectedIdsRef.current.has(params.target) !== !connectedIds.has(params.target)) {
+            setConnectedIds(newConnectedIds);
           }
         }, 100);
       }
     },
-    [edges, nodes, setEdges, setNodes, onConnect, currentFlow, saveCurrentFlow, connectedNodeIds]
+    [edges, nodes, setEdges, setNodes, onConnect, connectedIds]
   );
 
   const onInit = useCallback(
@@ -346,10 +315,9 @@ const DiagramEditor = ({
     (event) => {
       event.preventDefault();
       if (!reactFlowInstance) return;
-      const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const position = reactFlowInstance.project({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
       });
 
       // Ajout d'un nœud condition
@@ -415,54 +383,78 @@ const DiagramEditor = ({
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
       } else if (nodeType === 'textNode') {
+        const nodeId = `text-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
         const newNode = {
-          id: `text-node-${Date.now()}`,
+          id: nodeId,
           type: 'textNode',
           position,
           data: {
             text: 'Enter text here...',
-            onTextChange: (newText) => {
-              setNodes((prevNodes) =>
-                prevNodes.map((n) =>
-                  n.id === newNode.id ? { ...n, data: { ...n.data, text: newText } } : n
-                )
-              );
-              if (onNodesChange) {
-                onNodesChange((prevNodes) =>
-                  prevNodes.map((n) =>
-                    n.id === newNode.id ? { ...n, data: { ...n.data, text: newText } } : n
-                  )
-                );
-              }
-            },
+            onTextChange: null, // Will be set via ref
           },
         };
+        
+        // Store the callback in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onTextChange: (newText) => {
+            setNodes((prevNodes) =>
+              prevNodes.map((n) =>
+                n.id === nodeId ? { ...n, data: { ...n.data, text: newText } } : n
+              )
+            );
+            if (onNodesChange) {
+              onNodesChange(
+                prevNodes => prevNodes.map((n) =>
+                  n.id === nodeId ? { ...n, data: { ...n.data, text: newText } } : n
+                )
+              );
+            }
+          }
+        };
+        
+        // Set the callback reference
+        newNode.data.onTextChange = (newText) => nodeCallbacksRef.current[nodeId].onTextChange(newText);
+        
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
       } else if (nodeType === 'intNode') {
+        const nodeId = `int-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
         const newNode = {
-          id: `int-node-${Date.now()}`,
+          id: nodeId,
           type: 'intNode',
           position,
           data: {
             value: 0,
-            onValueChange: (newValue) => {
-              setNodes((prevNodes) =>
-                prevNodes.map((n) =>
-                  n.id === newNode.id ? { ...n, data: { ...n.data, value: newValue } } : n
-                )
-              );
-              if (onNodesChange) {
-                onNodesChange((prevNodes) =>
-                  prevNodes.map((n) =>
-                    n.id === newNode.id ? { ...n, data: { ...n.data, value: newValue } } : n
-                  )
-                );
-              }
-            },
+            onValueChange: null, // Will be set via ref
           },
         };
+        
+        // Store the callback in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onValueChange: (newValue) => {
+            setNodes((prevNodes) =>
+              prevNodes.map((n) =>
+                n.id === nodeId ? { ...n, data: { ...n.data, value: newValue } } : n
+              )
+            );
+            if (onNodesChange) {
+              onNodesChange(
+                prevNodes => prevNodes.map((n) =>
+                  n.id === nodeId ? { ...n, data: { ...n.data, value: newValue } } : n
+                )
+              );
+            }
+          }
+        };
+        
+        // Set the callback reference
+        newNode.data.onValueChange = (newValue) => nodeCallbacksRef.current[nodeId].onValueChange(newValue);
+        
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
@@ -546,21 +538,37 @@ const DiagramEditor = ({
     [nodes]
   );
 
-  // Add a connection indicator element to the DOM for each connected node
-  useEffect(() => {
-    // Clean up any existing indicators
-    document.querySelectorAll('.connection-indicator').forEach(el => el.remove());
-    
-    // Add indicators for connected nodes
-    setTimeout(() => {
-      document.querySelectorAll('.connected-node').forEach(nodeEl => {
-        const indicator = document.createElement('div');
-        indicator.className = 'connection-indicator';
-        indicator.title = 'Connected to starting node';
-        nodeEl.appendChild(indicator);
-      });
-    }, 100);
-  }, [connectedNodeIds]);
+  // We no longer need to manually add connection indicators
+  // They are now handled by CSS with .connected-node::after
+
+  // Memoize nodes with connection status to avoid unnecessary re-renders
+  const memoNodes = useMemo(() => nodes.map(n => {
+    const connected = connectedIdsRef.current.has(n.id);
+    return {
+      ...n,
+      className: connected ? 'connected-node' : '',
+      data: { ...n.data, isConnectedToStartingNode: connected }
+    };
+  }), [nodes, connectedIds]); // Only depends on nodes and connectedIds state (not the ref)
+
+  // Memoize edges with connection styling
+  const computedEdges = useMemo(
+    () =>
+      edges.map(e => {
+        if (e.data?.isExecutionLink) {
+          const connected =
+            connectedIdsRef.current.has(e.source) && connectedIdsRef.current.has(e.target);
+          return {
+            ...e,
+            style: connected ? CONNECTED_EXECUTION_LINK_STYLE : EXECUTION_LINK_STYLE,
+            animated: connected,
+            className: connected ? 'connected-edge' : ''
+          };
+        }
+        return e;
+      }),
+    [edges, connectedIds] // Only depends on edges and connectedIds state (not the ref)
+  );
 
   return (
     <div
@@ -570,56 +578,62 @@ const DiagramEditor = ({
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onConnect={handleConnect}
-        onEdgeClick={handleEdgeClick}
-        nodeTypes={nodeTypes}
-        onInit={onInit}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
-        minZoom={0.1}
-        maxZoom={4}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        style={{ background: '#f5f5f5' }}
-        edgeUpdaterRadius={10} // Increase the edge updater radius for easier edge manipulation
-        edgesFocusable={true} // Make edges focusable
-        edgesUpdatable={true} // Allow edges to be updated
-        connectionLineStyle={{ 
-          stroke: DATA_LINK_COLOR, 
-          strokeWidth: 2.5,
-          opacity: 0.6,
-          strokeDasharray: '5,5'
-        }}
-        connectionLineType="smoothstep"
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          animated: false,
-        }}
-      >
-        <Controls />
-        <MiniMap />
-        <Background variant="dots" gap={12} size={1} />
-        <Panel position="top-right">
-          <div className="diagram-info">
-            <h3>API Diagram</h3>
-            <p>{nodes.length} endpoints loaded</p>
-            {nodes.length > 0 && (
-              <button
-                className="fit-view-button"
-                onClick={() => {
-                  document.querySelector('.react-flow__controls-fitview')?.click();
-                }}
-              >
-                Fit View
-              </button>
-            )}
-          </div>
-        </Panel>
-      </ReactFlow>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={memoNodes}
+          edges={computedEdges}
+          onNodesChange={throttledApply}
+          onEdgesChange={handleEdgesChange}
+          onConnect={handleConnect}
+          onEdgeClick={handleEdgeClick}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onInit={onInit}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+          minZoom={0.1}
+          maxZoom={4}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          style={{ background: '#f5f5f5' }}
+          edgeUpdaterRadius={10} // Increase the edge updater radius for easier edge manipulation
+          edgesFocusable={true} // Make edges focusable
+          edgesUpdatable={true} // Allow edges to be updated
+          connectionLineStyle={{ 
+            stroke: DATA_LINK_COLOR, 
+            strokeWidth: 2.5,
+            opacity: 0.6,
+            strokeDasharray: '5,5'
+          }}
+          connectionLineType="smoothstep"
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false,
+          }}
+        >
+          <Controls />
+          {nodes.length < 80 && <MiniMap />}
+          <Background variant="dots" gap={12} size={1} />
+          <Panel position="top-right">
+            <div className="diagram-info">
+              <h3>API Diagram</h3>
+              <p>{nodes.length} endpoints loaded</p>
+              {nodes.length > 0 && (
+                <button
+                  className="fit-view-button"
+                  onClick={() => {
+                    document.querySelector('.react-flow__controls-fitview')?.click();
+                  }}
+                >
+                  Fit View
+                </button>
+              )}
+            </div>
+          </Panel>
+        </ReactFlow>
+        
+        {/* bouton menu + save : n'est PLUS dans <Panel> */}
+        <FlowMenuButton />
+      </ReactFlowProvider>
     </div>
   );
 };

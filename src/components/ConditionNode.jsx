@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 
 // Connection colors
@@ -7,7 +7,6 @@ const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 
 const ConditionNode = ({ data, id }) => {
   // ConditionNode component initialization
-  const [hoveredHandle, setHoveredHandle] = useState(null);
   
   // Default values if data is missing
   const returnText = data?.returnText || 'Condition Output';
@@ -43,58 +42,42 @@ const ConditionNode = ({ data, id }) => {
     bcc: '#F44336'       // Red
   };
   
-  // Handle hover effects
-  const handleMouseEnter = (handleId) => {
-    setHoveredHandle(handleId);
-  };
-  
-  const handleMouseLeave = () => {
-    setHoveredHandle(null);
-  };
-  
   // Common styles for data handles
-  const getDataHandleStyle = (color, handleId) => {
-    const isHovered = hoveredHandle === handleId;
+  const getDataHandleStyle = (color) => {
     return {
       background: color,
-      width: isHovered ? '14px' : '10px',
-      height: isHovered ? '14px' : '10px',
+      width: '10px',
+      height: '10px',
       right: 0,
-      border: isHovered ? '2px solid white' : 'none',
-      boxShadow: isHovered ? `0 0 6px ${color}` : 'none',
-      transition: 'all 0.2s ease',
       cursor: 'crosshair',
     };
   };
   
   // Execution handle styles
-  const getExecutionHandleStyle = (position, isHovered) => {
+  const getExecutionHandleStyle = (position) => {
     const baseStyle = {
       background: 'transparent',
       width: 0,
       height: 0,
       borderTop: '6px solid transparent',
       borderBottom: '6px solid transparent',
-      transition: 'all 0.2s ease',
     };
     
     if (position === 'left') {
       return {
         ...baseStyle,
-        borderRight: `${isHovered ? '12px' : '10px'} solid ${EXECUTION_LINK_COLOR}`,
+        borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
         top: 0,
         left: -10,
-        opacity: isHovered ? 1 : 0.8,
-        filter: isHovered ? `drop-shadow(0 0 3px ${EXECUTION_LINK_COLOR})` : 'none',
+        opacity: 0.8,
       };
     } else {
       return {
         ...baseStyle,
-        borderLeft: `${isHovered ? '12px' : '10px'} solid ${EXECUTION_LINK_COLOR}`,
+        borderLeft: '10px solid ' + EXECUTION_LINK_COLOR,
         top: 0,
         right: -10,
-        opacity: isHovered ? 1 : 0.8,
-        filter: isHovered ? `drop-shadow(0 0 3px ${EXECUTION_LINK_COLOR})` : 'none',
+        opacity: 0.8,
       };
     }
   };
@@ -121,18 +104,41 @@ const ConditionNode = ({ data, id }) => {
         type="target"
         position={Position.Left}
         id="execution"
-        style={getExecutionHandleStyle('left', hoveredHandle === 'execution-left')}
-        onMouseEnter={() => handleMouseEnter('execution-left')}
-        onMouseLeave={handleMouseLeave}
+        style={getExecutionHandleStyle('left')}
       />
       
       <Handle
         type="source"
         position={Position.Right}
         id="execution"
-        style={getExecutionHandleStyle('right', hoveredHandle === 'execution-right')}
-        onMouseEnter={() => handleMouseEnter('execution-right')}
-        onMouseLeave={handleMouseLeave}
+        style={getExecutionHandleStyle('right')}
+      />
+      
+      {/* Default handles for connections */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="default-out"
+        style={{ 
+          background: DATA_LINK_COLOR, 
+          width: '6px', 
+          height: '6px',
+          bottom: 0,
+          right: '30%'
+        }}
+      />
+      
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="default-in"
+        style={{ 
+          background: DATA_LINK_COLOR, 
+          width: '6px', 
+          height: '6px',
+          top: 0,
+          left: '30%'
+        }}
       />
       
       {/* Connection indicator */}
@@ -239,8 +245,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-email_id' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -260,9 +265,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-email_id"
-                style={getDataHandleStyle(attributeColors.from, 'attr-email_id')}
-                onMouseEnter={() => handleMouseEnter('attr-email_id')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.from)}
               />
             </div>
             
@@ -274,8 +277,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-fromEmail' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -295,9 +297,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-fromEmail"
-                style={getDataHandleStyle(attributeColors.from, 'attr-fromEmail')}
-                onMouseEnter={() => handleMouseEnter('attr-fromEmail')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.from)}
               />
             </div>
             
@@ -309,8 +309,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-fromDisplayName' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -330,9 +329,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-fromDisplayName"
-                style={getDataHandleStyle(attributeColors.from, 'attr-fromDisplayName')}
-                onMouseEnter={() => handleMouseEnter('attr-fromDisplayName')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.from)}
               />
             </div>
             
@@ -344,8 +341,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-toEmail' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -365,9 +361,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-toEmail"
-                style={getDataHandleStyle(attributeColors.to, 'attr-toEmail')}
-                onMouseEnter={() => handleMouseEnter('attr-toEmail')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.to)}
               />
             </div>
             
@@ -379,8 +373,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-toDisplayName' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -400,9 +393,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-toDisplayName"
-                style={getDataHandleStyle(attributeColors.to, 'attr-toDisplayName')}
-                onMouseEnter={() => handleMouseEnter('attr-toDisplayName')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.to)}
               />
             </div>
             
@@ -414,8 +405,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-subject' ? 'rgba(33, 150, 243, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -435,9 +425,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-subject"
-                style={getDataHandleStyle(attributeColors.subject, 'attr-subject')}
-                onMouseEnter={() => handleMouseEnter('attr-subject')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.subject)}
               />
             </div>
             
@@ -449,8 +437,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-date' ? 'rgba(255, 152, 0, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -470,9 +457,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-date"
-                style={getDataHandleStyle(attributeColors.date, 'attr-date')}
-                onMouseEnter={() => handleMouseEnter('attr-date')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.date)}
               />
             </div>
             
@@ -484,8 +469,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-content' ? 'rgba(156, 39, 176, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -505,9 +489,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-content"
-                style={getDataHandleStyle(attributeColors.content, 'attr-content')}
-                onMouseEnter={() => handleMouseEnter('attr-content')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.content)}
               />
             </div>
             
@@ -519,8 +501,7 @@ const ConditionNode = ({ data, id }) => {
               position: 'relative',
               padding: '2px 4px',
               borderRadius: '3px',
-              backgroundColor: hoveredHandle === 'attr-attachment_id' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
-              transition: 'background-color 0.2s ease'
+              backgroundColor: 'transparent'
             }}>
               <div 
                 className="attribute-badge"
@@ -541,9 +522,7 @@ const ConditionNode = ({ data, id }) => {
                 type="source"
                 position={Position.Right}
                 id="attr-attachment_id"
-                style={getDataHandleStyle(attributeColors.attachments, 'attr-attachment_id')}
-                onMouseEnter={() => handleMouseEnter('attr-attachment_id')}
-                onMouseLeave={handleMouseLeave}
+                style={getDataHandleStyle(attributeColors.attachments)}
               />
             </div>
             
@@ -557,8 +536,7 @@ const ConditionNode = ({ data, id }) => {
                   position: 'relative',
                   padding: '2px 4px',
                   borderRadius: '3px',
-                  backgroundColor: hoveredHandle === 'attr-attachments' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
-                  transition: 'background-color 0.2s ease'
+                  backgroundColor: 'transparent'
                 }}>
                   <div 
                     className="attribute-badge"
@@ -578,9 +556,7 @@ const ConditionNode = ({ data, id }) => {
                     type="source"
                     position={Position.Right}
                     id="attr-attachments"
-                    style={getDataHandleStyle(attributeColors.attachments, 'attr-attachments')}
-                    onMouseEnter={() => handleMouseEnter('attr-attachments')}
-                    onMouseLeave={handleMouseLeave}
+                    style={getDataHandleStyle(attributeColors.attachments)}
                   />
                 </div>
                 
@@ -597,8 +573,7 @@ const ConditionNode = ({ data, id }) => {
                       position: 'relative',
                       padding: '2px 4px',
                       borderRadius: '3px',
-                      backgroundColor: hoveredHandle === `attr-attachment-${index}` ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
-                      transition: 'background-color 0.2s ease',
+                      backgroundColor: 'transparent',
                       fontSize: '9px'
                     }}
                   >
@@ -621,9 +596,7 @@ const ConditionNode = ({ data, id }) => {
                       type="source"
                       position={Position.Right}
                       id={`attr-attachment-${index}`}
-                      style={getDataHandleStyle(attributeColors.attachments, `attr-attachment-${index}`)}
-                      onMouseEnter={() => handleMouseEnter(`attr-attachment-${index}`)}
-                      onMouseLeave={handleMouseLeave}
+                      style={getDataHandleStyle(attributeColors.attachments)}
                     />
                   </div>
                 ))}
@@ -639,8 +612,7 @@ const ConditionNode = ({ data, id }) => {
                 position: 'relative',
                 padding: '2px 4px',
                 borderRadius: '3px',
-                backgroundColor: hoveredHandle === 'attr-cc' ? 'rgba(96, 125, 139, 0.1)' : 'transparent',
-                transition: 'background-color 0.2s ease'
+                backgroundColor: 'transparent'
               }}>
                 <div 
                   className="attribute-badge"
@@ -660,9 +632,7 @@ const ConditionNode = ({ data, id }) => {
                   type="source"
                   position={Position.Right}
                   id="attr-cc"
-                  style={getDataHandleStyle(attributeColors.cc, 'attr-cc')}
-                  onMouseEnter={() => handleMouseEnter('attr-cc')}
-                  onMouseLeave={handleMouseLeave}
+                  style={getDataHandleStyle(attributeColors.cc)}
                 />
               </div>
             )}
@@ -676,8 +646,7 @@ const ConditionNode = ({ data, id }) => {
                 position: 'relative',
                 padding: '2px 4px',
                 borderRadius: '3px',
-                backgroundColor: hoveredHandle === 'attr-bcc' ? 'rgba(244, 67, 54, 0.1)' : 'transparent',
-                transition: 'background-color 0.2s ease'
+                backgroundColor: 'transparent'
               }}>
                 <div 
                   className="attribute-badge"
@@ -697,9 +666,7 @@ const ConditionNode = ({ data, id }) => {
                   type="source"
                   position={Position.Right}
                   id="attr-bcc"
-                  style={getDataHandleStyle(attributeColors.bcc, 'attr-bcc')}
-                  onMouseEnter={() => handleMouseEnter('attr-bcc')}
-                  onMouseLeave={handleMouseLeave}
+                  style={getDataHandleStyle(attributeColors.bcc)}
                 />
               </div>
             )}

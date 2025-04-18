@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { useAuth } from '../context/AuthContext';
 import '../styles/FlowModal.css';
 
 const FlowModal = () => {
@@ -10,7 +11,12 @@ const FlowModal = () => {
     createFlow,
     loadFlow,
     toggleFlowModal,
+    loading,
+    error,
+    refreshFlows
   } = useFlowManager();
+  
+  const { isAuthenticated } = useAuth();
 
   const [view, setView] = useState('main'); // 'main', 'create', 'load'
   const [flowName, setFlowName] = useState('');
@@ -26,13 +32,16 @@ const FlowModal = () => {
       setSearchTerm('');
       setCollaborators([]);
       setCollaboratorInput('');
+      
+      // We don't need to call refreshFlows here as it's already called when the user logs in
+      // and when flows are added or deleted
     }
   }, [showFlowModal]);
 
   // Handle flow creation
-  const handleCreateFlow = () => {
+  const handleCreateFlow = async () => {
     if (flowName.trim()) {
-      createFlow(flowName, collaborators);
+      await createFlow(flowName, collaborators);
     }
   };
 
@@ -101,23 +110,30 @@ const FlowModal = () => {
                 <h2>Flow Manager</h2>
                 <p>Create a new flow or load an existing one</p>
                 
+                {error && (
+                  <div className="error-message">
+                    <p>{error}</p>
+                  </div>
+                )}
+                
                 <div className="flow-modal-buttons">
                   <motion.button 
                     className="flow-button create"
                     onClick={() => setView('create')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    disabled={loading}
                   >
-                    Create New Flow
+                    {loading ? 'Loading...' : 'Create New Flow'}
                   </motion.button>
                   <motion.button 
                     className="flow-button load"
                     onClick={() => setView('load')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    disabled={flows.length === 0}
+                    disabled={flows.length === 0 || loading}
                   >
-                    Load Existing Flow
+                    {loading ? 'Loading...' : 'Load Existing Flow'}
                   </motion.button>
                 </div>
                 
@@ -210,6 +226,7 @@ const FlowModal = () => {
                     onClick={() => setView('main')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    disabled={loading}
                   >
                     Back
                   </motion.button>
@@ -218,11 +235,17 @@ const FlowModal = () => {
                     onClick={handleCreateFlow}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    disabled={!flowName.trim()}
+                    disabled={!flowName.trim() || loading}
                   >
-                    Create Flow
+                    {loading ? 'Creating...' : 'Create Flow'}
                   </motion.button>
                 </div>
+                
+                {error && (
+                  <div className="error-message">
+                    <p>{error}</p>
+                  </div>
+                )}
                 
                 <motion.button 
                   className="close-button"
@@ -251,47 +274,57 @@ const FlowModal = () => {
                 </div>
                 
                 <div className="flows-grid">
-                  <AnimatePresence>
-                    {filteredFlows.length > 0 ? (
-                      filteredFlows.map((flow, index) => (
-                        <motion.div
-                          key={flow.id}
-                          className="flow-card"
-                          custom={index}
-                          variants={listItemVariants}
-                          initial="hidden"
-                          animate="visible"
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => loadFlow(flow.id)}
-                        >
-                          <div className="flow-thumbnail">
-                            {flow.thumbnail ? (
-                              <div className="thumbnail-stats">
-                                <span>{flow.thumbnail.nodeCount} nodes</span>
-                                <span>{flow.thumbnail.edgeCount} connections</span>
-                              </div>
-                            ) : (
-                              <div className="empty-thumbnail">No preview</div>
-                            )}
-                          </div>
-                          <div className="flow-info">
-                            <h3>{flow.name}</h3>
-                            <p>Last updated: {new Date(flow.updatedAt).toLocaleDateString()}</p>
-                            {flow.collaborators.length > 0 && (
-                              <div className="collaborators">
-                                <span>{flow.collaborators.length} collaborator(s)</span>
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="no-flows-found">
-                        <p>No flows found matching "{searchTerm}"</p>
-                      </div>
-                    )}
-                  </AnimatePresence>
+                  {loading ? (
+                    <div className="loading-indicator">
+                      <p>Loading flows...</p>
+                    </div>
+                  ) : (
+                    <AnimatePresence>
+                      {filteredFlows.length > 0 ? (
+                        // Use a Set to track flow IDs we've already rendered to avoid duplicates
+                        filteredFlows.filter((flow, index, self) => 
+                          // Only keep the first occurrence of each flow.id
+                          index === self.findIndex(f => f.id === flow.id)
+                        ).map((flow, index) => (
+                          <motion.div
+                            key={flow.id}
+                            className="flow-card"
+                            custom={index}
+                            variants={listItemVariants}
+                            initial="hidden"
+                            animate="visible"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => loadFlow(flow.id)}
+                          >
+                            <div className="flow-thumbnail">
+                              {flow.thumbnail ? (
+                                <div className="thumbnail-stats">
+                                  <span>{flow.thumbnail.nodeCount} nodes</span>
+                                  <span>{flow.thumbnail.edgeCount} connections</span>
+                                </div>
+                              ) : (
+                                <div className="empty-thumbnail">No preview</div>
+                              )}
+                            </div>
+                            <div className="flow-info">
+                              <h3>{flow.name}</h3>
+                              <p>Last updated: {new Date(flow.updatedAt).toLocaleDateString()}</p>
+                              {flow.collaborators && flow.collaborators.length > 0 && (
+                                <div className="collaborators">
+                                  <span>{flow.collaborators.length} collaborator(s)</span>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="no-flows-found">
+                          <p>No flows found matching "{searchTerm}"</p>
+                        </div>
+                      )}
+                    </AnimatePresence>
+                  )}
                 </div>
                 
                 <div className="modal-actions">
@@ -300,10 +333,17 @@ const FlowModal = () => {
                     onClick={() => setView('main')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    disabled={loading}
                   >
                     Back
                   </motion.button>
                 </div>
+                
+                {error && (
+                  <div className="error-message">
+                    <p>{error}</p>
+                  </div>
+                )}
                 
                 <motion.button 
                   className="close-button"

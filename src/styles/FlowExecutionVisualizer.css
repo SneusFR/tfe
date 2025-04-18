@@ -1,0 +1,62 @@
+/* Styles for the flow execution visualizer */
+
+.flow-execution-visualizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Checkmark that appears when node execution is successful */
+.node-success-checkmark {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  animation: popCheckmark 0.5s ease-out;
+  z-index: 1000; /* Ensure it's above all other elements */
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
+  border: 2px solid white;
+}
+
+/* Animation for the checkmark to pop out */
+@keyframes popCheckmark {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation for the checkmark to disappear */
+.node-success-checkmark.hide {
+  animation: hideCheckmark 0.3s ease-in forwards;
+}
+
+@keyframes hideCheckmark {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+}

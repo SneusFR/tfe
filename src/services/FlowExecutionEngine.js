@@ -4,6 +4,12 @@
 import axios from 'axios';
 import { createWorker } from 'tesseract.js';
 
+// Create an axios instance with withCredentials
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  withCredentials: false // This is essential for sending cookies with requests
+});
+
 class FlowExecutionEngine {
   constructor() {
     this.nodes = [];
@@ -404,7 +410,11 @@ class FlowExecutionEngine {
       
       // Execute the API request
       console.log(`🔄 [FLOW ENGINE] Making API request: ${method.toUpperCase()} ${url}`);
-      const response = await axios({
+      
+      // Use the api instance for backend API calls
+      const axiosInstance = url.includes(this.baseApiUrl) ? api : axios;
+      
+      const response = await axiosInstance({
         method,
         url,
         params: queryParams,
@@ -412,6 +422,7 @@ class FlowExecutionEngine {
         headers: {
           'Content-Type': 'application/json',
         },
+        withCredentials: url.includes(this.baseApiUrl) // Only use withCredentials for backend API calls
       });
       
       console.log(`✅ [FLOW ENGINE] API request successful: ${response.status}`);

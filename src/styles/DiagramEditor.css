@@ -47,6 +47,15 @@
   animation: connectionPulse 0.5s ease-in-out;
 }
 
+/* Handle hover effect */
+.react-flow__handle:hover {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px currentColor;
+  cursor: crosshair;
+}
+
 @keyframes connectionPulse {
   0% {
     stroke-opacity: 0.3;
@@ -96,7 +105,8 @@
 }
 
 /* Connection indicator dot */
-.connection-indicator {
+.connected-node::after {
+  content: '';
   position: absolute;
   width: 8px;
   height: 8px;
@@ -108,6 +118,12 @@
   animation: indicatorPulse 2s infinite;
   z-index: 10;
   pointer-events: none;
+}
+
+/* Disable animations during dragging for better performance */
+.react-flow__node.dragging .connected-node::before,
+.react-flow__node.dragging .connected-node::after {
+  display: none;          /* no glow during drag */
 }
 
 @keyframes indicatorPulse {

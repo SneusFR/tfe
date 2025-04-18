@@ -1,44 +1,36 @@
 import { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
 
+// Create an axios instance with withCredentials
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  withCredentials: true // This is essential for sending cookies with requests
+});
+
 // Create the authentication context
 export const AuthContext = createContext(null);
 
 // Create a provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('authToken'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(!!token);
-
-  // Configure axios to use the token for all requests
-  useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      localStorage.setItem('authToken', token);
-      setIsAuthenticated(true);
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-      localStorage.removeItem('authToken');
-      setIsAuthenticated(false);
-    }
-  }, [token]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Function to register a new user
   const register = useCallback(async (email, password, displayName) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await api.post('/api/auth/register', {
         email,
         password,
         displayName
       });
       
-      const { token: newToken, ...userData } = response.data;
-      setToken(newToken);
+      const userData = response.data;
       setUser(userData);
+      setIsAuthenticated(true);
       return { success: true, data: userData };
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Registration failed';
@@ -54,14 +46,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await api.post('/api/auth/login', {
         email,
         password
       });
       
-      const { token: newToken, ...userData } = response.data;
-      setToken(newToken);
+      const userData = response.data;
       setUser(userData);
+      setIsAuthenticated(true);
       return { success: true, data: userData };
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Login failed';
@@ -73,51 +65,63 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Function to logout a user
-  const logout = useCallback(() => {
-    setToken(null);
-    setUser(null);
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/api/auth/logout');
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   }, []);
 
   // Function to get the current user's information
   const getCurrentUser = useCallback(async () => {
-    if (!token) return;
-    
     setLoading(true);
     try {
-      const response = await axios.get('/api/auth/me');
+      const response = await api.get('/api/auth/me');
       setUser(response.data);
+      setIsAuthenticated(true);
+      return response.data;
     } catch (err) {
-      // If the token is invalid, clear it
-      if (err.response?.status === 401) {
-        setToken(null);
-        setUser(null);
-      }
+      setUser(null);
+      setIsAuthenticated(false);
       setError(err.response?.data?.message || 'Failed to get user information');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
-  // Get the current user when the component mounts or token changes
+  // Check authentication status when the component mounts
   useEffect(() => {
-    if (token) {
-      getCurrentUser();
-    }
-  }, [token, getCurrentUser]);
+    const checkAuth = async () => {
+      try {
+        const { data } = await api.get('/api/auth/me');
+        setUser(data);
+        setIsAuthenticated(true);
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
 
   // Provide the authentication context to children components
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         loading,
         error,
         isAuthenticated,
         register,
         login,
         logout,
-        getCurrentUser
+        getCurrentUser,
+        api // Expose the api instance for other components to use
       }}
     >
       {children}

@@ -10,7 +10,7 @@ import theme from './theme';
 import { AuthProvider } from './context/AuthContext';
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  // <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
@@ -19,5 +19,5 @@ createRoot(document.getElementById('root')).render(
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
-  </StrictMode>,
+  // </StrictMode>
 );

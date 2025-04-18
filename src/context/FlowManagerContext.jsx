@@ -1,5 +1,7 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFlowService } from '../services/flowService';
+import { useAuth } from './AuthContext';
 
 // Create context
 const FlowManagerContext = createContext();
@@ -12,37 +14,56 @@ export const FlowManagerProvider = ({ children }) => {
   const [flows, setFlows] = useState([]);
   const [currentFlow, setCurrentFlow] = useState(null);
   const [showFlowModal, setShowFlowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
-  // Load flows from localStorage on initial render
-  useEffect(() => {
-    const savedFlows = localStorage.getItem('mailflow_flows');
-    if (savedFlows) {
-      setFlows(JSON.parse(savedFlows));
-    }
+  const { isAuthenticated } = useAuth();
+  const flowService = useFlowService();
+  
+  // Load flows from API when authenticated
+  const fetchFlows = useCallback(async () => {
+    if (!isAuthenticated) return;
     
-    // Check if there's a current flow saved
-    const currentFlowId = localStorage.getItem('mailflow_current_flow');
-    if (currentFlowId) {
-      const savedFlows = JSON.parse(localStorage.getItem('mailflow_flows') || '[]');
-      const flow = savedFlows.find(f => f.id === currentFlowId);
-      if (flow) {
-        setCurrentFlow(flow);
-      } else {
-        // If the flow doesn't exist anymore, show the modal
+    setLoading(true);
+    setError(null);
+    try {
+      const flowsArray = await flowService.getFlows({ page: 1, limit: 100 });
+      setFlows(flowsArray || []);
+      
+      // Check if there's a current flow saved
+      const currentFlowId = localStorage.getItem('mailflow_current_flow');
+      if (currentFlowId) {
+        const flow = flowsArray.find(f => f.id === currentFlowId);
+        if (flow) {
+          setCurrentFlow(flow);
+        } else if (flowsArray.length === 0) {
+          // Only show the modal if there are no flows available
+          setShowFlowModal(true);
+        }
+      } else if (flowsArray.length === 0) {
+        // Only show the modal if there are no flows available and no current flow
         setShowFlowModal(true);
       }
-    } else {
-      // If no current flow, show the modal
-      setShowFlowModal(true);
+    } catch (err) {
+      setError(err.message || 'Failed to load flows');
+      // Don't automatically show the modal on error
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, flowService]);
   
-  // Save flows to localStorage whenever they change
+  // Use a ref to track if we've already fetched flows
+  const hasFetchedRef = useRef(false);
+  
+  // Load flows only once when authenticated
   useEffect(() => {
-    localStorage.setItem('mailflow_flows', JSON.stringify(flows));
-  }, [flows]);
+    if (isAuthenticated && !hasFetchedRef.current) {
+      fetchFlows();
+      hasFetchedRef.current = true;
+    }
+  }, [isAuthenticated, fetchFlows]);
   
-  // Save current flow to localStorage whenever it changes
+  // Save current flow ID to localStorage whenever it changes
   useEffect(() => {
     if (currentFlow) {
       localStorage.setItem('mailflow_current_flow', currentFlow.id);
@@ -50,155 +71,144 @@ export const FlowManagerProvider = ({ children }) => {
   }, [currentFlow]);
   
   // Create a new flow
-  const createFlow = (name, collaborators = []) => {
-    const newFlow = {
-      id: `flow-${Date.now()}`,
-      name,
-      collaborators,
-      versions: [
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 1"
-        },
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 2"
-        },
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 3"
-        }
-      ],
-      currentVersionIndex: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      thumbnail: null, // Will be updated later
-    };
-    
-    setFlows([...flows, newFlow]);
-    setCurrentFlow(newFlow);
-    setShowFlowModal(false);
-    
-    return newFlow;
+  const createFlow = async (name, collaborators = []) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const newFlow = await flowService.createFlow({ name });
+      
+      // Add the flow to the local state
+      setFlows([...flows, newFlow]);
+      setCurrentFlow(newFlow);
+      setShowFlowModal(false);
+      
+      return newFlow;
+    } catch (err) {
+      setError(err.message || 'Failed to create flow');
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Load an existing flow
-  const loadFlow = (flowId) => {
-    const flow = flows.find(f => f.id === flowId);
-    if (flow) {
-      // If the flow doesn't have versions yet, migrate it to the new format
-      if (!flow.versions) {
-        flow.versions = [
-          {
-            nodes: flow.nodes || [],
-            edges: flow.edges || [],
-            name: "Version 1"
-          },
-          {
-            nodes: [],
-            edges: [],
-            name: "Version 2"
-          },
-          {
-            nodes: [],
-            edges: [],
-            name: "Version 3"
-          }
-        ];
-        flow.currentVersionIndex = 0;
-        // Remove old nodes and edges properties
-        delete flow.nodes;
-        delete flow.edges;
-      }
+  const loadFlow = async (flowId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const flow = await flowService.getFlowById(flowId);
       
       setCurrentFlow(flow);
       setShowFlowModal(false);
+      return flow;
+    } catch (err) {
+      setError(err.message || 'Failed to load flow');
+      return null;
+    } finally {
+      setLoading(false);
     }
-    return flow;
   };
   
   // Save the current flow
-  const saveCurrentFlow = (nodes, edges) => {
+  const saveCurrentFlow = async (nodes, edges) => {
     if (!currentFlow) return;
     
-    // Create a copy of the current flow
-    const updatedFlow = { ...currentFlow };
+    const versionIndex = currentFlow.currentVersionIndex || 0;
+    const version = currentFlow.versions?.[versionIndex] || {};
+    const nodesToSave = Array.isArray(nodes) ? nodes : version.nodes || [];
+    const edgesToSave = Array.isArray(edges) ? edges : version.edges || [];
     
-    // Ensure the flow has versions
-    if (!updatedFlow.versions) {
-      updatedFlow.versions = [
-        {
-          nodes: updatedFlow.nodes || [],
-          edges: updatedFlow.edges || [],
-          name: "Version 1"
-        },
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 2"
-        },
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 3"
-        }
-      ];
-      updatedFlow.currentVersionIndex = 0;
-      // Remove old nodes and edges properties
-      delete updatedFlow.nodes;
-      delete updatedFlow.edges;
+    setLoading(true);
+    setError(null);
+    try {
+      // Save to backend
+      const updatedFlow = await flowService.saveFlowVariant(currentFlow.id, { nodes: nodesToSave, edges: edgesToSave });
+      
+      // Update local state
+      setCurrentFlow(updatedFlow);
+      setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
+      
+      return updatedFlow;
+    } catch (err) {
+      setError(err.message || 'Failed to save flow');
+      
+      // Even if the API call fails, update the local state to prevent data loss
+      const localUpdatedFlow = { ...currentFlow };
+      localUpdatedFlow.versions[versionIndex].nodes = nodesToSave;
+      localUpdatedFlow.versions[versionIndex].edges = edgesToSave;
+      localUpdatedFlow.updatedAt = new Date().toISOString();
+      
+      // Generate a thumbnail from the current version
+      localUpdatedFlow.thumbnail = nodesToSave.length > 0 || edgesToSave.length > 0 
+        ? generateThumbnail(nodesToSave, edgesToSave) 
+        : null;
+      
+      setCurrentFlow(localUpdatedFlow);
+      
+      return localUpdatedFlow;
+    } finally {
+      setLoading(false);
     }
-    
-    // Update the current version with the new nodes and edges
-    updatedFlow.versions[updatedFlow.currentVersionIndex].nodes = nodes;
-    updatedFlow.versions[updatedFlow.currentVersionIndex].edges = edges;
-    updatedFlow.updatedAt = new Date().toISOString();
-    
-    // Generate a thumbnail from the current version
-    updatedFlow.thumbnail = nodes.length > 0 ? generateThumbnail(nodes, edges) : null;
-    
-    setCurrentFlow(updatedFlow);
-    setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
-    
-    return updatedFlow;
   };
   
   // Update flow properties
-  const updateFlowProperties = (flowId, properties) => {
-    const updatedFlows = flows.map(flow => {
-      if (flow.id === flowId) {
-        const updatedFlow = {
-          ...flow,
-          ...properties,
-          updatedAt: new Date().toISOString(),
-        };
-        
-        // If this is the current flow, update it as well
-        if (currentFlow && currentFlow.id === flowId) {
-          setCurrentFlow(updatedFlow);
-        }
-        
-        return updatedFlow;
+  const updateFlowProperties = async (flowId, properties) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // For now, we'll just update the name since that's what the backend supports
+      if (properties.name) {
+        await flowService.createFlow({ id: flowId, name: properties.name });
       }
-      return flow;
-    });
-    
-    setFlows(updatedFlows);
+      
+      // Update local state
+      const updatedFlows = flows.map(flow => {
+        if (flow.id === flowId) {
+          const updatedFlow = {
+            ...flow,
+            ...properties,
+            updatedAt: new Date().toISOString(),
+          };
+          
+          // If this is the current flow, update it as well
+          if (currentFlow && currentFlow.id === flowId) {
+            setCurrentFlow(updatedFlow);
+          }
+          
+          return updatedFlow;
+        }
+        return flow;
+      });
+      
+      setFlows(updatedFlows);
+    } catch (err) {
+      setError(err.message || 'Failed to update flow properties');
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Delete a flow
-  const deleteFlow = (flowId) => {
-    const updatedFlows = flows.filter(f => f.id !== flowId);
-    setFlows(updatedFlows);
-    
-    // If the deleted flow is the current flow, clear it
-    if (currentFlow && currentFlow.id === flowId) {
-      setCurrentFlow(null);
-      localStorage.removeItem('mailflow_current_flow');
-      setShowFlowModal(true);
+  const deleteFlow = async (flowId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await flowService.deleteFlow(flowId);
+      
+      // Update local state
+      const updatedFlows = flows.filter(f => f.id !== flowId);
+      setFlows(updatedFlows);
+      
+      // If the deleted flow is the current flow, clear it
+      if (currentFlow && currentFlow.id === flowId) {
+        setCurrentFlow(null);
+        localStorage.removeItem('mailflow_current_flow');
+        setShowFlowModal(true);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete flow');
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -219,43 +229,26 @@ export const FlowManagerProvider = ({ children }) => {
   };
   
   // Switch to a different version of the current flow
-  const switchFlowVersion = (versionIndex) => {
+  const switchFlowVersion = async (versionIndex) => {
     if (!currentFlow || versionIndex < 0 || versionIndex > 2) return;
     
-    // Create a copy of the current flow
-    const updatedFlow = { ...currentFlow };
-    
-    // Ensure the flow has versions
-    if (!updatedFlow.versions) {
-      updatedFlow.versions = [
-        {
-          nodes: updatedFlow.nodes || [],
-          edges: updatedFlow.edges || [],
-          name: "Version 1"
-        },
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 2"
-        },
-        {
-          nodes: [],
-          edges: [],
-          name: "Version 3"
-        }
-      ];
-      delete updatedFlow.nodes;
-      delete updatedFlow.edges;
+    setLoading(true);
+    setError(null);
+    try {
+      // Call the API to switch variants
+      const updatedFlow = await flowService.switchFlowVariant(currentFlow.id, versionIndex);
+      
+      // Update local state
+      setCurrentFlow(updatedFlow);
+      setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
+      
+      return updatedFlow;
+    } catch (err) {
+      setError(err.message || 'Failed to switch flow version');
+      return null;
+    } finally {
+      setLoading(false);
     }
-    
-    // Update the current version index
-    updatedFlow.currentVersionIndex = versionIndex;
-    updatedFlow.updatedAt = new Date().toISOString();
-    
-    setCurrentFlow(updatedFlow);
-    setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
-    
-    return updatedFlow;
   };
 
   return (
@@ -264,6 +257,8 @@ export const FlowManagerProvider = ({ children }) => {
         flows,
         currentFlow,
         showFlowModal,
+        loading,
+        error,
         createFlow,
         loadFlow,
         saveCurrentFlow,
@@ -272,6 +267,7 @@ export const FlowManagerProvider = ({ children }) => {
         toggleFlowModal,
         setShowFlowModal,
         switchFlowVersion,
+        refreshFlows: fetchFlows,
       }}
     >
       {children}

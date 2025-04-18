@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { Tooltip } from '@mui/material';
 import '../styles/FlowVersionSelector.css';
 
 const FlowVersionSelector = () => {
-  const { currentFlow, switchFlowVersion } = useFlowManager();
+  const { currentFlow, switchFlowVersion, loading, error } = useFlowManager();
 
   // If there's no current flow, don't render anything
   if (!currentFlow) {
@@ -15,9 +16,9 @@ const FlowVersionSelector = () => {
   const currentVersionIndex = currentFlow.currentVersionIndex || 0;
 
   // Handle version selection
-  const handleVersionSelect = (versionIndex) => {
-    if (versionIndex !== currentVersionIndex) {
-      switchFlowVersion(versionIndex);
+  const handleVersionSelect = async (versionIndex) => {
+    if (versionIndex !== currentVersionIndex && !loading) {
+      await switchFlowVersion(versionIndex);
     }
   };
 
@@ -28,17 +29,42 @@ const FlowVersionSelector = () => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {[0, 1, 2].map((versionIndex) => (
-        <motion.div
-          key={versionIndex}
-          className={`version-circle ${versionIndex === currentVersionIndex ? 'active' : ''}`}
-          onClick={() => handleVersionSelect(versionIndex)}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          {versionIndex + 1}
-        </motion.div>
-      ))}
+      {[0, 1, 2].map((versionIndex) => {
+        // Get the version data
+        const version = currentFlow.versions?.[versionIndex];
+        const hasContent = version && (version.nodes?.length > 0 || version.edges?.length > 0);
+        const lastSaved = version?.savedAt ? new Date(version.savedAt).toLocaleString() : 'Never saved';
+        
+        return (
+          <Tooltip 
+            key={versionIndex}
+            title={`Version ${versionIndex + 1}${hasContent ? ' (Has content)' : ' (Empty)'}\nLast saved: ${lastSaved}`}
+            arrow
+            placement="top"
+          >
+            <motion.div
+              className={`version-circle ${versionIndex === currentVersionIndex ? 'active' : ''} ${loading && versionIndex !== currentVersionIndex ? 'disabled' : ''}`}
+              onClick={() => handleVersionSelect(versionIndex)}
+              whileHover={{ scale: loading ? 1.0 : 1.1 }}
+              whileTap={{ scale: loading ? 1.0 : 0.95 }}
+            >
+              {loading && versionIndex === currentVersionIndex ? (
+                <span className="loading-indicator">...</span>
+              ) : (
+                versionIndex + 1
+              )}
+            </motion.div>
+          </Tooltip>
+        );
+      })}
+      
+      {error && (
+        <div className="version-error">
+          <Tooltip title={error} arrow placement="bottom">
+            <span>!</span>
+          </Tooltip>
+        </div>
+      )}
     </motion.div>
   );
 };
