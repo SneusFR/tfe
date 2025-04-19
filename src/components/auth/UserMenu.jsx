@@ -14,11 +14,14 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useNavigate } from 'react-router-dom';
 
 const UserMenu = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
   
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -30,6 +33,11 @@ const UserMenu = () => {
   
   const handleLogout = () => {
     logout();
+    handleClose();
+  };
+  
+  const handleSettings = () => {
+    navigate('/settings');
     handleClose();
   };
   
@@ -128,6 +136,11 @@ const UserMenu = () => {
         <MenuItem onClick={handleClose} sx={{ gap: 1 }}>
           <PersonIcon fontSize="small" />
           My Profile
+        </MenuItem>
+        
+        <MenuItem onClick={handleSettings} sx={{ gap: 1 }}>
+          <SettingsIcon fontSize="small" />
+          Settings
         </MenuItem>
         
         <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>

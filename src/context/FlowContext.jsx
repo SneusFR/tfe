@@ -1,25 +1,28 @@
-import { createContext, useRef, useEffect } from 'react';
-import FlowExecutionEngine from '../services/FlowExecutionEngine';
+import { createContext, useRef, useEffect, useState } from 'react';
+import { runFlow } from '../services/flowClient';
 
 // Create a context for the flow
 export const FlowContext = createContext(null);
 
 // Create a provider component
 export const FlowProvider = ({ children, nodes, edges }) => {
+  // State to store the selected backend config ID
+  const [backendConfigId, setBackendConfigId] = useState(null);
+  
   // Create a ref to hold the executeFlow function
   const executeFlowRef = useRef(async (task) => {
-    return await FlowExecutionEngine.executeFlow(task);
+    return await runFlow(nodes, edges, task, backendConfigId);
   });
   
-  // Update the diagram in the execution engine when nodes or edges change
+  // Update the executeFlowRef when nodes, edges, or backendConfigId change
   useEffect(() => {
-    if (nodes && edges) {
-      FlowExecutionEngine.setDiagram(nodes, edges);
-    }
-  }, [nodes, edges]);
+    executeFlowRef.current = async (task) => {
+      return await runFlow(nodes, edges, task, backendConfigId);
+    };
+  }, [nodes, edges, backendConfigId]);
 
   return (
-    <FlowContext.Provider value={{ executeFlowRef }}>
+    <FlowContext.Provider value={{ executeFlowRef, backendConfigId, setBackendConfigId }}>
       {children}
     </FlowContext.Provider>
   );

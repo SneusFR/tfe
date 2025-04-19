@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
 // ──────────────────────────────────────────────────────────────
-// UI & pages
+// UI & pages
 // ──────────────────────────────────────────────────────────────
 import HomePage from './components/HomePage';
 import ApiImporter from './components/ApiImporter';
@@ -15,6 +15,7 @@ import ConditionManager from './components/ConditionManager';
 import TaskManager from './components/TaskManager';
 import FlowModal from './components/FlowModal';
 import FlowVersionSelector from './components/FlowVersionSelector';
+import BackendSettings from './components/settings/BackendSettings';
 
 // Auth & header
 import { useAuth } from './context/AuthContext';
@@ -211,6 +212,7 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/editor" element={<EditorApp />} />
+      <Route path="/settings" element={<BackendSettings />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
