@@ -212,7 +212,9 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/editor" element={<EditorApp />} />
-      <Route path="/settings" element={<BackendSettings />} />
+      <Route path="/settings/backend" element={<BackendSettings />} />
+      <Route path="/settings/backend/:id" element={<BackendSettings />} />
+      <Route path="/settings/backend/new" element={<BackendSettings />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

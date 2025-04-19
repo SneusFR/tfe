@@ -9,6 +9,7 @@ import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
 import FlowMenuButton from './FlowMenuButton';
 import { useFlowManager } from '../context/FlowManagerContext';
+import BackendConfigSelector from './settings/BackendConfigSelector';
 import ReactFlow, {
   Background,
   Controls,
@@ -628,6 +629,10 @@ const DiagramEditor = ({
                 </button>
               )}
             </div>
+          </Panel>
+          
+          <Panel position="top-left" style={{ marginTop: '10px' }}>
+            <BackendConfigSelector />
           </Panel>
         </ReactFlow>
         

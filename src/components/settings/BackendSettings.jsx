@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Box, 
   Card, 
@@ -25,7 +25,7 @@ import {
   Tooltip
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
@@ -36,6 +36,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import SendIcon from "@mui/icons-material/Send";
 import UserMenu from "../auth/UserMenu";
+import BackendConfigSidebar from "./BackendConfigSidebar";
 
 /** ------------------------------------------------------------------------
  *  Helper for a key / value editable list (headers, custom params, …)
@@ -120,11 +121,13 @@ function KeyValueTable({ items, onChange, headerKey = "Key", headerValue = "Valu
  *  Main component
  *  ---------------------------------------------------------------------*/
 export default function BackendSettings() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, api } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
   const [tabValue, setTabValue] = useState("general");
   const [showPassword, setShowPassword] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const refetchConfigs = useRef(null);
   
   const [form, setForm] = useState({
     name: "",
@@ -138,6 +141,7 @@ export default function BackendSettings() {
     compression: false,
     proxy: { host: "", port: "" },
     tlsSkipVerify: false,
+    isActive: false,
     test: {
       method: "get",
       path: "",
@@ -145,6 +149,31 @@ export default function BackendSettings() {
       response: null,
     },
   });
+
+  // Fetch backend configuration if ID is provided
+  useEffect(() => {
+    if (id && id !== 'new') {
+      const fetchConfig = async () => {
+        try {
+          const response = await api.get(`/api/backend-configs/${id}`);
+          // Merge with existing form state instead of overwriting
+          setForm(prev => ({ 
+            ...prev, 
+            ...response.data 
+          }));
+        } catch (error) {
+          console.error('Error fetching backend config:', error);
+          setSnackbar({
+            open: true,
+            message: `Error: ${error.message || 'Failed to load configuration'}`,
+            severity: "error"
+          });
+        }
+      };
+      
+      fetchConfig();
+    }
+  }, [id, api]);
 
   const authOptions = [
     { value: "none",        label: "None" },
@@ -185,24 +214,24 @@ export default function BackendSettings() {
       const endpoint = isUpdate ? `/api/backend-configs/${form.id}` : '/api/backend-configs';
       const method = isUpdate ? 'put' : 'post';
       
-      const response = await fetch(endpoint, {
+      const response = await api.request({
+        url: endpoint,
         method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
-        credentials: 'include'
+        data: form
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to ${isUpdate ? 'update' : 'create'} backend configuration`);
-      }
-      
-      const result = await response.json();
+      const result = response.data;
       
       // Update the form with the returned ID if this was a create operation
       if (!isUpdate && result.id) {
         setForm(prev => ({ ...prev, id: result.id }));
+        // Navigate to the new config's URL
+        navigate(`/settings/backend/${result.id}`, { replace: true });
+      }
+      
+      // Refresh the sidebar
+      if (refetchConfigs.current) {
+        refetchConfigs.current();
       }
       
       setSnackbar({
@@ -214,7 +243,37 @@ export default function BackendSettings() {
       console.error('Error saving backend configuration:', error);
       setSnackbar({
         open: true,
-        message: `Error: ${error.message}`,
+        message: `Error: ${error.response?.data?.message || error.message}`,
+        severity: "error"
+      });
+    }
+  };
+
+  // Handle setting a configuration as active
+  const handleSetActive = async () => {
+    try {
+      if (!form.id) return;
+      
+      await api.patch(`/api/backend-configs/${form.id}/active`);
+      
+      // Update the form
+      setForm(prev => ({ ...prev, isActive: true }));
+      
+      // Refresh the sidebar
+      if (refetchConfigs.current) {
+        refetchConfigs.current();
+      }
+      
+      setSnackbar({
+        open: true,
+        message: "Backend configuration set as active",
+        severity: "success"
+      });
+    } catch (error) {
+      console.error('Error setting active configuration:', error);
+      setSnackbar({
+        open: true,
+        message: `Error: ${error.response?.data?.message || error.message}`,
         severity: "error"
       });
     }
@@ -277,22 +336,33 @@ export default function BackendSettings() {
           {isAuthenticated && <UserMenu />}
         </Box>
         
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              borderRadius: 2, 
-              overflow: "hidden",
-              transition: "box-shadow 0.3s ease",
-              "&:hover": {
-                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)"
-              }
-            }}
-          >
+        <Grid container spacing={3}>
+          {/* Sidebar */}
+          <Grid item xs={12} md={3}>
+            <BackendConfigSidebar 
+              selectedId={form.id} 
+              refetchConfigs={refetchConfigs}
+            />
+          </Grid>
+          
+          {/* Main content */}
+          <Grid item xs={12} md={9}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Paper 
+                elevation={3} 
+                sx={{ 
+                  borderRadius: 2, 
+                  overflow: "hidden",
+                  transition: "box-shadow 0.3s ease",
+                  "&:hover": {
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)"
+                  }
+                }}
+              >
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
               <Tabs 
                 value={tabValue} 
@@ -797,7 +867,7 @@ export default function BackendSettings() {
                           <FormControl fullWidth>
                             <InputLabel>Method</InputLabel>
                             <Select
-                              value={form.test.method}
+                              value={form.test?.method || 'get'}
                               onChange={e => setForm(prev => ({ 
                                 ...prev, 
                                 test: { ...prev.test, method: e.target.value } 
@@ -815,7 +885,7 @@ export default function BackendSettings() {
                             label="Path"
                             placeholder="/users/me"
                             fullWidth
-                            value={form.test.path}
+                              value={form.test?.path || ''}
                             onChange={e => setForm(prev => ({ 
                               ...prev, 
                               test: { ...prev.test, path: e.target.value } 
@@ -852,7 +922,7 @@ export default function BackendSettings() {
                                 fullWidth
                                 multiline
                                 rows={6}
-                                value={form.test.body}
+                                value={form.test?.body || ''}
                                 onChange={e => setForm(prev => ({ 
                                   ...prev, 
                                   test: { ...prev.test, body: e.target.value } 
@@ -908,34 +978,52 @@ export default function BackendSettings() {
                 </motion.div>
               </AnimatePresence>
               
-              <Divider sx={{ my: 4 }} />
-              
-              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Button 
-                    variant="outlined" 
-                    color="secondary" 
-                    onClick={handleCancel}
-                    startIcon={<CancelIcon />}
-                  >
-                    Cancel
-                  </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={handleSubmit}
-                    startIcon={<SaveIcon />}
-                  >
-                    Save settings
-                  </Button>
-                </motion.div>
-              </Box>
-            </CardContent>
-          </Paper>
-        </motion.div>
-      </Box>
+                <Divider sx={{ my: 4 }} />
+                
+                <Box sx={{ display: "flex", justifyContent: "space-between", px: 4, pb: 4 }}>
+                  <Box>
+                    {form.id && (
+                      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        <Button
+                          variant="outlined"
+                          color={form.isActive ? 'success' : 'primary'}
+                          disabled={form.isActive}
+                          onClick={handleSetActive}
+                          sx={{ mr: 2 }}
+                        >
+                          {form.isActive ? 'Active' : 'Set active'}
+                        </Button>
+                      </motion.div>
+                    )}
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                      <Button 
+                        variant="outlined" 
+                        color="secondary" 
+                        onClick={handleCancel}
+                        startIcon={<CancelIcon />}
+                      >
+                        Cancel
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                      <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={handleSubmit}
+                        startIcon={<SaveIcon />}
+                      >
+                        Save settings
+                      </Button>
+                    </motion.div>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Paper>
+          </motion.div>
+        </Grid>
+      </Grid>
       
       {/* Feedback snackbar */}
       <Snackbar 
@@ -953,6 +1041,7 @@ export default function BackendSettings() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
+  </Container>
   );
 }
