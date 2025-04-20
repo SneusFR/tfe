@@ -82,6 +82,9 @@ const IntNode = ({ data, id }) => {
       }}
       onDoubleClick={handleDoubleClick}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Node header */}
       <div className="int-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
         <div 

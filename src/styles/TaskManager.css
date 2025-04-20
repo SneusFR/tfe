@@ -80,6 +80,39 @@
   border-radius: 12px 12px 0 0;
 }
 
+.task-actions-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 20px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eee;
+}
+
+.refresh-button {
+  background-color: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .task-header h3 {
   margin: 0;
   color: #333;
@@ -242,6 +275,31 @@
 
 .delete-button:active {
   transform: translateY(0);
+}
+
+.loading-message {
+  padding: 30px 20px;
+  text-align: center;
+  color: #888;
+  background-color: #f9f9f9;
+  margin: 10px;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-message {
+  padding: 15px 20px;
+  text-align: center;
+  color: #e74c3c;
+  background-color: #fdecea;
+  margin: 10px;
+  border-radius: 8px;
+  border: 1px solid #fadbd8;
+  font-size: 14px;
 }
 
 .no-tasks-message {

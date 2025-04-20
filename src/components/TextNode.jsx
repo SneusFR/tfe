@@ -74,6 +74,9 @@ const TextNode = ({ data, id }) => {
       }}
       onDoubleClick={handleDoubleClick}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Connection indicator */}
       {connectionIndicator}
       {/* Node header */}

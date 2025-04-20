@@ -110,6 +110,9 @@ const EmailAttachmentNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Execution flow handles (triangles) */}
       <Handle
         type="target"

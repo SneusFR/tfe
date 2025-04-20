@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Typography,
   Tooltip,
-  Badge
+  Badge,
+  CircularProgress
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -11,7 +12,9 @@ import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 import CategoryIcon from '@mui/icons-material/Category';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { FlowContext } from '../context/FlowContext';
+import { useAuth } from '../context/AuthContext';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
 
@@ -19,36 +22,82 @@ const TaskManager = () => {
   const [tasks, setTasks] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [runningTask, setRunningTask] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Get auth context to check if user is authenticated
+  const { isAuthenticated } = useAuth();
 
   // Load tasks from store
   useEffect(() => {
-    const loadTasks = () => {
-      const allTasks = taskStore.getAllTasks();
-      setTasks(allTasks);
+    const loadTasks = async () => {
+      if (!isAuthenticated) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const allTasks = await taskStore.getAllTasks();
+        setTasks(allTasks);
+      } catch (err) {
+        console.error('Error loading tasks:', err);
+        setError('Failed to load tasks');
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadTasks();
     
     // Set up an interval to refresh tasks regularly
-    const intervalId = setInterval(loadTasks, 3000);
+    const intervalId = setInterval(loadTasks, 30000); // Increased to 30 seconds to reduce API calls
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [isAuthenticated]);
+
+  // Refresh tasks manually
+  const handleRefresh = async (e) => {
+    if (e) e.stopPropagation();
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Force refresh from API
+      const allTasks = await taskStore.getAllTasks({ forceRefresh: true });
+      setTasks(allTasks);
+    } catch (err) {
+      console.error('Error refreshing tasks:', err);
+      setError('Failed to refresh tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Delete a task
-  const handleDelete = (id, e) => {
+  const handleDelete = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
     if (window.confirm('Are you sure you want to delete this task?')) {
-      taskStore.removeTask(id);
-      setTasks(taskStore.getAllTasks());
+      try {
+        await taskStore.removeTask(id);
+        setTasks(await taskStore.getAllTasks());
+      } catch (err) {
+        console.error('Error deleting task:', err);
+        alert('Failed to delete task');
+      }
     }
   };
 
   // Mark task as completed
-  const handleComplete = (id, e) => {
+  const handleComplete = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
-    taskStore.completeTask(id);
-    setTasks(taskStore.getAllTasks());
+    try {
+      await taskStore.completeTask(id);
+      setTasks(await taskStore.getAllTasks());
+    } catch (err) {
+      console.error('Error completing task:', err);
+      alert('Failed to complete task');
+    }
   };
   
   // Get the executeFlow function from context
@@ -58,17 +107,19 @@ const TaskManager = () => {
   const handleRun = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
     
-    // Get the task data
-    const task = taskStore.getTaskById(id);
-    if (!task) {
-      console.error(`Task not found: ${id}`);
-      return;
-    }
-    
     setRunningTask(id);
-    console.log(`🚀 [TASK MANAGER] Running task: ${id} - ${task.type}`);
     
     try {
+      // Get the task data
+      const task = await taskStore.getTaskById(id);
+      if (!task) {
+        console.error(`Task not found: ${id}`);
+        alert('Task not found');
+        return;
+      }
+      
+      console.log(`🚀 [TASK MANAGER] Running task: ${id} - ${task.type}`);
+      
       // Execute the flow
       const result = await executeFlowRef.current(task);
       
@@ -81,7 +132,7 @@ const TaskManager = () => {
       }
     } catch (error) {
       console.error(`❌ [TASK MANAGER] Error executing task:`, error);
-      alert(`Error executing task: ${error.message}`);
+      alert(`Error executing task: ${error.message || 'Unknown error'}`);
     } finally {
       setRunningTask(null);
     }
@@ -146,7 +197,32 @@ const TaskManager = () => {
                 </motion.button>
               </div>
               
-              {tasks.length === 0 ? (
+              <div className="task-actions-header">
+                <Tooltip title="Refresh tasks" arrow placement="top">
+                  <motion.button 
+                    className="refresh-button"
+                    onClick={handleRefresh}
+                    disabled={loading}
+                    whileHover={{ rotate: 180 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {loading ? <CircularProgress size={16} /> : <RefreshIcon fontSize="small" />}
+                  </motion.button>
+                </Tooltip>
+              </div>
+              
+              {error && (
+                <div className="error-message">
+                  {error}
+                </div>
+              )}
+              
+              {loading && tasks.length === 0 ? (
+                <div className="loading-message">
+                  <CircularProgress size={24} />
+                  <span>Loading tasks...</span>
+                </div>
+              ) : tasks.length === 0 ? (
                 <div className="no-tasks-message">No tasks available</div>
               ) : (
                 <ul className="task-list">

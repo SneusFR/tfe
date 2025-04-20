@@ -195,8 +195,8 @@ const EmailBrowser = () => {
       
       setAnalysisResult(result);
       
-      // Extraire les conditions reconnues et créer des tâches
-      extractConditionsAndCreateTasks(result, email);
+      // Extraire les conditions reconnues et créer des tâches (maintenant asynchrone)
+      await extractConditionsAndCreateTasks(result, email);
       
       clearInterval(progressInterval);
       setAnalysisProgress(100);
@@ -217,15 +217,16 @@ const EmailBrowser = () => {
   };
   
   // Extraire les conditions de la réponse et créer des tâches
-  const extractConditionsAndCreateTasks = (analysisResult, email) => {
+  const extractConditionsAndCreateTasks = async (analysisResult, email) => {
     console.log("🔍 [CONDITION MATCHING] Checking for matching conditions in analysis result");
     
     // Récupérer toutes les conditions existantes
     const conditions = conditionStore.getAllConditions();
     
-    conditions.forEach(condition => {
-      // Vérifier si la réponse contient le returnText de la condition
-      if (analysisResult.includes(condition.returnText)) {
+    // Utiliser Promise.all pour gérer plusieurs tâches en parallèle
+    const taskPromises = conditions
+      .filter(condition => analysisResult.includes(condition.returnText))
+      .map(async (condition) => {
         console.log(`✅ [CONDITION MATCHED] Found matching condition: "${condition.returnText}"`);
         
         // Extraire l'email de l'expéditeur à partir de from_attendee.identifier
@@ -251,11 +252,19 @@ const EmailBrowser = () => {
         
         console.log(`📧 [EMAIL DATA] Using email ID: ${email.id} for task creation`);
         
-        // Ajouter la tâche
-        const newTask = taskStore.addTask(taskData);
-        console.log("📋 [TASK CREATION] Created new task:", JSON.stringify(newTask, null, 2));
-      }
-    });
+        try {
+          // Ajouter la tâche (maintenant asynchrone)
+          const newTask = await taskStore.addTask(taskData);
+          console.log("📋 [TASK CREATION] Created new task:", JSON.stringify(newTask, null, 2));
+          return newTask;
+        } catch (error) {
+          console.error("❌ [TASK CREATION] Failed to create task:", error);
+          return null;
+        }
+      });
+    
+    // Attendre que toutes les tâches soient créées
+    await Promise.all(taskPromises);
   };
   
   // Toggle l'expansion du corps de l'email

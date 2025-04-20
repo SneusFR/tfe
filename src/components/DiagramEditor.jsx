@@ -5,6 +5,7 @@ import React, {
   useState,
   useMemo
 } from 'react';
+import { FaTimes } from 'react-icons/fa';
 import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
 import FlowMenuButton from './FlowMenuButton';
@@ -95,6 +96,8 @@ const DiagramEditor = ({
   // Keep a state version for components that need to re-render when connections change
   const [connectedIds, setConnectedIds] = useState(new Set());
   const [animatingEdgeId, setAnimatingEdgeId] = useState(null);
+  // Track the selected node to show delete button
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
   
   // Store node callbacks in a ref to prevent recreation on each render
   const nodeCallbacksRef = useRef({});
@@ -187,6 +190,38 @@ const DiagramEditor = ({
       }
     },
     [edges, setEdges, onEdgesChange, onEdgeDelete]
+  );
+  
+  // Handle node click to show delete button
+  const handleNodeClick = useCallback(
+    (event, node) => {
+      // Toggle selection if clicking the same node, otherwise select the new node
+      setSelectedNodeId(prevId => prevId === node.id ? null : node.id);
+    },
+    []
+  );
+  
+  // Handle node deletion
+  const handleNodeDelete = useCallback(
+    (nodeId) => {
+      if (window.confirm('Do you want to delete this node?')) {
+        // Remove all edges connected to this node
+        const updatedEdges = edges.filter(
+          (e) => e.source !== nodeId && e.target !== nodeId
+        );
+        setEdges(updatedEdges);
+        if (onEdgesChange) onEdgesChange(updatedEdges);
+        
+        // Remove the node
+        const updatedNodes = nodes.filter((n) => n.id !== nodeId);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+        
+        // Clear selection
+        setSelectedNodeId(null);
+      }
+    },
+    [edges, nodes, setEdges, setNodes, onEdgesChange, onNodesChange]
   );
 
   // Calculate starting points only when nodes with isStartingPoint change
@@ -545,12 +580,48 @@ const DiagramEditor = ({
   // Memoize nodes with connection status to avoid unnecessary re-renders
   const memoNodes = useMemo(() => nodes.map(n => {
     const connected = connectedIdsRef.current.has(n.id);
+    const isSelected = n.id === selectedNodeId;
+    
+    // Add delete button component if node is selected
+    const deleteButton = isSelected ? (
+      <div 
+        className="node-delete-button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleNodeDelete(n.id);
+        }}
+        style={{
+          position: 'absolute',
+          top: '-8px',
+          right: '-8px',
+          width: '20px',
+          height: '20px',
+          borderRadius: '50%',
+          backgroundColor: '#ff4d4f',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          fontSize: '12px',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+          zIndex: 100
+        }}
+      >
+        <FaTimes />
+      </div>
+    ) : null;
+    
     return {
       ...n,
-      className: connected ? 'connected-node' : '',
-      data: { ...n.data, isConnectedToStartingNode: connected }
+      className: `${connected ? 'connected-node' : ''} ${isSelected ? 'selected-node' : ''}`,
+      data: { 
+        ...n.data, 
+        isConnectedToStartingNode: connected,
+        deleteButton: deleteButton
+      }
     };
-  }), [nodes, connectedIds]); // Only depends on nodes and connectedIds state (not the ref)
+  }), [nodes, connectedIds, selectedNodeId, handleNodeDelete]); // Only depends on nodes, connectedIds state, and selected node
 
   // Memoize edges with connection styling
   const computedEdges = useMemo(
@@ -587,6 +658,7 @@ const DiagramEditor = ({
           onEdgesChange={handleEdgesChange}
           onConnect={handleConnect}
           onEdgeClick={handleEdgeClick}
+          onNodeClick={handleNodeClick}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           onInit={onInit}

@@ -236,7 +236,6 @@ const HomePage = () => {
       <header className="home-header">
         <div className="logo">
           <img src="/mailflow-logo.svg" alt="Mailflow Logo" className="logo-image" />
-          <h1>Mailflow</h1>
         </div>
         <nav className="main-nav">
           <ul>

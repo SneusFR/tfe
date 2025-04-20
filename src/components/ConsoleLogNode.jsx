@@ -25,6 +25,9 @@ const ConsoleLogNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Node header */}
       <div className="console-log-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
         <div 

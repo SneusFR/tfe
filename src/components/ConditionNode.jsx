@@ -99,6 +99,9 @@ const ConditionNode = ({ data, id }) => {
         transition: 'box-shadow 0.3s ease, transform 0.2s ease'
       }}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Execution flow handles (triangles) - better integrated with the node */}
       <Handle
         type="target"

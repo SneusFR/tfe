@@ -120,6 +120,9 @@ const ApiNode = ({ data, id }) => {
         transition: 'box-shadow 0.3s ease, transform 0.2s ease'
       }}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Connection indicator */}
       {connectionIndicator}
       {/* Execution flow handles (triangles) - better integrated with the node */}

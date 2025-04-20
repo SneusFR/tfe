@@ -109,6 +109,9 @@ const SendingMailNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
+      {/* Delete button */}
+      {data.deleteButton}
+      
       {/* Execution flow handles (triangles) - better integrated with the node */}
       <Handle
         type="target"
