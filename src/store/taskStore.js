@@ -1,41 +1,60 @@
+// taskStore.js
 import axios from 'axios';
 
-// Create an axios instance with withCredentials
+// Axios (envoie les cookies pour la session)
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  withCredentials: true // This is essential for sending cookies with requests
+  withCredentials: true
 });
 
-// Cache for tasks
+/* ------------------------------------------------------------------------- */
+/*  Cache simple                                                            */
+/* ------------------------------------------------------------------------- */
 let tasksCache = {
   data: [],
   lastFetched: null,
   loading: false
 };
 
+/* ------------------------------------------------------------------------- */
+/*  Helpers                                                                  */
+/* ------------------------------------------------------------------------- */
+/** Nettoie un objet en supprimant les clés dont la valeur est undefined */
+const stripUndefined = (obj) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+
+/* ------------------------------------------------------------------------- */
+/*  Store                                                                    */
+/* ------------------------------------------------------------------------- */
 const taskStore = {
-  // Add a new task
+  /* --------------------------------------------------------------------- */
+  /*  Création                                                             */
+  /* --------------------------------------------------------------------- */
   async addTask(taskData) {
     try {
-      console.log("📧 [TASK STORE] Creating task with email ID:", taskData.sourceId);
-      if (taskData.attachments && taskData.attachments.length > 0) {
-        console.log("📎 [TASK STORE] Task includes attachments:", 
-          taskData.attachments.map(a => ({ id: a.id, name: a.name })));
-      }
-      
-      const response = await api.post('/api/tasks', {
-        type: taskData.type || 'GENERAL',
-        description: taskData.description,
-        source: taskData.source || 'email',
+      console.log('📧 [TASK STORE] Creating task:', {
         sourceId: taskData.sourceId,
-        attachments: taskData.attachments || []
+        sender:   taskData.senderEmail,
+        recipient:taskData.recipientEmail
       });
-      
-      // Update cache with the new task
+
+      const payload = stripUndefined({
+        type:           taskData.type || 'GENERAL',
+        description:    taskData.description,
+        source:         taskData.source || 'email',
+        sourceId:       taskData.sourceId,
+        senderEmail:    taskData.senderEmail,
+        recipientEmail: taskData.recipientEmail,
+        status:         taskData.status,           // facultatif
+        attachments:    taskData.attachments || []
+      });
+
+      const response = await api.post('/api/tasks', payload);
+
+      // maj du cache
       if (tasksCache.data.length > 0) {
         tasksCache.data.unshift(response.data);
       }
-      
       return response.data;
     } catch (error) {
       console.error('Error creating task:', error);
@@ -43,14 +62,13 @@ const taskStore = {
     }
   },
 
-  // Remove a task by ID
+  /* --------------------------------------------------------------------- */
+  /*  Suppression                                                          */
+  /* --------------------------------------------------------------------- */
   async removeTask(id) {
     try {
       await api.delete(`/api/tasks/${id}`);
-      
-      // Update cache
-      tasksCache.data = tasksCache.data.filter(task => task.id !== id);
-      
+      tasksCache.data = tasksCache.data.filter((t) => t.id !== id);
       return true;
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -58,17 +76,14 @@ const taskStore = {
     }
   },
 
-  // Mark a task as completed
+  /* --------------------------------------------------------------------- */
+  /*  Marquer comme terminée                                               */
+  /* --------------------------------------------------------------------- */
   async completeTask(id) {
     try {
       const response = await api.put(`/api/tasks/${id}/complete`);
-      
-      // Update cache
-      const taskIndex = tasksCache.data.findIndex(task => task.id === id);
-      if (taskIndex !== -1) {
-        tasksCache.data[taskIndex] = response.data;
-      }
-      
+      const idx = tasksCache.data.findIndex((t) => t.id === id);
+      if (idx !== -1) tasksCache.data[idx] = response.data;
       return response.data;
     } catch (error) {
       console.error('Error completing task:', error);
@@ -76,17 +91,26 @@ const taskStore = {
     }
   },
 
-  // Update a task
-  async updateTask(id, updateData) {
+  /* --------------------------------------------------------------------- */
+  /*  Mise à jour                                                          */
+  /* --------------------------------------------------------------------- */
+  async updateTask(id, updateData = {}) {
     try {
-      const response = await api.put(`/api/tasks/${id}`, updateData);
-      
-      // Update cache
-      const taskIndex = tasksCache.data.findIndex(task => task.id === id);
-      if (taskIndex !== -1) {
-        tasksCache.data[taskIndex] = response.data;
-      }
-      
+      const payload = stripUndefined({
+        description:    updateData.description,
+        type:           updateData.type,
+        source:         updateData.source,
+        sourceId:       updateData.sourceId,
+        senderEmail:    updateData.senderEmail,
+        recipientEmail: updateData.recipientEmail,
+        status:         updateData.status,
+        attachments:    updateData.attachments
+      });
+
+      const response = await api.put(`/api/tasks/${id}`, payload);
+
+      const idx = tasksCache.data.findIndex((t) => t.id === id);
+      if (idx !== -1) tasksCache.data[idx] = response.data;
       return response.data;
     } catch (error) {
       console.error('Error updating task:', error);
@@ -94,120 +118,86 @@ const taskStore = {
     }
   },
 
-  // Get all tasks with optional filtering
-  async getAllTasks(options = {}) {
-    // If we have cached data and it's recent (less than 30 seconds old), return it
-    const now = new Date();
+  /* --------------------------------------------------------------------- */
+  /*  Récupération (liste)                                                 */
+  /* --------------------------------------------------------------------- */
+  async getAllTasks(opts = {}) {
+    const now = Date.now();
+
     if (
-      tasksCache.data.length > 0 && 
-      tasksCache.lastFetched && 
-      (now - tasksCache.lastFetched) < 30000 &&
-      !options.forceRefresh
+      tasksCache.data.length &&
+      tasksCache.lastFetched &&
+      now - tasksCache.lastFetched < 30_000 &&
+      !opts.forceRefresh
     ) {
       return [...tasksCache.data];
     }
-    
-    // If already loading, return current cache
-    if (tasksCache.loading) {
-      return [...tasksCache.data];
-    }
-    
+    if (tasksCache.loading) return [...tasksCache.data];
+
     try {
       tasksCache.loading = true;
-      
-      // Build query parameters
+
       const params = new URLSearchParams();
-      if (options.status) params.append('status', options.status);
-      if (options.type) params.append('type', options.type);
-      if (options.limit) params.append('limit', options.limit);
-      if (options.page) params.append('page', options.page);
-      
-      const response = await api.get(`/api/tasks?${params.toString()}`);
-      
-      // Update cache
-      tasksCache.data = response.data.data || [];
+      if (opts.status) params.append('status', opts.status);
+      if (opts.type)   params.append('type',   opts.type);
+      if (opts.limit)  params.append('limit',  opts.limit);
+      if (opts.page)   params.append('page',   opts.page);
+
+      const res = await api.get(`/api/tasks?${params}`);
+      tasksCache.data        = res.data.data || [];
       tasksCache.lastFetched = now;
-      
+
       return [...tasksCache.data];
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      throw err;
     } finally {
       tasksCache.loading = false;
     }
   },
 
-  // Get pending tasks
-  async getPendingTasks() {
-    const tasks = await this.getAllTasks({ status: 'pending' });
-    return tasks;
-  },
-  
-  // Get task by ID
+  /* --------------------------------------------------------------------- */
+  /*  Raccourcis                                                           */
+  /* --------------------------------------------------------------------- */
+  async getPendingTasks()       { return this.getAllTasks({ status: 'pending' }); },
+  async getTasksByType(type)    { return this.getAllTasks({ type }); },
+
   async getTaskById(id) {
-    // Check cache first
-    const cachedTask = tasksCache.data.find(task => task.id === id);
-    if (cachedTask) {
-      return cachedTask;
-    }
-    
-    try {
-      const response = await api.get(`/api/tasks/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching task ${id}:`, error);
-      throw error;
-    }
-  },
-  
-  // Get tasks by type
-  async getTasksByType(type) {
-    const tasks = await this.getAllTasks({ type });
-    return tasks;
-  },
-  
-  // Get task statistics
-  async getTaskStats() {
-    try {
-      const response = await api.get('/api/tasks/stats');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching task stats:', error);
-      throw error;
-    }
+    const cached = tasksCache.data.find((t) => t.id === id);
+    if (cached) return cached;
+
+    const { data } = await api.get(`/api/tasks/${id}`);
+    return data;
   },
 
-  // Clear the cache to force a refresh on next fetch
-  clearCache() {
-    tasksCache = {
-      data: [],
-      lastFetched: null,
-      loading: false
-    };
+  async getTaskStats() {
+    const { data } = await api.get('/api/tasks/stats');
+    return data;
   },
-  
-  // For backward compatibility - load from localStorage if API fails
+
+  /* --------------------------------------------------------------------- */
+  /*  Divers                                                               */
+  /* --------------------------------------------------------------------- */
+  clearCache() {
+    tasksCache = { data: [], lastFetched: null, loading: false };
+  },
+
   async loadFromLocalStorage() {
     try {
-      // Try to load from API first
       await this.getAllTasks({ forceRefresh: true });
-    } catch (error) {
-      console.error('Error loading tasks from API, falling back to localStorage:', error);
-      
+    } catch (apiErr) {
+      console.warn('API unreachable, loading tasks from localStorage');
       try {
-        const savedTasks = localStorage.getItem('emailTasks');
-        if (savedTasks) {
-          tasksCache.data = JSON.parse(savedTasks);
-          console.log('📂 [TASK STORE] Tasks loaded from localStorage fallback');
-        }
-      } catch (localError) {
-        console.error('Error loading tasks from localStorage:', localError);
+        const saved = localStorage.getItem('emailTasks');
+        if (saved) tasksCache.data = JSON.parse(saved);
+      } catch (localErr) {
+        console.error('Error loading tasks from localStorage:', localErr);
       }
     }
   }
 };
 
-// Initialize by loading tasks
+/* Chargement initial */
 taskStore.loadFromLocalStorage();
 
 export default taskStore;

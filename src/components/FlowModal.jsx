@@ -13,7 +13,8 @@ const FlowModal = () => {
     toggleFlowModal,
     loading,
     error,
-    refreshFlows
+    refreshFlows,
+    deleteFlow
   } = useFlowManager();
   
   const { isAuthenticated } = useAuth();
@@ -23,6 +24,7 @@ const FlowModal = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [collaborators, setCollaborators] = useState([]);
   const [collaboratorInput, setCollaboratorInput] = useState('');
+  const [flowToDelete, setFlowToDelete] = useState(null);
 
   // Reset state when modal is opened
   useEffect(() => {
@@ -32,6 +34,7 @@ const FlowModal = () => {
       setSearchTerm('');
       setCollaborators([]);
       setCollaboratorInput('');
+      setFlowToDelete(null);
       
       // We don't need to call refreshFlows here as it's already called when the user logs in
       // and when flows are added or deleted
@@ -56,6 +59,18 @@ const FlowModal = () => {
   // Handle removing a collaborator
   const handleRemoveCollaborator = (collaborator) => {
     setCollaborators(collaborators.filter(c => c !== collaborator));
+  };
+
+  // Handle flow deletion
+  const handleDeleteFlow = async () => {
+    if (flowToDelete) {
+      try {
+        await deleteFlow(flowToDelete.id);
+        setFlowToDelete(null);
+      } catch (err) {
+        console.error('Error deleting flow:', err);
+      }
+    }
   };
 
   // Filter flows based on search term
@@ -315,6 +330,17 @@ const FlowModal = () => {
                                   <span>{flow.collaborators.length} collaborator(s)</span>
                                 </div>
                               )}
+                              <motion.button
+                                className="delete-flow-button"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent card click
+                                  setFlowToDelete(flow);
+                                }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                Delete
+                              </motion.button>
                             </div>
                           </motion.div>
                         ))
@@ -353,6 +379,42 @@ const FlowModal = () => {
                 >
                   ×
                 </motion.button>
+              </div>
+            )}
+
+            {/* Delete Flow Confirmation Dialog */}
+            {flowToDelete && (
+              <div className="delete-confirmation-overlay">
+                <motion.div 
+                  className="delete-confirmation-dialog"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                >
+                  <h3>Delete Flow</h3>
+                  <p>Are you sure you want to delete the flow "{flowToDelete.name}"?</p>
+                  <p className="warning">This action cannot be undone.</p>
+                  
+                  <div className="confirmation-actions">
+                    <motion.button
+                      className="cancel-button"
+                      onClick={() => setFlowToDelete(null)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      className="delete-button"
+                      onClick={handleDeleteFlow}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      disabled={loading}
+                    >
+                      {loading ? 'Deleting...' : 'Delete'}
+                    </motion.button>
+                  </div>
+                </motion.div>
               </div>
             )}
           </motion.div>
