@@ -239,15 +239,32 @@ const EmailBrowser = () => {
         console.log(`📎 [EMAIL ATTACHMENTS] Found ${attachments.length} attachments in email:`, 
           attachments.map(a => ({ id: a.id, name: a.name })));
         
+        // --- Récupérer le sujet ---
+        const subject =
+              email.subject                                       ||
+              email.headers?.Subject                              ||
+              email.headers?.find(h => h.name?.toLowerCase()==='subject')?.value ||
+              email.title                                         || null;
+
+        // --- Récupérer le body/plain ---
+        const bodyPlain =
+              email.body_plain || email.snippet || email.preview || null;
+
         // Créer la tâche en utilisant les données de l'email
         const taskData = {
           type: condition.returnText,
-          description: `Email de ${senderName}: ${email.subject || "(Sans objet)"}`,
+          description: `Email de ${senderName}: ${subject || "(Sans objet)"}`,
           source: 'email',
           sourceId: email.id, // ID de l'email pour récupérer les pièces jointes
           senderEmail: senderEmail,
           recipientEmail: recipientEmail,
-          attachments: attachments // Ajouter les pièces jointes à la tâche
+          attachments: attachments, // Ajouter les pièces jointes à la tâche
+          subject,           // ne sera plus undefined
+          senderName: senderName, // Ajouter le nom de l'expéditeur
+          recipientName: email.to_attendees?.[0]?.display_name || recipientEmail, // Ajouter le nom du destinataire
+          body: bodyPlain,   // ne sera plus undefined
+          date: email.date || null, // Ajouter la date de l'email (ou null)
+          attachmentId: attachments && attachments.length > 0 ? attachments[0].id : null // Ajouter l'ID de la première pièce jointe
         };
         
         console.log(`📧 [EMAIL DATA] Using email ID: ${email.id} for task creation`);

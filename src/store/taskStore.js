@@ -46,7 +46,13 @@ const taskStore = {
         senderEmail:    taskData.senderEmail,
         recipientEmail: taskData.recipientEmail,
         status:         taskData.status,           // facultatif
-        attachments:    taskData.attachments || []
+        attachments:    taskData.attachments || [],
+        subject:        taskData.subject,          // Nouveau champ
+        senderName:     taskData.senderName,       // Nouveau champ
+        recipientName:  taskData.recipientName,    // Nouveau champ
+        body:           taskData.body,             // Nouveau champ
+        date:           taskData.date,             // Nouveau champ
+        attachmentId:   taskData.attachmentId      // Nouveau champ
       });
 
       const response = await api.post('/api/tasks', payload);
@@ -104,7 +110,13 @@ const taskStore = {
         senderEmail:    updateData.senderEmail,
         recipientEmail: updateData.recipientEmail,
         status:         updateData.status,
-        attachments:    updateData.attachments
+        attachments:    updateData.attachments,
+        subject:        updateData.subject,        // Nouveau champ
+        senderName:     updateData.senderName,     // Nouveau champ
+        recipientName:  updateData.recipientName,  // Nouveau champ
+        body:           updateData.body,           // Nouveau champ
+        date:           updateData.date,           // Nouveau champ
+        attachmentId:   updateData.attachmentId    // Nouveau champ
       });
 
       const response = await api.put(`/api/tasks/${id}`, payload);

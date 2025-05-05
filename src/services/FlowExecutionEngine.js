@@ -70,9 +70,25 @@ class FlowExecutionVisualizer {
     
     // Populate starting node attributes with task data if available
     if (startingNode.data.emailAttributes && task.sourceId) {
-      this.executionContext.set('attr-email_id', task.sourceId);
-      if (task.senderEmail) this.executionContext.set('attr-fromEmail', task.senderEmail);
-      if (task.recipientEmail) this.executionContext.set('attr-toEmail', task.recipientEmail);
+      // Map all email attributes from task to execution context
+      const emailAttributes = {
+        email_id: task.sourceId,
+        fromEmail: task.senderEmail,
+        fromDisplayName: task.senderName ?? startingNode.data.emailAttributes.fromDisplayName,
+        toEmail: task.recipientEmail,
+        toDisplayName: task.recipientName ?? startingNode.data.emailAttributes.toDisplayName,
+        subject: task.subject ?? startingNode.data.emailAttributes.subject,
+        date: task.date ?? startingNode.data.emailAttributes.date,
+        content: task.body ?? startingNode.data.emailAttributes.content,
+        attachment_id: task.attachmentId ?? startingNode.data.emailAttributes.attachment_id
+      };
+      
+      // Store all attributes in execution context
+      Object.entries(emailAttributes).forEach(([k, v]) => {
+        if (v !== undefined) {
+          this.executionContext.set('attr-' + k, v);
+        }
+      });
     }
     
     // Return visualization data
