@@ -13,12 +13,13 @@ import {
   Paper
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useFlowManager } from "../../context/FlowManagerContext";
+import backendConfigStore from "../../store/backendConfigStore";
 import AddIcon from "@mui/icons-material/Add";
 import { motion } from "framer-motion";
 
 export default function BackendConfigSidebar({ onSelectConfig, selectedId, refetchConfigs }) {
-  const { api } = useAuth();
+  const { currentFlowId } = useFlowManager();
   const navigate = useNavigate();
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,10 +27,16 @@ export default function BackendConfigSidebar({ onSelectConfig, selectedId, refet
 
   // Fetch backend configurations
   const fetchConfigs = async () => {
+    if (!currentFlowId) return;     // ① attendre que l'ID existe
+    
     setLoading(true);
     try {
-      const response = await api.get('/api/backend-configs');
-      setConfigs(response.data);
+      // Set the current flow ID in the store
+      backendConfigStore.setCurrentFlowId(currentFlowId);
+      
+      // Get all backend configs
+      const configs = await backendConfigStore.getAll();
+      setConfigs(configs);
       setError(null);
     } catch (err) {
       console.error('Error fetching backend configs:', err);
@@ -41,8 +48,9 @@ export default function BackendConfigSidebar({ onSelectConfig, selectedId, refet
 
   // Initial fetch
   useEffect(() => {
+    if (!currentFlowId) return;     // ① attendre que l'ID existe
     fetchConfigs();
-  }, []);
+  }, [currentFlowId]);
 
   // Set up refetchConfigs function
   useEffect(() => {

@@ -2,6 +2,9 @@ import React, { createContext, useState, useContext, useEffect, useCallback, use
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlowService } from '../services/flowService';
 import { useAuth } from './AuthContext';
+import taskStore from '../store/taskStore';
+import conditionStore from '../store/conditionStore';
+import backendConfigStore from '../store/backendConfigStore';
 
 // Create context
 const FlowManagerContext = createContext();
@@ -17,7 +20,7 @@ export const FlowManagerProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, api } = useAuth();
   const flowService = useFlowService();
   
   // Load flows from API when authenticated
@@ -71,17 +74,42 @@ export const FlowManagerProvider = ({ children }) => {
   }, [currentFlow]);
   
   // Create a new flow
-  const createFlow = async (name, collaborators = []) => {
+  const createFlow = async (name, collaboratorsEmails = []) => {
     setLoading(true);
     setError(null);
     try {
+      // Create the flow first
       const newFlow = await flowService.createFlow({ name });
       
-      // Add the flow to the local state
-      setFlows([...flows, newFlow]);
-      setCurrentFlow(newFlow);
-      setShowFlowModal(false);
+      // Create a copy of the flow that we'll update with collaborators
+      const updatedFlow = { ...newFlow, collaborators: [] };
       
+      // Add collaborators if provided
+      if (collaboratorsEmails.length > 0) {
+        for (const email of collaboratorsEmails) {
+          try {
+            const response = await api.post('/api/collaborations', {
+              flowId: newFlow.id,
+              email: email.trim(),
+              role: 'editor'.toLowerCase()
+            });
+            
+            // Add the collaboration to our flow object
+            if (response.data) {
+              updatedFlow.collaborators.push(response.data);
+            }
+          } catch (collaboratorErr) {
+            console.error(`Failed to add collaborator ${email}:`, collaboratorErr);
+            // Continue with other collaborators even if one fails
+          }
+        }
+      }
+      
+      // Add the flow to the local state
+      setFlows([...flows, updatedFlow]);
+      setCurrentFlow(updatedFlow);
+      
+      setShowFlowModal(false);
       return newFlow;
     } catch (err) {
       setError(err.message || 'Failed to create flow');
@@ -102,7 +130,15 @@ export const FlowManagerProvider = ({ children }) => {
       setShowFlowModal(false);
       return flow;
     } catch (err) {
-      setError(err.message || 'Failed to load flow');
+      // Check if this is a 403 Forbidden error
+      if (err.response && err.response.status === 403) {
+        // Show a toast message for unauthorized access
+        // We'll use a simple alert for now, but you might want to use a toast library
+        alert("Vous n'avez pas accès à ce flow");
+        setError("Vous n'avez pas accès à ce flow");
+      } else {
+        setError(err.message || 'Failed to load flow');
+      }
       return null;
     } finally {
       setLoading(false);
@@ -251,11 +287,26 @@ export const FlowManagerProvider = ({ children }) => {
     }
   };
 
+  // Get the current flow ID
+  const currentFlowId = currentFlow?.id;
+
+  // Set current flow ID in stores when flow changes
+  useEffect(() => {
+    if (currentFlow) {
+      taskStore.clearCache();                       // 1) on vide
+      taskStore.setCurrentFlowId(currentFlow.id);   // 2) on fixe le flow
+      conditionStore.setCurrentFlowId(currentFlow.id);
+      backendConfigStore.setCurrentFlowId(currentFlow.id);
+    }
+  }, [currentFlow]);
+
   return (
     <FlowManagerContext.Provider
       value={{
         flows,
         currentFlow,
+        setCurrentFlow,
+        currentFlowId,
         showFlowModal,
         loading,
         error,

@@ -1,12 +1,14 @@
 import { createContext, useRef, useEffect, useState, useContext } from 'react';
 import { runFlow } from '../services/flowClient';
 import { useAuth } from './AuthContext';
+import conditionStore from '../store/conditionStore';
+import backendConfigStore from '../store/backendConfigStore';
 
 // Create a context for the flow
 export const FlowContext = createContext(null);
 
 // Create a provider component
-export const FlowProvider = ({ children, nodes, edges }) => {
+export const FlowProvider = ({ children, nodes, edges, flowId }) => {
   const { api } = useAuth();
   // State to store the selected backend config ID
   const [backendConfigId, setBackendConfigId] = useState(null);
@@ -27,17 +29,31 @@ export const FlowProvider = ({ children, nodes, edges }) => {
     };
   }, [nodes, edges, backendConfigId]);
 
+  // Update condition store when flowId changes
+  useEffect(() => {
+    if (flowId) {
+      conditionStore.setCurrentFlowId(flowId);
+    }
+  }, [flowId]);
+
   // Fetch backend configurations
   useEffect(() => {
     const fetchBackendConfigs = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/backend-configs');
-        setBackendConfigs(response.data);
+        
+        // Set the current flow ID in the store
+        if (flowId) {
+          backendConfigStore.setCurrentFlowId(flowId);
+        }
+        
+        // Get all backend configs
+        const configs = await backendConfigStore.getAll();
+        setBackendConfigs(configs);
         
         // Set the active backend config as selected if no selection exists
         if (!backendConfigId) {
-          const activeConfig = response.data.find(config => config.isActive);
+          const activeConfig = configs.find(config => config.isActive);
           if (activeConfig) {
             setBackendConfigId(activeConfig.id);
           }
@@ -52,7 +68,7 @@ export const FlowProvider = ({ children, nodes, edges }) => {
     if (api) {
       fetchBackendConfigs();
     }
-  }, [api, backendConfigId]);
+  }, [api, backendConfigId, flowId]);
 
   return (
     <FlowContext.Provider value={{ 
@@ -60,7 +76,8 @@ export const FlowProvider = ({ children, nodes, edges }) => {
       backendConfigId, 
       setBackendConfigId,
       backendConfigs,
-      loading
+      loading,
+      flowId
     }}>
       {children}
     </FlowContext.Provider>

@@ -1,3 +1,4 @@
+import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import { 
   Box, 
@@ -26,7 +27,8 @@ import {
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useFlowManager } from "../../context/FlowManagerContext";
+import backendConfigStore from "../../store/backendConfigStore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -121,7 +123,8 @@ function KeyValueTable({ items, onChange, headerKey = "Key", headerValue = "Valu
  *  Main component
  *  ---------------------------------------------------------------------*/
 export default function BackendSettings() {
-  const { isAuthenticated, api } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { currentFlowId } = useFlowManager();
   const navigate = useNavigate();
   const { id } = useParams();
   const [tabValue, setTabValue] = useState("general");
@@ -152,14 +155,21 @@ export default function BackendSettings() {
 
   // Fetch backend configuration if ID is provided
   useEffect(() => {
+    if (!currentFlowId) return;     // ① attendre que l'ID existe
+    
     if (id && id !== 'new') {
       const fetchConfig = async () => {
         try {
-          const response = await api.get(`/api/backend-configs/${id}`);
+          // Set the current flow ID in the store
+          backendConfigStore.setCurrentFlowId(currentFlowId);
+          
+          // Get the backend config by ID
+          const config = await backendConfigStore.getById(id);
+          
           // Merge with existing form state instead of overwriting
           setForm(prev => ({ 
             ...prev, 
-            ...response.data 
+            ...config 
           }));
         } catch (error) {
           console.error('Error fetching backend config:', error);
@@ -173,7 +183,7 @@ export default function BackendSettings() {
       
       fetchConfig();
     }
-  }, [id, api]);
+  }, [id, currentFlowId]);
 
   const authOptions = [
     { value: "none",        label: "None" },
@@ -196,6 +206,8 @@ export default function BackendSettings() {
   };
   
   const handleSubmit = async () => {
+    if (!currentFlowId) return;     // ① attendre que l'ID existe
+    
     try {
       // Validate required fields
       if (!form.name || !form.baseUrl) {
@@ -207,20 +219,20 @@ export default function BackendSettings() {
         return;
       }
 
+      // Set the current flow ID in the store
+      backendConfigStore.setCurrentFlowId(currentFlowId);
+      
       // Determine if this is a create or update operation
       const isUpdate = form.id ? true : false;
       
-      // Make the API call
-      const endpoint = isUpdate ? `/api/backend-configs/${form.id}` : '/api/backend-configs';
-      const method = isUpdate ? 'put' : 'post';
-      
-      const response = await api.request({
-        url: endpoint,
-        method: method,
-        data: form
-      });
-      
-      const result = response.data;
+      let result;
+      if (isUpdate) {
+        // Update existing config
+        result = await backendConfigStore.update(form.id, form);
+      } else {
+        // Create new config
+        result = await backendConfigStore.create(form);
+      }
       
       // Update the form with the returned ID if this was a create operation
       if (!isUpdate && result.id) {
@@ -251,10 +263,16 @@ export default function BackendSettings() {
 
   // Handle setting a configuration as active
   const handleSetActive = async () => {
+    if (!currentFlowId) return;     // ① attendre que l'ID existe
+    
     try {
       if (!form.id) return;
       
-      await api.patch(`/api/backend-configs/${form.id}/active`);
+      // Set the current flow ID in the store
+      backendConfigStore.setCurrentFlowId(currentFlowId);
+      
+      // Set the config as active
+      await backendConfigStore.setActive(form.id);
       
       // Update the form
       setForm(prev => ({ ...prev, isActive: true }));

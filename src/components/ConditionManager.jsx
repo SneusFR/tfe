@@ -6,7 +6,8 @@ import {
   IconButton,
   Typography,
   Paper,
-  Badge
+  Badge,
+  CircularProgress
 } from '@mui/material';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import CodeIcon from '@mui/icons-material/Code';
@@ -14,6 +15,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from '@mui/icons-material/Close';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useFlowManager } from '../context/FlowManagerContext';
 import conditionStore from '../store/conditionStore';
 import '../styles/ConditionManager.css';
 
@@ -22,27 +24,58 @@ const ConditionManager = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [promptView, setPromptView] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  // Get the current flow
+  const { currentFlow } = useFlowManager();
+
+  // Update condition store when flow changes
+  useEffect(() => {
+    if (currentFlow) {
+      conditionStore.setCurrentFlowId(currentFlow.id);
+    }
+  }, [currentFlow]);
 
   // Load conditions from store
   useEffect(() => {
-    const loadConditions = () => {
-      const allConditions = conditionStore.getAllConditions();
-      setConditions(allConditions);
+    const loadConditions = async () => {
+      setLoading(true);
+      try {
+        if (currentFlow) {
+          await conditionStore.loadConditions();
+        }
+        const allConditions = conditionStore.getAllConditions();
+        setConditions(allConditions);
+      } catch (error) {
+        console.error('Error loading conditions:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadConditions();
     
     // Set up an interval to refresh conditions regularly
-    const intervalId = setInterval(loadConditions, 3000);
+    const intervalId = setInterval(() => {
+      const allConditions = conditionStore.getAllConditions();
+      setConditions(allConditions);
+    }, 3000);
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [currentFlow]);
 
   // Delete a condition
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this condition?')) {
-      conditionStore.removeCondition(id);
-      setConditions(conditionStore.getAllConditions());
+      setLoading(true);
+      try {
+        await conditionStore.removeCondition(id);
+        setConditions(conditionStore.getAllConditions());
+      } catch (error) {
+        console.error('Error deleting condition:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

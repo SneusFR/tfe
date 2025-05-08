@@ -12,18 +12,18 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useFlow } from "../../context/FlowContext";
+import { useFlowManager } from "../../context/FlowManagerContext";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 export default function BackendConfigSelector() {
   const navigate = useNavigate();
-  const { backendConfigId, setBackendConfigId, backendConfigs, loading } = useFlow();
+  const { backendConfigId, setBackendConfigId, backendConfigs, loading, flowId } = useFlow();
+  const { currentFlowId } = useFlowManager();
   const [selectedId, setSelectedId] = useState(backendConfigId || "");
 
   // Update local state when context changes
   useEffect(() => {
-    if (backendConfigId) {
-      setSelectedId(backendConfigId);
-    }
+    setSelectedId(backendConfigId || '');
   }, [backendConfigId]);
 
   // Handle selection change

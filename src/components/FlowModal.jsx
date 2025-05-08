@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { useAuth } from '../context/AuthContext';
+import CollaboratorsManager from './CollaboratorsManager';
 import '../styles/FlowModal.css';
 
 const FlowModal = () => {
@@ -14,10 +15,11 @@ const FlowModal = () => {
     loading,
     error,
     refreshFlows,
-    deleteFlow
+    deleteFlow,
+    setCurrentFlow
   } = useFlowManager();
   
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [view, setView] = useState('main'); // 'main', 'create', 'load'
   const [flowName, setFlowName] = useState('');
@@ -25,6 +27,7 @@ const FlowModal = () => {
   const [collaborators, setCollaborators] = useState([]);
   const [collaboratorInput, setCollaboratorInput] = useState('');
   const [flowToDelete, setFlowToDelete] = useState(null);
+  const [showCollaboratorsManager, setShowCollaboratorsManager] = useState(false);
 
   // Reset state when modal is opened
   useEffect(() => {
@@ -330,17 +333,33 @@ const FlowModal = () => {
                                   <span>{flow.collaborators.length} collaborator(s)</span>
                                 </div>
                               )}
-                              <motion.button
-                                className="delete-flow-button"
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Prevent card click
-                                  setFlowToDelete(flow);
-                                }}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                Delete
-                              </motion.button>
+                              <div className="flow-card-actions">
+                                {flow.collaborators && flow.collaborators.some(c => c.role === 'owner' && c.email === user.email) && (
+                                  <motion.button
+                                    className="manage-collaborators-button"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Prevent card click
+                                      setCurrentFlow(flow);
+                                      setShowCollaboratorsManager(true);
+                                    }}
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                  >
+                                    Manage Collaborators
+                                  </motion.button>
+                                )}
+                                <motion.button
+                                  className="delete-flow-button"
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent card click
+                                    setFlowToDelete(flow);
+                                  }}
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                >
+                                  Delete
+                                </motion.button>
+                              </div>
                             </div>
                           </motion.div>
                         ))
@@ -379,6 +398,20 @@ const FlowModal = () => {
                 >
                   ×
                 </motion.button>
+              </div>
+            )}
+
+            {/* Collaborators Manager Dialog */}
+            {showCollaboratorsManager && (
+              <div className="modal-overlay">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="modal-container"
+                >
+                  <CollaboratorsManager onClose={() => setShowCollaboratorsManager(false)} />
+                </motion.div>
               </div>
             )}
 

@@ -24,7 +24,7 @@ import UserMenu from './components/auth/UserMenu';
 
 // Contexts / stores
 import { FlowProvider } from './context/FlowContext';
-import { FlowManagerProvider } from './context/FlowManagerContext';
+import { FlowManagerProvider, useFlowManager } from './context/FlowManagerContext';
 import conditionStore from './store/conditionStore';
 
 // -----------------------------------------------------------------------------
@@ -205,6 +205,19 @@ const EditorApp = () => {
 };
 
 // -----------------------------------------------------------------------------
+// Backend Settings Wrapper
+// -----------------------------------------------------------------------------
+const BackendSettingsWrapper = () => {
+  const { currentFlowId } = useFlowManager();
+  
+  return (
+    <FlowProvider nodes={[]} edges={[]} flowId={currentFlowId}>
+      <BackendSettings />
+    </FlowProvider>
+  );
+};
+
+// -----------------------------------------------------------------------------
 // 🌐  Routes
 // -----------------------------------------------------------------------------
 function App() {
@@ -212,9 +225,21 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/editor" element={<EditorApp />} />
-      <Route path="/settings/backend" element={<BackendSettings />} />
-      <Route path="/settings/backend/:id" element={<BackendSettings />} />
-      <Route path="/settings/backend/new" element={<BackendSettings />} />
+      <Route path="/settings/backend" element={
+        <FlowManagerProvider>
+          <BackendSettingsWrapper />
+        </FlowManagerProvider>
+      } />
+      <Route path="/settings/backend/:id" element={
+        <FlowManagerProvider>
+          <BackendSettingsWrapper />
+        </FlowManagerProvider>
+      } />
+      <Route path="/settings/backend/new" element={
+        <FlowManagerProvider>
+          <BackendSettingsWrapper />
+        </FlowManagerProvider>
+      } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

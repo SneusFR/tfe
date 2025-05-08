@@ -294,10 +294,14 @@
   position: relative;
 }
 
+.flow-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
 .delete-flow-button {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
   background-color: #e74c3c;
   color: white;
   border: none;
@@ -310,6 +314,21 @@
 
 .delete-flow-button:hover {
   background-color: #c0392b;
+}
+
+.manage-collaborators-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.manage-collaborators-button:hover {
+  background-color: #2980b9;
 }
 
 .flow-info h3 {
@@ -410,6 +429,27 @@
 .delete-button:disabled {
   background-color: #f5a8a1;
   cursor: not-allowed;
+}
+
+/* Modal overlay for collaborators manager */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  backdrop-filter: blur(3px);
+}
+
+.modal-container {
+  width: 90%;
+  max-width: 600px;
+  z-index: 1200;
 }
 
 /* Responsive adjustments */

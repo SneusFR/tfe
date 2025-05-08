@@ -10,6 +10,7 @@ import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
 import FlowMenuButton from './FlowMenuButton';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { FlowProvider } from '../context/FlowContext';
 import BackendConfigSelector from './settings/BackendConfigSelector';
 import ReactFlow, {
   Background,
@@ -113,6 +114,9 @@ const DiagramEditor = ({
     if (!currentFlow) return;
     if (currentFlow.id === prevFlowId.current) return;
     prevFlowId.current = currentFlow.id;
+    
+    // Reset selected node when flow changes
+    setSelectedNodeId(null);
 
     // Get the version to use (either the current version or the flow itself for backward compatibility)
     const version = currentFlow.versions?.[currentFlow.currentVersionIndex] || currentFlow;
@@ -128,18 +132,11 @@ const DiagramEditor = ({
     
     // Load edges with default sourceHandle/targetHandle if needed
     if (version.edges) {
-      const processedEdges = version.edges.map(edge => {
-        // If sourceHandle or targetHandle is missing, add default values based on the edge type
-        if (!edge.sourceHandle || !edge.targetHandle) {
-          const isExecutionLink = edge.data?.isExecutionLink;
-          return {
-            ...edge,
-            sourceHandle: edge.sourceHandle || (isExecutionLink ? 'execution' : `${edge.source}-out`),
-            targetHandle: edge.targetHandle || (isExecutionLink ? 'execution' : `${edge.target}-in`)
-          };
-        }
-        return edge;
-      });
+      const processedEdges = version.edges.map(edge => ({
+        ...edge,
+        sourceHandle: edge.sourceHandle || 'default-out',
+        targetHandle: edge.targetHandle || 'default-in',
+      }));
       
       // Clean up edges without handles to eliminate warnings
       const sanitisedEdges = processedEdges.filter(e => e.sourceHandle && e.targetHandle);
@@ -651,7 +648,8 @@ const DiagramEditor = ({
       onDragOver={onDragOver}
     >
       <ReactFlowProvider>
-        <ReactFlow
+        <FlowProvider nodes={nodes} edges={edges} flowId={currentFlow?.id}>
+          <ReactFlow
           nodes={memoNodes}
           edges={computedEdges}
           onNodesChange={throttledApply}
@@ -706,10 +704,11 @@ const DiagramEditor = ({
           <Panel position="top-left" style={{ marginTop: '10px' }}>
             <BackendConfigSelector />
           </Panel>
-        </ReactFlow>
-        
-        {/* bouton menu + save : n'est PLUS dans <Panel> */}
-        <FlowMenuButton />
+          </ReactFlow>
+          
+          {/* bouton menu + save : n'est PLUS dans <Panel> */}
+          <FlowMenuButton />
+        </FlowProvider>
       </ReactFlowProvider>
     </div>
   );

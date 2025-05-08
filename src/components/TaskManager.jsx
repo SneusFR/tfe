@@ -15,6 +15,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { FlowContext } from '../context/FlowContext';
 import { useAuth } from '../context/AuthContext';
+import { useFlowManager } from '../context/FlowManagerContext';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
 
@@ -25,19 +26,21 @@ const TaskManager = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Get auth context to check if user is authenticated
+  // Get contexts
   const { isAuthenticated } = useAuth();
+  const { currentFlowId } = useFlowManager();
 
   // Load tasks from store
   useEffect(() => {
     const loadTasks = async () => {
       if (!isAuthenticated) return;
+      if (!currentFlowId) return;
       
       setLoading(true);
       setError(null);
       
       try {
-        const allTasks = await taskStore.getAllTasks();
+        const allTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
         setTasks(allTasks);
       } catch (err) {
         console.error('Error loading tasks:', err);
@@ -53,7 +56,7 @@ const TaskManager = () => {
     const intervalId = setInterval(loadTasks, 30000); // Increased to 30 seconds to reduce API calls
     
     return () => clearInterval(intervalId);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentFlowId]);
 
   // Refresh tasks manually
   const handleRefresh = async (e) => {
@@ -64,7 +67,7 @@ const TaskManager = () => {
     
     try {
       // Force refresh from API
-      const allTasks = await taskStore.getAllTasks({ forceRefresh: true });
+      const allTasks = await taskStore.getAllTasks({ forceRefresh: true }, { id: currentFlowId });
       setTasks(allTasks);
     } catch (err) {
       console.error('Error refreshing tasks:', err);
@@ -79,8 +82,8 @@ const TaskManager = () => {
     e.stopPropagation(); // Prevent dropdown from closing
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
-        await taskStore.removeTask(id);
-        setTasks(await taskStore.getAllTasks());
+        await taskStore.removeTask(id, { id: currentFlowId });
+        setTasks(await taskStore.getAllTasks({}, { id: currentFlowId }));
       } catch (err) {
         console.error('Error deleting task:', err);
         alert('Failed to delete task');
@@ -92,8 +95,8 @@ const TaskManager = () => {
   const handleComplete = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
     try {
-      await taskStore.completeTask(id);
-      setTasks(await taskStore.getAllTasks());
+      await taskStore.completeTask(id, { id: currentFlowId });
+      setTasks(await taskStore.getAllTasks({}, { id: currentFlowId }));
     } catch (err) {
       console.error('Error completing task:', err);
       alert('Failed to complete task');
@@ -111,7 +114,7 @@ const TaskManager = () => {
     
     try {
       // Get the task data
-      const task = await taskStore.getTaskById(id);
+      const task = await taskStore.getTaskById(id, { id: currentFlowId });
       if (!task) {
         console.error(`Task not found: ${id}`);
         alert('Task not found');
