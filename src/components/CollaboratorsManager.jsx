@@ -15,11 +15,14 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../context/AuthContext';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { useFlowAccess } from '../hooks/useFlowAccess';
+import collaborationStore from '../store/collaborationStore';
 import './CollaboratorsManager.css';
 
 const CollaboratorsManager = ({ onClose }) => {
-  const { api, user } = useAuth();
+  const { user } = useAuth();
   const { currentFlow, refreshFlows } = useFlowManager();
+  const { userRole } = useFlowAccess();
   
   const [collaborators, setCollaborators] = useState([]);
   const [newEmail, setNewEmail] = useState('');
@@ -28,11 +31,26 @@ const CollaboratorsManager = ({ onClose }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   
-  // Load collaborators from the current flow
+  // Load collaborators from the store
   useEffect(() => {
-    if (currentFlow && currentFlow.collaborators) {
-      setCollaborators(currentFlow.collaborators);
-    }
+    const loadCollaborators = async () => {
+      if (!currentFlow) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const collabs = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
+        setCollaborators(collabs);
+      } catch (err) {
+        console.error('Error loading collaborators:', err);
+        setError('Failed to load collaborators');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadCollaborators();
   }, [currentFlow]);
   
   // Handle adding a new collaborator
@@ -50,7 +68,7 @@ const CollaboratorsManager = ({ onClose }) => {
     
     try {
       // Check if the collaborator already exists
-      const exists = collaborators.some(c => c.email.toLowerCase() === newEmail.toLowerCase());
+      const exists = collaborators.some(c => c.user?.email?.toLowerCase() === newEmail.toLowerCase());
       if (exists) {
         setError('This collaborator is already added to the flow');
         setLoading(false);
@@ -58,13 +76,14 @@ const CollaboratorsManager = ({ onClose }) => {
       }
       
       // Add the collaborator
-      await api.post('/api/collaborations', {
+      await collaborationStore.add({
         flowId: currentFlow.id,
         email: newEmail.trim(),
         role: newRole.toLowerCase()
       });
       
-      // Refresh the flow to get updated collaborators
+      // Refresh collaborators and flows
+      await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
       await refreshFlows();
       
       // Clear the form
@@ -93,9 +112,10 @@ const CollaboratorsManager = ({ onClose }) => {
     setSuccess(null);
     
     try {
-      await api.delete(`/api/collaborations/${collaborationId}`);
+      await collaborationStore.remove(collaborationId);
       
-      // Refresh the flow to get updated collaborators
+      // Refresh collaborators and flows
+      await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
       await refreshFlows();
       
       setSuccess('Collaborator removed successfully');
@@ -114,11 +134,12 @@ const CollaboratorsManager = ({ onClose }) => {
     setSuccess(null);
     
     try {
-      await api.patch(`/api/collaborations/${collaborationId}`, {
+      await collaborationStore.update(collaborationId, {
         role: newRole.toLowerCase()
       });
       
-      // Refresh the flow to get updated collaborators
+      // Refresh collaborators and flows
+      await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
       await refreshFlows();
       
       setSuccess('Collaborator role updated successfully');
@@ -130,21 +151,7 @@ const CollaboratorsManager = ({ onClose }) => {
     }
   };
   
-  // Get the current user's role in the flow
-  const getCurrentUserRole = () => {
-    if (!currentFlow || !currentFlow.collaborators) return null;
-    
-    const userEmail = user?.email;
-    if (!userEmail) return null;
-    
-    const userCollaboration = currentFlow.collaborators.find(c => 
-      c.email.toLowerCase() === userEmail.toLowerCase()
-    );
-    
-    return userCollaboration ? userCollaboration.role : null;
-  };
-  
-  const userRole = getCurrentUserRole();
+  // Use the userRole from the hook
   const isOwner = userRole === 'owner';
   
   return (
@@ -194,7 +201,7 @@ const CollaboratorsManager = ({ onClose }) => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <td>{collaborator.email}</td>
+                  <td>{collaborator.user?.email}</td>
                   <td>
                     {collaborator.role === 'owner' ? (
                       <span className="role owner">Owner</span>

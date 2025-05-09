@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 
 // ──────────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ import BackendSettings from './components/settings/BackendSettings';
 import { useAuth } from './context/AuthContext';
 import LoginButton from './components/auth/LoginButton';
 import UserMenu from './components/auth/UserMenu';
+import AuthPage from './components/auth/AuthPage';
 
 // Contexts / stores
 import { FlowProvider } from './context/FlowContext';
@@ -218,27 +219,53 @@ const BackendSettingsWrapper = () => {
 };
 
 // -----------------------------------------------------------------------------
+// Protected Route Component
+// -----------------------------------------------------------------------------
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  
+  if (!isAuthenticated) {
+    // Redirect to the login page, but save the current location
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return children;
+};
+
+// -----------------------------------------------------------------------------
 // 🌐  Routes
 // -----------------------------------------------------------------------------
 function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/editor" element={<EditorApp />} />
+      <Route path="/login" element={<AuthPage />} />
+      <Route path="/editor" element={
+        <ProtectedRoute>
+          <EditorApp />
+        </ProtectedRoute>
+      } />
       <Route path="/settings/backend" element={
-        <FlowManagerProvider>
-          <BackendSettingsWrapper />
-        </FlowManagerProvider>
+        <ProtectedRoute>
+          <FlowManagerProvider>
+            <BackendSettingsWrapper />
+          </FlowManagerProvider>
+        </ProtectedRoute>
       } />
       <Route path="/settings/backend/:id" element={
-        <FlowManagerProvider>
-          <BackendSettingsWrapper />
-        </FlowManagerProvider>
+        <ProtectedRoute>
+          <FlowManagerProvider>
+            <BackendSettingsWrapper />
+          </FlowManagerProvider>
+        </ProtectedRoute>
       } />
       <Route path="/settings/backend/new" element={
-        <FlowManagerProvider>
-          <BackendSettingsWrapper />
-        </FlowManagerProvider>
+        <ProtectedRoute>
+          <FlowManagerProvider>
+            <BackendSettingsWrapper />
+          </FlowManagerProvider>
+        </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

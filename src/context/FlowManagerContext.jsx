@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import taskStore from '../store/taskStore';
 import conditionStore from '../store/conditionStore';
 import backendConfigStore from '../store/backendConfigStore';
+import collaborationStore from '../store/collaborationStore';
 
 // Create context
 const FlowManagerContext = createContext();
@@ -23,6 +24,13 @@ export const FlowManagerProvider = ({ children }) => {
   const { isAuthenticated, api } = useAuth();
   const flowService = useFlowService();
   
+  // Clear all flow data
+  const clear = useCallback(() => {
+    setFlows([]);
+    setCurrentFlow(null);
+    collaborationStore.setCurrentFlowId(null);
+  }, []);
+
   // Load flows from API when authenticated
   const fetchFlows = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -39,9 +47,15 @@ export const FlowManagerProvider = ({ children }) => {
         const flow = flowsArray.find(f => f.id === currentFlowId);
         if (flow) {
           setCurrentFlow(flow);
-        } else if (flowsArray.length === 0) {
-          // Only show the modal if there are no flows available
-          setShowFlowModal(true);
+        } else {
+          // If the flow is not found in the new list, remove it from localStorage
+          localStorage.removeItem('mailflow_current_flow');
+          setCurrentFlow(null);
+          
+          if (flowsArray.length === 0) {
+            // Only show the modal if there are no flows available
+            setShowFlowModal(true);
+          }
         }
       } else if (flowsArray.length === 0) {
         // Only show the modal if there are no flows available and no current flow
@@ -88,15 +102,16 @@ export const FlowManagerProvider = ({ children }) => {
       if (collaboratorsEmails.length > 0) {
         for (const email of collaboratorsEmails) {
           try {
-            const response = await api.post('/api/collaborations', {
+            // Use the collaborationStore to add collaborators
+            const collaboration = await collaborationStore.add({
               flowId: newFlow.id,
               email: email.trim(),
-              role: 'editor'.toLowerCase()
+              role: 'editor'
             });
             
             // Add the collaboration to our flow object
-            if (response.data) {
-              updatedFlow.collaborators.push(response.data);
+            if (collaboration) {
+              updatedFlow.collaborators.push(collaboration);
             }
           } catch (collaboratorErr) {
             console.error(`Failed to add collaborator ${email}:`, collaboratorErr);
@@ -297,6 +312,7 @@ export const FlowManagerProvider = ({ children }) => {
       taskStore.setCurrentFlowId(currentFlow.id);   // 2) on fixe le flow
       conditionStore.setCurrentFlowId(currentFlow.id);
       backendConfigStore.setCurrentFlowId(currentFlow.id);
+      collaborationStore.setCurrentFlowId(currentFlow.id);
     }
   }, [currentFlow]);
 
@@ -319,6 +335,7 @@ export const FlowManagerProvider = ({ children }) => {
         setShowFlowModal,
         switchFlowVersion,
         refreshFlows: fetchFlows,
+        clear,     // ← nouveau
       }}
     >
       {children}

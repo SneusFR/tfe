@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { useAuth } from '../context/AuthContext';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import CollaboratorsManager from './CollaboratorsManager';
 import '../styles/FlowModal.css';
 
@@ -20,6 +21,7 @@ const FlowModal = () => {
   } = useFlowManager();
   
   const { isAuthenticated, user } = useAuth();
+  const { hasAccess: canManageCollaborators } = useFlowAccess('editor');
 
   const [view, setView] = useState('main'); // 'main', 'create', 'load'
   const [flowName, setFlowName] = useState('');
@@ -334,20 +336,20 @@ const FlowModal = () => {
                                 </div>
                               )}
                               <div className="flow-card-actions">
-                                {flow.collaborators && flow.collaborators.some(c => c.role === 'owner' && c.email === user.email) && (
-                                  <motion.button
-                                    className="manage-collaborators-button"
-                                    onClick={(e) => {
-                                      e.stopPropagation(); // Prevent card click
-                                      setCurrentFlow(flow);
-                                      setShowCollaboratorsManager(true);
-                                    }}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                  >
-                                    Manage Collaborators
-                                  </motion.button>
-                                )}
+                              {canManageCollaborators && (
+                                <motion.button
+                                  className="manage-collaborators-button"
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent card click
+                                    setCurrentFlow(flow);
+                                    setShowCollaboratorsManager(true);
+                                  }}
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                >
+                                  Manage Collaborators
+                                </motion.button>
+                              )}
                                 <motion.button
                                   className="delete-flow-button"
                                   onClick={(e) => {

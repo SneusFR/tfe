@@ -11,6 +11,7 @@ import { buildAdjacency, markReachable } from '../utils/graph';
 import FlowMenuButton from './FlowMenuButton';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { FlowProvider } from '../context/FlowContext';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import BackendConfigSelector from './settings/BackendConfigSelector';
 import ReactFlow, {
   Background,
@@ -87,6 +88,7 @@ const DiagramEditor = ({
   onEdgeDelete,
 }) => {
   const { currentFlow, saveCurrentFlow } = useFlowManager();
+  const { hasAccess: canEdit } = useFlowAccess('editor');
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [nodes, setNodes] = useNodesState(initialNodes || []);
   const [edges, setEdges] = useEdgesState(initialEdges || []);
@@ -166,17 +168,21 @@ const DiagramEditor = ({
 
   const handleEdgesChange = useCallback(
     (changes) => {
+      if (!canEdit) return;
+      
       const updatedEdges = applyEdgeChanges(changes, edges);
       setEdges(updatedEdges);
       if (onEdgesChange) onEdgesChange(updatedEdges);
       
       // No automatic saving - changes are stored in local state only
     },
-    [edges, setEdges, onEdgesChange]
+    [edges, setEdges, onEdgesChange, canEdit]
   );
 
   const handleEdgeClick = useCallback(
     (event, edge) => {
+      if (!canEdit) return;
+      
       if (window.confirm('Do you want to delete this connection?')) {
         const updatedEdges = edges.filter((e) => e.id !== edge.id);
         setEdges(updatedEdges);
@@ -186,21 +192,26 @@ const DiagramEditor = ({
         // No automatic saving - changes are stored in local state only
       }
     },
-    [edges, setEdges, onEdgesChange, onEdgeDelete]
+    [edges, setEdges, onEdgesChange, onEdgeDelete, canEdit]
   );
   
   // Handle node click to show delete button
   const handleNodeClick = useCallback(
     (event, node) => {
+      // Only allow selection for delete if user can edit
+      if (!canEdit) return;
+      
       // Toggle selection if clicking the same node, otherwise select the new node
       setSelectedNodeId(prevId => prevId === node.id ? null : node.id);
     },
-    []
+    [canEdit]
   );
   
   // Handle node deletion
   const handleNodeDelete = useCallback(
     (nodeId) => {
+      if (!canEdit) return;
+      
       if (window.confirm('Do you want to delete this node?')) {
         // Remove all edges connected to this node
         const updatedEdges = edges.filter(
@@ -218,7 +229,7 @@ const DiagramEditor = ({
         setSelectedNodeId(null);
       }
     },
-    [edges, nodes, setEdges, setNodes, onEdgesChange, onNodesChange]
+    [edges, nodes, setEdges, setNodes, onEdgesChange, onNodesChange, canEdit]
   );
 
   // Calculate starting points only when nodes with isStartingPoint change
@@ -245,6 +256,8 @@ const DiagramEditor = ({
   // Création d'une arête avec distinction entre lien d'exécution et lien de données
   const handleConnect = useCallback(
     (params) => {
+      if (!canEdit) return;
+      
       const edgeId = `edge-${Date.now()}`;
       
       // Add default handles if missing
@@ -347,7 +360,7 @@ const DiagramEditor = ({
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-      if (!reactFlowInstance) return;
+      if (!reactFlowInstance || !canEdit) return;
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
@@ -559,8 +572,8 @@ const DiagramEditor = ({
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
+    event.dataTransfer.dropEffect = canEdit ? 'move' : 'none';
+  }, [canEdit]);
 
   const startingPointNodes = useMemo(
     () =>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Container, 
@@ -8,9 +8,11 @@ import {
   Typography, 
   useMediaQuery, 
   useTheme,
-  Alert
+  Alert,
+  Button
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Login from './Login';
 import Register from './Register';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +22,19 @@ const AuthPage = ({ onAuthSuccess }) => {
   const { isAuthenticated, user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Redirect to editor if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Get the redirect path from the location state or default to /editor
+      const from = location.state?.from?.pathname || '/editor';
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 1500); // Short delay to show the success message
+    }
+  }, [isAuthenticated, navigate, location]);
   
   const handleTabChange = (_, newValue) => {
     setActiveTab(newValue);
@@ -29,6 +44,10 @@ const AuthPage = ({ onAuthSuccess }) => {
     if (onAuthSuccess) {
       onAuthSuccess();
     }
+  };
+  
+  const handleContinueClick = () => {
+    navigate('/editor', { replace: true });
   };
   
   return (
@@ -59,8 +78,16 @@ const AuthPage = ({ onAuthSuccess }) => {
                   Welcome, {user?.displayName || 'User'}!
                 </Typography>
                 <Alert severity="success" sx={{ mt: 2 }}>
-                  You are successfully logged in.
+                  You are successfully logged in. Redirecting...
                 </Alert>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  sx={{ mt: 2 }}
+                  onClick={handleContinueClick}
+                >
+                  Continue to Editor
+                </Button>
               </Box>
             </motion.div>
           ) : (

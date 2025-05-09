@@ -16,6 +16,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { FlowContext } from '../context/FlowContext';
 import { useAuth } from '../context/AuthContext';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
 
@@ -29,6 +30,7 @@ const TaskManager = () => {
   // Get contexts
   const { isAuthenticated } = useAuth();
   const { currentFlowId } = useFlowManager();
+  const { hasAccess: canEdit } = useFlowAccess('editor');
 
   // Load tasks from store
   useEffect(() => {
@@ -80,6 +82,11 @@ const TaskManager = () => {
   // Delete a task
   const handleDelete = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
+    if (!canEdit) {
+      alert('You need editor or owner permissions to delete tasks');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
         await taskStore.removeTask(id, { id: currentFlowId });
@@ -94,6 +101,11 @@ const TaskManager = () => {
   // Mark task as completed
   const handleComplete = async (id, e) => {
     e.stopPropagation(); // Prevent dropdown from closing
+    if (!canEdit) {
+      alert('You need editor or owner permissions to complete tasks');
+      return;
+    }
+    
     try {
       await taskStore.completeTask(id, { id: currentFlowId });
       setTasks(await taskStore.getAllTasks({}, { id: currentFlowId }));
@@ -266,25 +278,26 @@ const TaskManager = () => {
                             </motion.button>
                           </span>
                         </Tooltip>
-                        <Tooltip title="Mark as completed" arrow placement="top">
+                        <Tooltip title={canEdit ? "Mark as completed" : "You need editor permissions"} arrow placement="top">
                           <span>
                             <motion.button 
                               className="complete-button"
                               onClick={(e) => handleComplete(task.id, e)}
-                              disabled={task.status === 'completed'}
-                              whileHover={task.status !== 'completed' ? { y: -2 } : {}}
-                              whileTap={task.status !== 'completed' ? { scale: 0.95 } : {}}
+                              disabled={task.status === 'completed' || !canEdit}
+                              whileHover={task.status !== 'completed' && canEdit ? { y: -2 } : {}}
+                              whileTap={task.status !== 'completed' && canEdit ? { scale: 0.95 } : {}}
                             >
                               <CheckIcon fontSize="small" />
                             </motion.button>
                           </span>
                         </Tooltip>
-                        <Tooltip title="Delete task" arrow placement="top">
+                        <Tooltip title={canEdit ? "Delete task" : "You need editor permissions"} arrow placement="top">
                           <motion.button 
                             className="delete-button"
                             onClick={(e) => handleDelete(task.id, e)}
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.95 }}
+                            disabled={!canEdit}
+                            whileHover={canEdit ? { y: -2 } : {}}
+                            whileTap={canEdit ? { scale: 0.95 } : {}}
                           >
                             <DeleteIcon fontSize="small" />
                           </motion.button>

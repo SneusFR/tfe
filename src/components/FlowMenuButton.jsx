@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useReactFlow } from 'reactflow';
-import { Snackbar, Alert } from '@mui/material';
+import { Snackbar, Alert, Chip } from '@mui/material';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import '../styles/FlowMenuButton.css';
 
 const FlowMenuButton = () => {
   const { getNodes, getEdges } = useReactFlow();
   const { toggleFlowModal, currentFlow, saveCurrentFlow, loading } = useFlowManager();
+  const { hasAccess, userRole } = useFlowAccess('editor');
 
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -42,12 +44,23 @@ const FlowMenuButton = () => {
       transition={{ duration: 0.3 }}
     >
       <div className="flow-buttons-wrapper">
+        {userRole && (
+          <Chip
+            label={userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+            color={userRole === 'owner' ? 'primary' : userRole === 'editor' ? 'success' : 'default'}
+            size="small"
+            className="role-chip"
+            style={{ marginRight: '10px' }}
+          />
+        )}
+        
         <motion.button
           className={`flow-save-button ${loading ? 'loading' : ''}`}
           onClick={handleSave}
-          whileHover={{ scale: loading ? 1 : 1.05 }}
-          whileTap={{ scale: loading ? 1 : 0.95 }}
-          disabled={loading || !currentFlow}
+          whileHover={{ scale: loading || !hasAccess ? 1 : 1.05 }}
+          whileTap={{ scale: loading || !hasAccess ? 1 : 0.95 }}
+          disabled={loading || !currentFlow || !hasAccess}
+          title={!hasAccess ? "You need editor or owner permissions to save" : ""}
         >
           {loading ? 'Saving…' : 'Save'}
         </motion.button>
