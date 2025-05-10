@@ -23,6 +23,15 @@ const FlowMenuButton = () => {
       setOpen(true);
       return;
     }
+    
+    if (!hasAccess) {
+      console.log("Permission denied: User doesn't have editor rights to save the flow");
+      setMessage("Vous n'avez pas la permission de sauvegarder ce flow");
+      setSeverity('error');
+      setOpen(true);
+      return;
+    }
+    
     try {
       const nodes = getNodes();
       const edges = getEdges();

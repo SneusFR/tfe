@@ -105,9 +105,18 @@ const collaborationStore = {
     
     // Cherche la collaboration de l'utilisateur courant pour ce flow
     // en comparant l'ID de l'utilisateur avec celui de la collaboration
-    const myCollaboration = collaborationsCache.data.find(
-      (collab) => collab.flow === flowId && collab.user && (collab.user.id === userId || collab.user._id === userId)
-    );
+    const myCollaboration = collaborationsCache.data.find(collab => {
+      if (collab.flow !== flowId || !collab.user) return false;
+      // collab.user peut être un objet ou une string
+      let collabUserId;
+      if (typeof collab.user === 'object' && collab.user) {
+        collabUserId = (collab.user.id || collab.user._id || '').toString();
+      } else {
+        collabUserId = (collab.user || '').toString();
+      }
+      const currentUserId = (userId || '').toString();
+      return collabUserId === currentUserId;
+    });
     
     return myCollaboration ? myCollaboration.role : null;
   },

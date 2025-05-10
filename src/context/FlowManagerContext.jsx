@@ -75,6 +75,7 @@ export const FlowManagerProvider = ({ children }) => {
   // Load flows only once when authenticated
   useEffect(() => {
     if (isAuthenticated && !hasFetchedRef.current) {
+      collaborationStore.clearCache();    // ← vide l'ancien cache mal formé
       fetchFlows();
       hasFetchedRef.current = true;
     }
@@ -162,7 +163,10 @@ export const FlowManagerProvider = ({ children }) => {
   
   // Save the current flow
   const saveCurrentFlow = async (nodes, edges) => {
-    if (!currentFlow) return;
+    if (!currentFlow) {
+      console.log("Cannot save: No current flow selected");
+      return;
+    }
     
     const versionIndex = currentFlow.currentVersionIndex || 0;
     const version = currentFlow.versions?.[versionIndex] || {};
@@ -179,9 +183,17 @@ export const FlowManagerProvider = ({ children }) => {
       setCurrentFlow(updatedFlow);
       setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
       
+      console.log("Flow saved successfully");
       return updatedFlow;
     } catch (err) {
-      setError(err.message || 'Failed to save flow');
+      // Check if this is a permission error (403)
+      if (err.response && err.response.status === 403) {
+        console.log("Permission denied: User doesn't have rights to save this flow");
+        setError("Vous n'avez pas la permission de sauvegarder ce flow");
+      } else {
+        console.error("Error saving flow:", err);
+        setError(err.message || 'Failed to save flow');
+      }
       
       // Even if the API call fails, update the local state to prevent data loss
       const localUpdatedFlow = { ...currentFlow };
@@ -204,6 +216,11 @@ export const FlowManagerProvider = ({ children }) => {
   
   // Update flow properties
   const updateFlowProperties = async (flowId, properties) => {
+    if (!flowId) {
+      console.log("Cannot update: No flow ID provided");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
@@ -232,8 +249,16 @@ export const FlowManagerProvider = ({ children }) => {
       });
       
       setFlows(updatedFlows);
+      console.log("Flow properties updated successfully");
     } catch (err) {
-      setError(err.message || 'Failed to update flow properties');
+      // Check if this is a permission error (403)
+      if (err.response && err.response.status === 403) {
+        console.log("Permission denied: User doesn't have rights to update this flow");
+        setError("Vous n'avez pas la permission de modifier ce flow");
+      } else {
+        console.error("Error updating flow properties:", err);
+        setError(err.message || 'Failed to update flow properties');
+      }
     } finally {
       setLoading(false);
     }
@@ -241,6 +266,11 @@ export const FlowManagerProvider = ({ children }) => {
   
   // Delete a flow
   const deleteFlow = async (flowId) => {
+    if (!flowId) {
+      console.log("Cannot delete: No flow ID provided");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
@@ -256,8 +286,17 @@ export const FlowManagerProvider = ({ children }) => {
         localStorage.removeItem('mailflow_current_flow');
         setShowFlowModal(true);
       }
+      
+      console.log("Flow deleted successfully");
     } catch (err) {
-      setError(err.message || 'Failed to delete flow');
+      // Check if this is a permission error (403)
+      if (err.response && err.response.status === 403) {
+        console.log("Permission denied: User doesn't have rights to delete this flow");
+        setError("Vous n'avez pas la permission de supprimer ce flow");
+      } else {
+        console.error("Error deleting flow:", err);
+        setError(err.message || 'Failed to delete flow');
+      }
     } finally {
       setLoading(false);
     }
@@ -281,7 +320,15 @@ export const FlowManagerProvider = ({ children }) => {
   
   // Switch to a different version of the current flow
   const switchFlowVersion = async (versionIndex) => {
-    if (!currentFlow || versionIndex < 0 || versionIndex > 2) return;
+    if (!currentFlow) {
+      console.log("Cannot switch version: No current flow selected");
+      return null;
+    }
+    
+    if (versionIndex < 0 || versionIndex > 2) {
+      console.log(`Invalid version index: ${versionIndex}. Must be between 0 and 2.`);
+      return null;
+    }
     
     setLoading(true);
     setError(null);
@@ -293,9 +340,17 @@ export const FlowManagerProvider = ({ children }) => {
       setCurrentFlow(updatedFlow);
       setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
       
+      console.log(`Switched to flow version ${versionIndex} successfully`);
       return updatedFlow;
     } catch (err) {
-      setError(err.message || 'Failed to switch flow version');
+      // Check if this is a permission error (403)
+      if (err.response && err.response.status === 403) {
+        console.log("Permission denied: User doesn't have rights to switch flow versions");
+        setError("Vous n'avez pas la permission de changer la version de ce flow");
+      } else {
+        console.error("Error switching flow version:", err);
+        setError(err.message || 'Failed to switch flow version');
+      }
       return null;
     } finally {
       setLoading(false);

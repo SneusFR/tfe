@@ -26,12 +26,21 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
 
   // Fonction pour vérifier si le rôle de l'utilisateur est suffisant
   const hasAccess = useCallback(() => {
-    if (!userRole || !requiredRole) return false;
+    if (!userRole || !requiredRole) {
+      console.log(`Permission check failed: No user role (${userRole}) or required role (${requiredRole}) defined`);
+      return false;
+    }
     
     const userRank = RANK[userRole] || 0;
     const requiredRank = RANK[requiredRole] || 0;
     
-    return userRank >= requiredRank;
+    const hasPermission = userRank >= requiredRank;
+    
+    if (!hasPermission) {
+      console.log(`Permission check failed: User role '${userRole}' (rank ${userRank}) is insufficient for required role '${requiredRole}' (rank ${requiredRank})`);
+    }
+    
+    return hasPermission;
   }, [userRole, requiredRole]);
 
   // Récupérer le rôle de l'utilisateur pour le flow courant
@@ -49,9 +58,17 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
         const collaborations = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
         
         // Trouver la collaboration de l'utilisateur courant
-        const myCollaboration = collaborations.find(
-          collab => collab.user && (collab.user.id === user.id || collab.user._id === user.id)
-        );
+        const myCollaboration = collaborations.find(c => {
+          // c.user peut être un objet ou une string
+          let collabUserId;
+          if (typeof c.user === 'object' && c.user) {
+            collabUserId = (c.user.id || c.user._id || '').toString();
+          } else {
+            collabUserId = (c.user || '').toString();
+          }
+          const currentUserId = (user.id || user._id || '').toString();
+          return collabUserId === currentUserId;
+        });
         
         // Définir le rôle de l'utilisateur
         setUserRole(myCollaboration ? myCollaboration.role : null);

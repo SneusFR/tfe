@@ -62,6 +62,13 @@ const CollaboratorsManager = ({ onClose }) => {
       return;
     }
     
+    // Check if user has owner permissions
+    if (userRole !== 'owner') {
+      console.log("Permission denied: User doesn't have owner rights to add collaborators");
+      setError("Vous n'avez pas la permission d'ajouter des collaborateurs à ce flow");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -103,6 +110,13 @@ const CollaboratorsManager = ({ onClose }) => {
   
   // Handle removing a collaborator
   const handleRemoveCollaborator = async (collaborationId) => {
+    // Check if user has owner permissions
+    if (userRole !== 'owner') {
+      console.log("Permission denied: User doesn't have owner rights to remove collaborators");
+      setError("Vous n'avez pas la permission de supprimer des collaborateurs de ce flow");
+      return;
+    }
+    
     if (!window.confirm('Are you sure you want to remove this collaborator?')) {
       return;
     }
@@ -129,6 +143,13 @@ const CollaboratorsManager = ({ onClose }) => {
   
   // Handle changing a collaborator's role
   const handleRoleChange = async (collaborationId, newRole) => {
+    // Check if user has owner permissions
+    if (userRole !== 'owner') {
+      console.log("Permission denied: User doesn't have owner rights to change collaborator roles");
+      setError("Vous n'avez pas la permission de modifier les rôles des collaborateurs de ce flow");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setSuccess(null);

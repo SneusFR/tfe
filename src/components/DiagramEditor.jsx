@@ -168,7 +168,11 @@ const DiagramEditor = ({
 
   const handleEdgesChange = useCallback(
     (changes) => {
-      if (!canEdit) return;
+      if (!canEdit) {
+        console.log("Permission denied: User doesn't have editor rights to modify edges");
+        alert("Vous n'avez pas la permission de modifier ce flow");
+        return;
+      }
       
       const updatedEdges = applyEdgeChanges(changes, edges);
       setEdges(updatedEdges);
@@ -181,7 +185,11 @@ const DiagramEditor = ({
 
   const handleEdgeClick = useCallback(
     (event, edge) => {
-      if (!canEdit) return;
+      if (!canEdit) {
+        console.log("Permission denied: User doesn't have editor rights to delete edges");
+        alert("Vous n'avez pas la permission de supprimer des connexions dans ce flow");
+        return;
+      }
       
       if (window.confirm('Do you want to delete this connection?')) {
         const updatedEdges = edges.filter((e) => e.id !== edge.id);
@@ -199,7 +207,10 @@ const DiagramEditor = ({
   const handleNodeClick = useCallback(
     (event, node) => {
       // Only allow selection for delete if user can edit
-      if (!canEdit) return;
+      if (!canEdit) {
+        console.log("Permission denied: User doesn't have editor rights to select nodes for deletion");
+        return;
+      }
       
       // Toggle selection if clicking the same node, otherwise select the new node
       setSelectedNodeId(prevId => prevId === node.id ? null : node.id);
@@ -210,7 +221,11 @@ const DiagramEditor = ({
   // Handle node deletion
   const handleNodeDelete = useCallback(
     (nodeId) => {
-      if (!canEdit) return;
+      if (!canEdit) {
+        console.log("Permission denied: User doesn't have editor rights to delete nodes");
+        alert("Vous n'avez pas la permission de supprimer des nœuds dans ce flow");
+        return;
+      }
       
       if (window.confirm('Do you want to delete this node?')) {
         // Remove all edges connected to this node
@@ -256,7 +271,11 @@ const DiagramEditor = ({
   // Création d'une arête avec distinction entre lien d'exécution et lien de données
   const handleConnect = useCallback(
     (params) => {
-      if (!canEdit) return;
+      if (!canEdit) {
+        console.log("Permission denied: User doesn't have editor rights to create connections");
+        alert("Vous n'avez pas la permission de créer des connexions dans ce flow");
+        return;
+      }
       
       const edgeId = `edge-${Date.now()}`;
       
@@ -341,7 +360,7 @@ const DiagramEditor = ({
         }, 100);
       }
     },
-    [edges, nodes, setEdges, setNodes, onConnect, connectedIds]
+    [edges, nodes, setEdges, setNodes, onConnect, connectedIds, canEdit]
   );
 
   const onInit = useCallback(
@@ -360,7 +379,12 @@ const DiagramEditor = ({
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-      if (!reactFlowInstance || !canEdit) return;
+      if (!reactFlowInstance) return;
+      if (!canEdit) {
+        console.log("Permission denied: User doesn't have editor rights to add nodes");
+        alert("Vous n'avez pas la permission d'ajouter des nœuds dans ce flow");
+        return;
+      }
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
@@ -567,12 +591,17 @@ const DiagramEditor = ({
         }
       }
     },
-    [reactFlowInstance, nodes, setNodes, onNodesChange]
+    [reactFlowInstance, nodes, setNodes, onNodesChange, canEdit]
   );
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = canEdit ? 'move' : 'none';
+    if (!canEdit) {
+      console.log("Permission denied: User doesn't have editor rights to drag elements");
+      event.dataTransfer.dropEffect = 'none';
+    } else {
+      event.dataTransfer.dropEffect = 'move';
+    }
   }, [canEdit]);
 
   const startingPointNodes = useMemo(

@@ -29,7 +29,11 @@ export const AuthProvider = ({ children }) => {
       });
       
       const userData = response.data;
-      setUser(userData);
+      const normalisedUser = {
+        ...userData,
+        id: userData.id ?? userData._id,   // toujours présent ensuite
+      };
+      setUser(normalisedUser);
       setIsAuthenticated(true);
       return { success: true, data: userData };
     } catch (err) {
@@ -52,9 +56,13 @@ export const AuthProvider = ({ children }) => {
       });
       
       const userData = response.data;
-      setUser(userData);
+      const normalisedUser = {
+        ...userData,
+        id: userData.id ?? userData._id,   // toujours présent ensuite
+      };
+      setUser(normalisedUser);
       setIsAuthenticated(true);
-      return { success: true, data: userData };
+      return { success: true, data: normalisedUser };
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Login failed';
       setError(errorMessage);
@@ -119,9 +127,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await api.get('/api/auth/me');
-      setUser(response.data);
+      const userData = response.data;
+      const normalisedUser = {
+        ...userData,
+        id: userData.id ?? userData._id,   // toujours présent ensuite
+      };
+      setUser(normalisedUser);
       setIsAuthenticated(true);
-      return response.data;
+      return normalisedUser;
     } catch (err) {
       setUser(null);
       setIsAuthenticated(false);
@@ -136,7 +149,11 @@ export const AuthProvider = ({ children }) => {
   const sessionCheck = useCallback(async () => {
     try {
       const { data } = await api.get('/api/auth/me');
-      setUser(data);
+      const normalisedUser = {
+        ...data,
+        id: data.id ?? data._id,   // toujours présent ensuite
+      };
+      setUser(normalisedUser);
       setIsAuthenticated(true);
       return true;
     } catch (err) {
