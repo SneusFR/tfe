@@ -10,9 +10,11 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import conditionStore from '../store/conditionStore';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import '../styles/NodesInventory.css';
 
 const NodesInventory = ({ apiNodes = [] }) => {
+  const { hasAccess: canEdit } = useFlowAccess('editor');
   const [conditions, setConditions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('starting-points');
@@ -198,6 +200,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                         className="condition-item"
                         draggable={true}
                         onDragStart={(e) => {
+                          if (!canEdit) {
+                            e.preventDefault();
+                            return;
+                          }
                           // Set the condition ID as drag data
                           e.dataTransfer.setData('application/conditionId', condition.id);
                           e.dataTransfer.effectAllowed = 'move';
@@ -240,6 +246,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     className="condition-item sending-mail-item"
                     draggable={true}
                     onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
                       // Set the node type as drag data
                       e.dataTransfer.setData('application/nodeType', 'sendingMailNode');
                       e.dataTransfer.effectAllowed = 'move';
@@ -266,6 +276,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     className="condition-item email-attachment-item"
                     draggable={true}
                     onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
                       // Set the node type as drag data
                       e.dataTransfer.setData('application/nodeType', 'emailAttachmentNode');
                       e.dataTransfer.effectAllowed = 'move';
@@ -292,6 +306,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     className="condition-item ocr-item"
                     draggable={true}
                     onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
                       // Set the node type as drag data
                       e.dataTransfer.setData('application/nodeType', 'ocrNode');
                       e.dataTransfer.effectAllowed = 'move';
@@ -330,6 +348,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     className="condition-item text-node-item"
                     draggable={true}
                     onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
                       // Set the node type as drag data
                       e.dataTransfer.setData('application/nodeType', 'textNode');
                       e.dataTransfer.effectAllowed = 'move';
@@ -368,6 +390,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     className="condition-item int-node-item"
                     draggable={true}
                     onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
                       // Set the node type as drag data
                       e.dataTransfer.setData('application/nodeType', 'intNode');
                       e.dataTransfer.effectAllowed = 'move';
@@ -406,6 +432,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     className="condition-item console-log-node-item"
                     draggable={true}
                     onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
                       // Set the node type as drag data
                       e.dataTransfer.setData('application/nodeType', 'consoleLogNode');
                       e.dataTransfer.effectAllowed = 'move';
@@ -455,6 +485,10 @@ const NodesInventory = ({ apiNodes = [] }) => {
                         className="condition-item"
                         draggable={true}
                         onDragStart={(e) => {
+                          if (!canEdit) {
+                            e.preventDefault();
+                            return;
+                          }
                           // Set the node type as apiNode
                           e.dataTransfer.setData('application/nodeType', 'apiNode');
                           // Set the API node data as drag data

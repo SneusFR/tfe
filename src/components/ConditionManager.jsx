@@ -16,10 +16,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFlowManager } from '../context/FlowManagerContext';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import conditionStore from '../store/conditionStore';
 import '../styles/ConditionManager.css';
 
 const ConditionManager = () => {
+  const { hasAccess: canEdit } = useFlowAccess('editor');
   const [conditions, setConditions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [promptView, setPromptView] = useState(false);
@@ -66,6 +68,11 @@ const ConditionManager = () => {
 
   // Delete a condition
   const handleDelete = async (id) => {
+    if (!canEdit) {
+      alert("Vous n'avez pas la permission de supprimer des conditions dans ce flow");
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this condition?')) {
       setLoading(true);
       try {
@@ -205,6 +212,10 @@ const ConditionManager = () => {
                             key={condition.id} 
                             draggable={true}
                             onDragStart={(e) => {
+                              if (!canEdit) {
+                                e.preventDefault();
+                                return;
+                              }
                               // Set the condition ID as drag data
                               e.dataTransfer.setData('application/conditionId', condition.id);
                               e.dataTransfer.effectAllowed = 'move';
@@ -240,16 +251,18 @@ const ConditionManager = () => {
                                     <DragIndicatorIcon fontSize="small" />
                                   </motion.button>
                                 </Tooltip>
-                                <Tooltip title="Delete condition" arrow>
-                                  <motion.button
-                                    className="delete-button"
-                                    onClick={() => handleDelete(condition.id)}
-                                    whileHover={{ y: -2 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </motion.button>
-                                </Tooltip>
+                                {canEdit && (
+                                  <Tooltip title="Delete condition" arrow>
+                                    <motion.button
+                                      className="delete-button"
+                                      onClick={() => handleDelete(condition.id)}
+                                      whileHover={{ y: -2 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </motion.button>
+                                  </Tooltip>
+                                )}
                               </div>
                             </td>
                           </motion.tr>

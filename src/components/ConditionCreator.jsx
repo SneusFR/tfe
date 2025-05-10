@@ -9,9 +9,11 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import { useFlowAccess } from '../hooks/useFlowAccess';
 import '../styles/ConditionCreator.css';
 
 const ConditionCreator = ({ onCreateCondition }) => {
+  const { hasAccess } = useFlowAccess('editor');
   const [conditionText, setConditionText] = useState('');
   const [returnText, setReturnText] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -49,17 +51,17 @@ const ConditionCreator = ({ onCreateCondition }) => {
 
   return (
     <div className="condition-creator">
-      <motion.button
-       
-        className="open-condition-creator" 
-        onClick={() => setIsOpen(true)}
-        
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <AddIcon fontSize="small" />
-        Create Condition
-      </motion.button>
+      {hasAccess && (
+        <motion.button
+          className="open-condition-creator" 
+          onClick={() => setIsOpen(true)}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <AddIcon fontSize="small" />
+          Create Condition
+        </motion.button>
+      )}
 
       <AnimatePresence>
         {isOpen && (
