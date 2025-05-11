@@ -18,7 +18,7 @@ ROLE_HIERARCHY.forEach((role, index) => {
  * @returns {Object} - { hasAccess, userRole, loading, error }
  */
 export const useFlowAccess = (requiredRole = 'viewer') => {
-  const { currentFlow } = useFlowManager();
+  const { currentFlow, setCurrentFlow } = useFlowManager();   // ← ①
   const { user } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +83,20 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
         
         // Définir le rôle de l'utilisateur
         console.log('[useFlowAccess] setting userRole', myCollaboration?.role);
-        setUserRole(myCollaboration ? myCollaboration.role : null);
+        if (myCollaboration) {
+          const role = myCollaboration.role;
+          setUserRole(role);
+
+          /* Injecte le rôle UNE SEULE FOIS
+             – même objet => pas de re‑rendu / pas de boucle */
+          setCurrentFlow(prev => {
+            if (!prev || prev.id !== currentFlow.id) return prev;   // autre flow ?
+            if (prev.userRole === role)          return prev;       // déjà bon
+            return { ...prev, userRole: role };                     // ↵ mise à jour
+          });
+        } else {
+          setUserRole(null);
+        }
         setError(null);
       } catch (err) {
         console.error('Error fetching user role:', err);
@@ -95,7 +108,7 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
     };
 
     fetchUserRole();
-  }, [currentFlow, user]);
+  }, [currentFlow?.id, user, setCurrentFlow]);
 
   return {
     hasAccess: hasAccess(),

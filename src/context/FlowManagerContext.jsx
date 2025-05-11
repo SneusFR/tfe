@@ -201,6 +201,12 @@ export const FlowManagerProvider = ({ children }) => {
       // Save to backend
       const updatedFlow = await flowService.saveFlowVariant(currentFlow.id, { nodes: nodesToSave, edges: edgesToSave });
       
+      // ➜ on recopie le rôle qu'on connaît déjà
+      updatedFlow.userRole = currentFlow.userRole;
+
+      // (facultatif, garde aussi les collaborateurs déjà chargés)
+      updatedFlow.collaborators = currentFlow.collaborators;
+      
       // Update local state
       setCurrentFlow(updatedFlow);
       setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
@@ -361,6 +367,9 @@ export const FlowManagerProvider = ({ children }) => {
     try {
       // Call the API to switch variants
       const updatedFlow = await flowService.switchFlowVariant(currentFlow.id, versionIndex);
+      
+      // Préserver le rôle utilisateur lors du changement de version
+      updatedFlow.userRole = currentFlow.userRole;
       
       // Update local state
       setCurrentFlow(updatedFlow);
