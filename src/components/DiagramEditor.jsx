@@ -13,6 +13,7 @@ import { useFlowManager } from '../context/FlowManagerContext';
 import { FlowProvider } from '../context/FlowContext';
 import { useFlowAccess } from '../hooks/useFlowAccess';
 import BackendConfigSelector from './settings/BackendConfigSelector';
+import { motion } from 'framer-motion';
 import ReactFlow, {
   Background,
   Controls,
@@ -87,7 +88,7 @@ const DiagramEditor = ({
   onConnect,
   onEdgeDelete,
 }) => {
-  const { currentFlow, saveCurrentFlow } = useFlowManager();
+  const { currentFlow, saveCurrentFlow, toggleFlowModal } = useFlowManager();
   const { hasAccess: canEdit } = useFlowAccess('editor');
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [nodes, setNodes] = useNodesState(initialNodes || []);
@@ -113,7 +114,16 @@ const DiagramEditor = ({
 
   // Effet pour charger les nœuds et les arêtes lorsque le flow courant change
   useEffect(() => {
-    if (!currentFlow) return;
+    // If there's no current flow, clear all nodes and edges
+    if (!currentFlow) {
+      setNodes([]);
+      setEdges([]);
+      if (onNodesChange) onNodesChange([]);
+      if (onEdgesChange) onEdgesChange([]);
+      prevFlowId.current = null;
+      return;
+    }
+    
     if (currentFlow.id === prevFlowId.current) return;
     prevFlowId.current = currentFlow.id;
     
@@ -148,7 +158,7 @@ const DiagramEditor = ({
       setEdges([]);
       if (onEdgesChange) onEdgesChange([]);
     }
-  }, [currentFlow?.id, setNodes, setEdges, onNodesChange, onEdgesChange]);
+  }, [currentFlow, setNodes, setEdges, onNodesChange, onEdgesChange]);
 
   // Throttled version of node changes to improve performance during dragging
   const throttledApply = useRef(
@@ -685,10 +695,61 @@ const DiagramEditor = ({
     <div
       ref={reactFlowWrapper}
       className="diagram-editor"
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: '100%', height: '100%', position: 'relative' }}
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
+      {!currentFlow && (
+        <div className="flow-required-overlay" style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          color: 'white',
+          textAlign: 'center',
+          padding: '20px'
+        }}>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              backgroundColor: '#2a2a2a',
+              borderRadius: '8px',
+              padding: '30px',
+              maxWidth: '500px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <h2 style={{ marginTop: 0 }}>Aucun flow actif</h2>
+            <p>Vous devez créer un nouveau flow ou charger un flow existant pour continuer.</p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleFlowModal}
+              style={{
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '4px',
+                fontSize: '16px',
+                cursor: 'pointer',
+                marginTop: '20px'
+              }}
+            >
+              Créer ou charger un flow
+            </motion.button>
+          </motion.div>
+        </div>
+      )}
       <ReactFlowProvider>
         <FlowProvider nodes={nodes} edges={edges} flowId={currentFlow?.id}>
           <ReactFlow

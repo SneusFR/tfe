@@ -21,7 +21,7 @@ export const FlowManagerProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  const { isAuthenticated, api } = useAuth();
+  const { isAuthenticated, api, user } = useAuth();
   const flowService = useFlowService();
   
   // Clear all flow data
@@ -44,21 +44,12 @@ export const FlowManagerProvider = ({ children }) => {
       // Check if there's a current flow saved
       const currentFlowId = localStorage.getItem('mailflow_current_flow');
       if (currentFlowId) {
-        const flow = flowsArray.find(f => f.id === currentFlowId);
-        if (flow) {
-          setCurrentFlow(flow);
-        } else {
-          // If the flow is not found in the new list, remove it from localStorage
-          localStorage.removeItem('mailflow_current_flow');
-          setCurrentFlow(null);
-          
-          if (flowsArray.length === 0) {
-            // Only show the modal if there are no flows available
-            setShowFlowModal(true);
-          }
-        }
-      } else if (flowsArray.length === 0) {
-        // Only show the modal if there are no flows available and no current flow
+        // Instead of loading the flow automatically, just clear it and show the modal
+        localStorage.removeItem('mailflow_current_flow');
+        setCurrentFlow(null);
+        setShowFlowModal(true);
+      } else {
+        // No current flow, show the modal
         setShowFlowModal(true);
       }
     } catch (err) {
@@ -141,7 +132,22 @@ export const FlowManagerProvider = ({ children }) => {
     setError(null);
     try {
       const flow = await flowService.getFlowById(flowId);
+      console.log('[loadFlow] flow from API', flow);
       
+      // on vide / positionne le flow courant dans le store
+      collaborationStore.setCurrentFlowId(flow.id);
+
+      // 1️⃣ on force un fetch des collaborations (cookie déjà OK)
+      try {
+        const colls = await collaborationStore.getByFlow(flow.id, { forceRefresh: true });
+        const me = colls.find(c =>
+          (c.user.id ?? c.user._id ?? c.user).toString() ===
+          (user.id ?? user._id).toString());
+        if (me) flow.userRole = me.role;
+      } catch (e) {
+        console.error('[loadFlow] collaborations fetch failed', e);
+      }
+
       setCurrentFlow(flow);
       setShowFlowModal(false);
       return flow;
@@ -315,6 +321,10 @@ export const FlowManagerProvider = ({ children }) => {
   
   // Toggle the flow modal
   const toggleFlowModal = () => {
+    // If there's no current flow and the modal is open, don't allow closing it
+    if (!currentFlow && showFlowModal) {
+      return; // Keep the modal open
+    }
     setShowFlowModal(!showFlowModal);
   };
   

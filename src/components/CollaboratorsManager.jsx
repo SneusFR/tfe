@@ -19,7 +19,7 @@ import { useFlowAccess } from '../hooks/useFlowAccess';
 import collaborationStore from '../store/collaborationStore';
 import './CollaboratorsManager.css';
 
-const CollaboratorsManager = ({ onClose }) => {
+const CollaboratorsManager = ({ onClose = () => {} }) => {
   const { user } = useAuth();
   const { currentFlow, refreshFlows } = useFlowManager();
   const { userRole } = useFlowAccess();
@@ -179,9 +179,6 @@ const CollaboratorsManager = ({ onClose }) => {
     <div className="collaborators-manager">
       <div className="collaborators-manager-header">
         <Typography variant="h6">Manage Collaborators</Typography>
-        <IconButton onClick={onClose} className="close-button">
-          <span>×</span>
-        </IconButton>
       </div>
       
       {error && (

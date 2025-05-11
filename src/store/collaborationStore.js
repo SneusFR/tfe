@@ -72,6 +72,7 @@ const collaborationStore = {
 
   /* ------------------- Récupération par flow --------------------- */
   async getByFlow(flowId, opts = {}) {
+    console.log('[getByFlow] flowId', flowId, 'cached?', !!collaborationsCache.data.length);
     const now = Date.now();
 
     // Cache frais ? on renvoie la copie

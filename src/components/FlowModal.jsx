@@ -161,14 +161,8 @@ const FlowModal = () => {
                   <p className="no-flows-message">No flows available. Create your first flow!</p>
                 )}
                 
-                <motion.button 
-                  className="close-button"
-                  onClick={toggleFlowModal}
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ×
-                </motion.button>
+                {/* Only show close button if there's a current flow */}
+                {/* Close button removed to force flow selection */}
               </div>
             )}
             
@@ -267,14 +261,8 @@ const FlowModal = () => {
                   </div>
                 )}
                 
-                <motion.button 
-                  className="close-button"
-                  onClick={toggleFlowModal}
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ×
-                </motion.button>
+                {/* Only show close button if there's a current flow */}
+                {/* Close button removed to force flow selection */}
               </div>
             )}
             
@@ -392,14 +380,8 @@ const FlowModal = () => {
                   </div>
                 )}
                 
-                <motion.button 
-                  className="close-button"
-                  onClick={toggleFlowModal}
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ×
-                </motion.button>
+                {/* Only show close button if there's a current flow */}
+                {/* Close button removed to force flow selection */}
               </div>
             )}
 

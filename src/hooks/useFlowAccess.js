@@ -46,16 +46,25 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
   // Récupérer le rôle de l'utilisateur pour le flow courant
   useEffect(() => {
     const fetchUserRole = async () => {
+      console.log('[useFlowAccess] currentFlow', currentFlow?.id, 'userRole in flow', currentFlow?.userRole);
+      
       if (!currentFlow || !user) {
         setUserRole(null);
         setLoading(false);
         return;
       }
 
+      /* 0. S'il y a déjà l'info dans le flow, on l'utilise tout de suite */
+      if (currentFlow.userRole) {
+        setUserRole(currentFlow.userRole);
+      }
+
       try {
         setLoading(true);
         // Récupérer les collaborations pour ce flow
-        const collaborations = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
+        /* 1. Ne force le refresh qu'en cas de mutation */
+        const collaborations = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: false });
+        console.log('[loadFlow] collabs', collaborations);
         
         // Trouver la collaboration de l'utilisateur courant
         const myCollaboration = collaborations.find(c => {
@@ -70,7 +79,10 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
           return collabUserId === currentUserId;
         });
         
+        console.log('[loadFlow] my role', myCollaboration?.role);
+        
         // Définir le rôle de l'utilisateur
+        console.log('[useFlowAccess] setting userRole', myCollaboration?.role);
         setUserRole(myCollaboration ? myCollaboration.role : null);
         setError(null);
       } catch (err) {

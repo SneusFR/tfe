@@ -10,6 +10,7 @@ import ApiImporter from './components/ApiImporter';
 import DiagramEditor from './components/DiagramEditor';
 import NodesInventory from './components/NodesInventory';
 import EmailBrowser from './components/EmailBrowser';
+import CollaboratorsManager from './components/CollaboratorsManager';
 import ConditionCreator from './components/ConditionCreator';
 import ConditionManager from './components/ConditionManager';
 import TaskManager from './components/TaskManager';
@@ -146,6 +147,12 @@ const EditorApp = () => {
                 >
                   Emails
                 </button>
+                <button
+                  className={`tab-button ${activeTab === 'collaborations' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('collaborations')}
+                >
+                  Collaborations
+                </button>
               </div>
               {isAuthenticated ? <UserMenu /> : <LoginButton />}
             </div>
@@ -190,8 +197,12 @@ const EditorApp = () => {
                   />
                   <NodesInventory apiNodes={apiInventoryNodes} />
                 </div>
-              ) : (
+              ) : activeTab === 'emails' ? (
                 <EmailBrowser />
+              ) : (
+                <div className="collaborations-container">
+                  <CollaboratorsManager onClose={() => {}} />
+                </div>
               )}
             </div>
           </main>
