@@ -60,6 +60,22 @@ export const FlowManagerProvider = ({ children }) => {
     }
   }, [isAuthenticated, flowService]);
   
+  // Refresh flows without showing the modal (for use in CollaboratorsManager)
+  const refreshFlowsQuiet = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const flowsArray = await flowService.getFlows({ page: 1, limit: 100 });
+      setFlows(flowsArray || []);
+    } catch (err) {
+      setError(err.message || 'Failed to load flows');
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, flowService]);
+  
   // Use a ref to track if we've already fetched flows
   const hasFetchedRef = useRef(false);
   
@@ -400,6 +416,7 @@ export const FlowManagerProvider = ({ children }) => {
         setShowFlowModal,
         switchFlowVersion,
         refreshFlows: fetchFlows,
+        refreshFlowsQuiet,
         clear,     // ← nouveau
       }}
     >

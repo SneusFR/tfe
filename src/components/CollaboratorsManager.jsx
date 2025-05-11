@@ -21,7 +21,7 @@ import './CollaboratorsManager.css';
 
 const CollaboratorsManager = ({ onClose = () => {} }) => {
   const { user } = useAuth();
-  const { currentFlow, refreshFlows } = useFlowManager();
+  const { currentFlow, refreshFlowsQuiet } = useFlowManager();
   const { userRole } = useFlowAccess();
   
   const [collaborators, setCollaborators] = useState([]);
@@ -34,14 +34,24 @@ const CollaboratorsManager = ({ onClose = () => {} }) => {
   // Load collaborators from the store
   useEffect(() => {
     const loadCollaborators = async () => {
-      if (!currentFlow) return;
+      if (!currentFlow) {
+        console.log('No current flow, cannot load collaborators');
+        return;
+      }
       
+      console.log('Loading collaborators for flow:', currentFlow.id);
       setLoading(true);
       setError(null);
       
       try {
+        // Set the current flow ID in the store first
+        collaborationStore.setCurrentFlowId(currentFlow.id);
+        
+        // Then get the collaborations
         const collabs = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
-        setCollaborators(collabs);
+        console.log('Loaded collaborators:', collabs);
+        
+        setCollaborators(collabs || []);
       } catch (err) {
         console.error('Error loading collaborators:', err);
         setError('Failed to load collaborators');
@@ -90,8 +100,10 @@ const CollaboratorsManager = ({ onClose = () => {} }) => {
       });
       
       // Refresh collaborators and flows
-      await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
-      await refreshFlows();
+      const updatedCollabs = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
+      console.log('Updated collaborators after add:', updatedCollabs);
+      setCollaborators(updatedCollabs || []);
+      await refreshFlowsQuiet();
       
       // Clear the form
       setNewEmail('');
@@ -129,8 +141,10 @@ const CollaboratorsManager = ({ onClose = () => {} }) => {
       await collaborationStore.remove(collaborationId);
       
       // Refresh collaborators and flows
-      await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
-      await refreshFlows();
+      const updatedCollabs = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
+      console.log('Updated collaborators after remove:', updatedCollabs);
+      setCollaborators(updatedCollabs || []);
+      await refreshFlowsQuiet();
       
       setSuccess('Collaborator removed successfully');
     } catch (err) {
@@ -160,8 +174,10 @@ const CollaboratorsManager = ({ onClose = () => {} }) => {
       });
       
       // Refresh collaborators and flows
-      await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
-      await refreshFlows();
+      const updatedCollabs = await collaborationStore.getByFlow(currentFlow.id, { forceRefresh: true });
+      console.log('Updated collaborators after role change:', updatedCollabs);
+      setCollaborators(updatedCollabs || []);
+      await refreshFlowsQuiet();
       
       setSuccess('Collaborator role updated successfully');
     } catch (err) {
