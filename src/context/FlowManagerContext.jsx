@@ -160,6 +160,9 @@ export const FlowManagerProvider = ({ children }) => {
           (c.user.id ?? c.user._id ?? c.user).toString() ===
           (user.id ?? user._id).toString());
         if (me) flow.userRole = me.role;
+        
+        // Stocker les collaborations dans le flow pour un accès rapide
+        flow.collaborators = colls;
       } catch (e) {
         console.error('[loadFlow] collaborations fetch failed', e);
       }
@@ -368,8 +371,9 @@ export const FlowManagerProvider = ({ children }) => {
       // Call the API to switch variants
       const updatedFlow = await flowService.switchFlowVariant(currentFlow.id, versionIndex);
       
-      // Préserver le rôle utilisateur lors du changement de version
+      // Préserver le rôle utilisateur et les collaborateurs lors du changement de version
       updatedFlow.userRole = currentFlow.userRole;
+      updatedFlow.collaborators = currentFlow.collaborators;
       
       // Update local state
       setCurrentFlow(updatedFlow);
