@@ -38,6 +38,7 @@ import TextNode from './TextNode';
 import IntNode from './IntNode';
 import OcrNode from './OcrNode';
 import ConsoleLogNode from './ConsoleLogNode';
+import AINode from './AINode';
 import conditionStore from '../store/conditionStore';
 
 // Connection colors and styles
@@ -72,6 +73,7 @@ const nodeTypes = {
   intNode: IntNode,
   ocrNode: OcrNode,
   consoleLogNode: ConsoleLogNode,
+  aiNode: AINode,
 };
 
 // Define edge types outside the component
@@ -577,6 +579,62 @@ const DiagramEditor = ({
           position,
           data: {},
         };
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'aiNode') {
+        const nodeId = `ai-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'aiNode',
+          position,
+          data: {
+            prompt: 'Enter your prompt here...',
+            input: '',
+            output: '',
+            onPromptChange: null, // Will be set via ref
+            onInputChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callbacks in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onPromptChange: (newPrompt) => {
+            setNodes((prevNodes) =>
+              prevNodes.map((n) =>
+                n.id === nodeId ? { ...n, data: { ...n.data, prompt: newPrompt } } : n
+              )
+            );
+            if (onNodesChange) {
+              onNodesChange(
+                prevNodes => prevNodes.map((n) =>
+                  n.id === nodeId ? { ...n, data: { ...n.data, prompt: newPrompt } } : n
+                )
+              );
+            }
+          },
+          onInputChange: (newInput) => {
+            setNodes((prevNodes) =>
+              prevNodes.map((n) =>
+                n.id === nodeId ? { ...n, data: { ...n.data, input: newInput } } : n
+              )
+            );
+            if (onNodesChange) {
+              onNodesChange(
+                prevNodes => prevNodes.map((n) =>
+                  n.id === nodeId ? { ...n, data: { ...n.data, input: newInput } } : n
+                )
+              );
+            }
+          }
+        };
+        
+        // Set the callback references
+        newNode.data.onPromptChange = (newPrompt) => nodeCallbacksRef.current[nodeId].onPromptChange(newPrompt);
+        newNode.data.onInputChange = (newInput) => nodeCallbacksRef.current[nodeId].onInputChange(newInput);
+        
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);

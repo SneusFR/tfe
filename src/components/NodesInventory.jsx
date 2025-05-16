@@ -127,6 +127,14 @@ const NodesInventory = ({ apiNodes = [] }) => {
               Debug
             </motion.button>
             <motion.button 
+              className={`inventory-tab ${activeCategory === 'ai-nodes' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('ai-nodes')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              AI Nodes
+            </motion.button>
+            <motion.button 
               className={`inventory-tab ${activeCategory === 'api-nodes' ? 'active' : ''}`}
               onClick={() => setActiveCategory('api-nodes')}
               whileHover={{ scale: 1.05 }}
@@ -455,6 +463,48 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     </div>
                     <div className="condition-description">
                       Logs input value to the console when connected to an execution flow
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+            
+            {activeCategory === 'ai-nodes' && (
+              <motion.div
+                key="ai-nodes"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="condition-items">
+                  <motion.div 
+                    className="condition-item ai-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'aiNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#673AB7' }}>AI</div>
+                      </Tooltip>
+                      <div className="condition-return">AI Processing</div>
+                    </div>
+                    <div className="condition-description">
+                      Process text with AI using customizable prompts and inputs
                     </div>
                   </motion.div>
                 </div>
