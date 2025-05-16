@@ -19,15 +19,15 @@ export const FlowProvider = ({ children, nodes, edges, flowId }) => {
   
   // Create a ref to hold the executeFlow function
   const executeFlowRef = useRef(async (task) => {
-    return await runFlow(nodes, edges, task, backendConfigId);
+    return await runFlow(nodes, edges, task, backendConfigId, flowId);
   });
   
-  // Update the executeFlowRef when nodes, edges, or backendConfigId change
+  // Update the executeFlowRef when nodes, edges, backendConfigId, or flowId change
   useEffect(() => {
     executeFlowRef.current = async (task) => {
-      return await runFlow(nodes, edges, task, backendConfigId);
+      return await runFlow(nodes, edges, task, backendConfigId, flowId);
     };
-  }, [nodes, edges, backendConfigId]);
+  }, [nodes, edges, backendConfigId, flowId]);
 
   // Update condition store when flowId changes
   useEffect(() => {
