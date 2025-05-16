@@ -15,7 +15,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../context/AuthContext';
 import { useFlowManager } from '../context/FlowManagerContext';
-import { useFlowAccess } from '../hooks/useFlowAccess';
+import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import collaborationStore from '../store/collaborationStore';
 import './CollaboratorsManager.css';
 

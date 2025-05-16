@@ -11,7 +11,7 @@ import { buildAdjacency, markReachable } from '../utils/graph';
 import FlowMenuButton from './FlowMenuButton';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { FlowProvider } from '../context/FlowContext';
-import { useFlowAccess } from '../hooks/useFlowAccess';
+import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import BackendConfigSelector from './settings/BackendConfigSelector';
 import { motion } from 'framer-motion';
 import ReactFlow, {

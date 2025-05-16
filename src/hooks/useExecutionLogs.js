@@ -3,11 +3,8 @@ import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   fetchExecutionLogs,
-  deleteExecutionLogs,
-  LogsFilter, 
-  PageState, 
-  LogEntry 
-} from '../api/executionLogs';
+  deleteExecutionLogs
+} from '../api/executionLogs.js';
 
 /**
  * Custom hook to manage execution logs with filtering and pagination
@@ -16,12 +13,12 @@ import {
  * @returns Logs data, loading state, error state, and utility functions
  */
 export const useExecutionLogs = (
-  initialFilter: LogsFilter,
-  initialPageState: PageState
+  initialFilter,
+  initialPageState
 ) => {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [filter, setFilter] = useState<LogsFilter>(initialFilter);
-  const [pageState, setPageState] = useState<PageState>(initialPageState);
+  const [logs, setLogs] = useState([]);
+  const [filter, setFilter] = useState(initialFilter);
+  const [pageState, setPageState] = useState(initialPageState);
 
   /* NEW : quand initialFilter change (flowId enfin connu) on le pousse
      dans le state interne et on remet la pagination à 1. */
@@ -29,8 +26,8 @@ export const useExecutionLogs = (
     setFilter(initialFilter);
     setPageState(ps => ({ ...ps, page: 1 }));
   }, [initialFilter]);         // ← dépendance indispensable
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -55,7 +52,7 @@ export const useExecutionLogs = (
           total: response.total
         }));
       }
-    } catch (err: any) {
+    } catch (err) {
       // Handle different error types
       if (err.message.includes('Unauthorized')) {
         // Unauthorized - redirect to login
@@ -78,7 +75,7 @@ export const useExecutionLogs = (
    * Update filter and reset to page 1
    * @param newFilter - New filter parameters
    */
-  const updateFilter = useCallback((newFilter: Partial<LogsFilter>) => {
+  const updateFilter = useCallback((newFilter) => {
     setFilter(prev => ({ ...prev, ...newFilter }));
     // Reset to page 1 when filter changes
     setPageState(prev => ({ ...prev, page: 1 }));
@@ -88,7 +85,7 @@ export const useExecutionLogs = (
    * Update page state
    * @param newPageState - New page state
    */
-  const updatePageState = useCallback((newPageState: Partial<PageState>) => {
+  const updatePageState = useCallback((newPageState) => {
     setPageState(prev => ({ ...prev, ...newPageState }));
   }, []);
 
@@ -96,7 +93,7 @@ export const useExecutionLogs = (
    * Set page number
    * @param page - Page number
    */
-  const setPage = useCallback((page: number) => {
+  const setPage = useCallback((page) => {
     updatePageState({ page });
   }, [updatePageState]);
 
@@ -104,7 +101,7 @@ export const useExecutionLogs = (
    * Delete logs based on criteria
    * @param criteria - Deletion criteria
    */
-  const deleteLogs = useCallback(async (criteria: { flowId?: string; taskIds?: string[] }) => {
+  const deleteLogs = useCallback(async (criteria) => {
     setLoading(true);
     setError(null);
     
@@ -115,7 +112,7 @@ export const useExecutionLogs = (
       // Refresh logs after deletion (reset to page 1)
       setPageState(prev => ({ ...prev, page: 1 }));
       fetchLogs();
-    } catch (err: any) {
+    } catch (err) {
       if (err.message.includes('Unauthorized')) {
         navigate('/login');
       } else if (err.message.includes('Access forbidden')) {

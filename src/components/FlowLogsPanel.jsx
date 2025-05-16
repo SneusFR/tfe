@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useFlow } from '../context/FlowContext';
-import { useFlowAccess } from '../hooks/useFlowAccess';
-import { useExecutionLogs } from '../hooks/useExecutionLogs';
-import { LogEntry, LogLevel } from '../api/executionLogs';
+import { useFlowAccess } from '../hooks/useFlowAccess.js';
+import { useExecutionLogs } from '../hooks/useExecutionLogs.js';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
@@ -46,7 +45,7 @@ import {
   Description as FileTextIcon,
   CalendarToday as CalendarIcon
 } from '@mui/icons-material';
-import { cn } from '../utils/classNames';
+import { cn } from '../utils/classNames.js';
 
 // Level badge colors and styles
 const levelColors = {
@@ -56,12 +55,8 @@ const levelColors = {
   error: { bgcolor: 'error.main', color: 'white' },
 };
 
-interface FlowLogsPanelProps {
-  flowId: string;
-}
-
-// -- FlowLogsPanel.tsx
-const FlowLogsPanel: React.FC<FlowLogsPanelProps> = ({ flowId }) => {
+// -- FlowLogsPanel.jsx
+const FlowLogsPanel = ({ flowId }) => {
   useEffect(() => {
     console.log('[FlowLogsPanel] mount, props.flowId =', flowId);
   }, [flowId]);
@@ -81,14 +76,14 @@ const FlowLogsPanel: React.FC<FlowLogsPanelProps> = ({ flowId }) => {
   const { hasAccess: isOwner } = useFlowAccess('owner');
   
   // Filter state
-  const [filterLevel, setFilterLevel] = useState<LogLevel | undefined>(undefined);
-  const [filterSince, setFilterSince] = useState<Date | undefined>(undefined);
-  const [filterUntil, setFilterUntil] = useState<Date | undefined>(undefined);
+  const [filterLevel, setFilterLevel] = useState(undefined);
+  const [filterSince, setFilterSince] = useState(undefined);
+  const [filterUntil, setFilterUntil] = useState(undefined);
   
   // Dialog states
-  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
-  const [openDetailDialog, setOpenDetailDialog] = useState<boolean>(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   
   // Initial filter and page state
   const initialFilter = useMemo(() => ({
@@ -144,7 +139,7 @@ const FlowLogsPanel: React.FC<FlowLogsPanelProps> = ({ flowId }) => {
   }, [deleteLogs, flowId]);
   
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString) => {
     try {
       return format(new Date(dateString), 'dd/MM/yyyy HH:mm:ss', { locale: fr });
     } catch (e) {
@@ -153,7 +148,7 @@ const FlowLogsPanel: React.FC<FlowLogsPanelProps> = ({ flowId }) => {
   };
   
   // Format payload for display
-  const formatPayload = (payload?: string) => {
+  const formatPayload = (payload) => {
     if (!payload) return '';
     try {
       return JSON.stringify(JSON.parse(payload), null, 2);
@@ -163,7 +158,7 @@ const FlowLogsPanel: React.FC<FlowLogsPanelProps> = ({ flowId }) => {
   };
   
   // Copy payload to clipboard
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
   };
   
@@ -226,7 +221,7 @@ const FlowLogsPanel: React.FC<FlowLogsPanelProps> = ({ flowId }) => {
             labelId="level-filter-label"
             value={filterLevel || ''}
             label="Niveau"
-            onChange={(e) => setFilterLevel(e.target.value as LogLevel || undefined)}
+            onChange={(e) => setFilterLevel(e.target.value || undefined)}
             displayEmpty
           >
             <MenuItem value="">Tous les niveaux</MenuItem>

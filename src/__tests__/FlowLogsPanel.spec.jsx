@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import FlowLogsPanel from '../components/FlowLogsPanel';
+import FlowLogsPanel from '../components/FlowLogsPanel.jsx';
 import { ToastProvider } from '../context/ToastContext';
 import { FlowProvider } from '../context/FlowContext';
 import { FlowManagerProvider } from '../context/FlowManagerContext';
@@ -69,8 +69,8 @@ const mockLogs = [
 ];
 
 // Mock the useFlowAccess hook
-jest.mock('../hooks/useFlowAccess', () => ({
-  useFlowAccess: (role: string) => ({ hasAccess: role === 'owner' })
+jest.mock('../hooks/useFlowAccess.js', () => ({
+  useFlowAccess: (role) => ({ hasAccess: role === 'owner' })
 }));
 
 // Setup and teardown the mock server
@@ -79,7 +79,7 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Wrapper component for providing context
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const TestWrapper = ({ children }) => (
   <MemoryRouter>
     <ToastProvider>
       <FlowManagerProvider>

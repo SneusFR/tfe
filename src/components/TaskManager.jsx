@@ -16,7 +16,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { FlowContext } from '../context/FlowContext';
 import { useAuth } from '../context/AuthContext';
 import { useFlowManager } from '../context/FlowManagerContext';
-import { useFlowAccess } from '../hooks/useFlowAccess';
+import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
 

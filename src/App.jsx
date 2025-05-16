@@ -10,7 +10,8 @@ import ApiImporter from './components/ApiImporter';
 import DiagramEditor from './components/DiagramEditor';
 import NodesInventory from './components/NodesInventory';
 import EmailBrowser from './components/EmailBrowser';
-import FlowLogsPanel from './components/FlowLogsPanel';
+import FlowLogsPanel from './components/FlowLogsPanel.jsx';
+import LogsPanelWrapper from './components/LogsPanelWrapper.jsx';
 import CollaboratorsManager from './components/CollaboratorsManager';
 import ConditionCreator from './components/ConditionCreator';
 import ConditionManager from './components/ConditionManager';
@@ -30,28 +31,6 @@ import { FlowProvider } from './context/FlowContext';
 import { FlowManagerProvider, useFlowManager } from './context/FlowManagerContext';
 import conditionStore from './store/conditionStore';
 
-// -----------------------------------------------------------------------------
-// Logs Panel Wrapper
-// -----------------------------------------------------------------------------
-const LogsPanelWrapper = () => {
-  const { currentFlow, loading } = useFlowManager();
-  
-  // Debug the flow object structure
-  console.log('Current Flow:', currentFlow);
-  
-  if (loading) return <div className="loading-container"><div className="loading-spinner"></div></div>;
-  if (!currentFlow) {
-    return (
-      <div className="empty-state">
-        <h3>Sélectionnez (ou créez) un flow pour afficher les logs</h3>
-      </div>
-    );
-  }
-  
-  // Use id or _id as appropriate
-  const flowId = currentFlow.id || currentFlow._id;
-  return <FlowLogsPanel flowId={flowId} />;
-};
 
 // -----------------------------------------------------------------------------
 // 🖥️  Editor sub‑app

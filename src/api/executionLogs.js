@@ -1,45 +1,10 @@
 import axios from 'axios';
 
-// Types
-export type LogLevel = 'info' | 'debug' | 'warn' | 'error';
-
-export interface LogEntry {
-  id: string;
-  timestamp: string;
-  level: LogLevel;
-  nodeId?: string;
-  nodeType?: string;
-  message: string;
-  payload?: string;
-}
-
-export interface LogsFilter {
-  flowId: string;
-  taskIds?: string[];
-  level?: LogLevel;
-  since?: string;
-  until?: string;
-}
-
-export interface LogsResponse {
-  page: number;
-  limit: number;
-  total: number;
-  data: LogEntry[];
-}
-
-export interface PageState {
-  page: number;
-  limit: number;
-  total: number;
-  sort: string;
-}
-
 // API functions
 export const fetchExecutionLogs = async (
-  filter: LogsFilter,
-  pageState: PageState
-): Promise<LogsResponse> => {
+  filter,
+  pageState
+) => {
   try {
     // Build query params
     const params = new URLSearchParams();
@@ -87,10 +52,10 @@ export const fetchExecutionLogs = async (
 };
 
 export const fetchTaskLogs = async (
-  taskId: string,
-  pageState: PageState,
-  filter: Omit<LogsFilter, 'flowId' | 'taskIds'>
-): Promise<LogsResponse> => {
+  taskId,
+  pageState,
+  filter
+) => {
   try {
     // Build query params
     const params = new URLSearchParams();
@@ -133,8 +98,8 @@ export const fetchTaskLogs = async (
 };
 
 export const deleteExecutionLogs = async (
-  options: { flowId?: string; taskIds?: string[] }
-): Promise<void> => {
+  options
+) => {
   try {
     await axios.delete('/api/executions/logs', {
       data: options,

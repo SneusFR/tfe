@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { useAuth } from '../context/AuthContext';
-import { useFlowAccess } from '../hooks/useFlowAccess';
+import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import CollaboratorsManager from './CollaboratorsManager';
 import '../styles/FlowModal.css';
 

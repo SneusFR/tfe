@@ -1,5 +1,5 @@
 import { createContext, useRef, useEffect, useState, useContext } from 'react';
-import { runFlow } from '../services/flowClient';
+import { runFlow } from '../services/flowClient.js';
 import { useAuth } from './AuthContext';
 import conditionStore from '../store/conditionStore';
 import backendConfigStore from '../store/backendConfigStore';
