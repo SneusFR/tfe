@@ -10,6 +10,7 @@ import ApiImporter from './components/ApiImporter';
 import DiagramEditor from './components/DiagramEditor';
 import NodesInventory from './components/NodesInventory';
 import EmailBrowser from './components/EmailBrowser';
+import FlowLogsPanel from './components/FlowLogsPanel';
 import CollaboratorsManager from './components/CollaboratorsManager';
 import ConditionCreator from './components/ConditionCreator';
 import ConditionManager from './components/ConditionManager';
@@ -28,6 +29,29 @@ import AuthPage from './components/auth/AuthPage';
 import { FlowProvider } from './context/FlowContext';
 import { FlowManagerProvider, useFlowManager } from './context/FlowManagerContext';
 import conditionStore from './store/conditionStore';
+
+// -----------------------------------------------------------------------------
+// Logs Panel Wrapper
+// -----------------------------------------------------------------------------
+const LogsPanelWrapper = () => {
+  const { currentFlow, loading } = useFlowManager();
+  
+  // Debug the flow object structure
+  console.log('Current Flow:', currentFlow);
+  
+  if (loading) return <div className="loading-container"><div className="loading-spinner"></div></div>;
+  if (!currentFlow) {
+    return (
+      <div className="empty-state">
+        <h3>Sélectionnez (ou créez) un flow pour afficher les logs</h3>
+      </div>
+    );
+  }
+  
+  // Use id or _id as appropriate
+  const flowId = currentFlow.id || currentFlow._id;
+  return <FlowLogsPanel flowId={flowId} />;
+};
 
 // -----------------------------------------------------------------------------
 // 🖥️  Editor sub‑app
@@ -127,8 +151,7 @@ const EditorApp = () => {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <FlowManagerProvider>
-      <FlowProvider nodes={nodes} edges={edges}>
+    <FlowProvider nodes={nodes} edges={edges}>
         <div className="app-container">
           {/* ─────── Header ─────── */}
           <header className="app-header">
@@ -146,6 +169,12 @@ const EditorApp = () => {
                   onClick={() => setActiveTab('emails')}
                 >
                   Emails
+                </button>
+                <button
+                  className={`tab-button ${activeTab === 'logs' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('logs')}
+                >
+                  Logs
                 </button>
                 <button
                   className={`tab-button ${activeTab === 'collaborations' ? 'active' : ''}`}
@@ -199,9 +228,17 @@ const EditorApp = () => {
                 </div>
               ) : activeTab === 'emails' ? (
                 <EmailBrowser />
-              ) : (
+              ) : activeTab === 'logs' ? (
+                <div className="logs-container">
+                  <LogsPanelWrapper />
+                </div>
+              ) : activeTab === 'collaborations' ? (
                 <div className="collaborations-container">
                   <CollaboratorsManager onClose={() => {}} />
+                </div>
+              ) : (
+                <div className="logs-container">
+                  <LogsPanelWrapper />
                 </div>
               )}
             </div>
@@ -211,8 +248,7 @@ const EditorApp = () => {
           <FlowModal />
           <FlowVersionSelector />
         </div>
-      </FlowProvider>
-    </FlowManagerProvider>
+    </FlowProvider>
   );
 };
 
@@ -254,7 +290,9 @@ function App() {
       <Route path="/login" element={<AuthPage />} />
       <Route path="/editor" element={
         <ProtectedRoute>
-          <EditorApp />
+          <FlowManagerProvider>
+            <EditorApp />
+          </FlowManagerProvider>
         </ProtectedRoute>
       } />
       <Route path="/settings/backend" element={

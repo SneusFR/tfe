@@ -101,7 +101,10 @@ export const FlowManagerProvider = ({ children }) => {
     setError(null);
     try {
       // Create the flow first
-      const newFlow = await flowService.createFlow({ name });
+      const apiFlow = await flowService.createFlow({ name });
+      
+      // Normalize flow to ensure it has an id property
+      const newFlow = { ...apiFlow, id: apiFlow._id || apiFlow.id };
       
       // Create a copy of the flow that we'll update with collaborators
       const updatedFlow = { ...newFlow, collaborators: [] };
@@ -147,8 +150,11 @@ export const FlowManagerProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const flow = await flowService.getFlowById(flowId);
-      console.log('[loadFlow] flow from API', flow);
+      const apiFlow = await flowService.getFlowById(flowId);
+      console.log('[loadFlow] flow from API', apiFlow);
+      
+      // Normalize flow to ensure it has an id property
+      const flow = { ...apiFlow, id: apiFlow._id || apiFlow.id };
       
       // on vide / positionne le flow courant dans le store
       collaborationStore.setCurrentFlowId(flow.id);
@@ -202,7 +208,10 @@ export const FlowManagerProvider = ({ children }) => {
     setError(null);
     try {
       // Save to backend
-      const updatedFlow = await flowService.saveFlowVariant(currentFlow.id, { nodes: nodesToSave, edges: edgesToSave });
+      const apiFlow = await flowService.saveFlowVariant(currentFlow.id, { nodes: nodesToSave, edges: edgesToSave });
+      
+      // Normalize flow to ensure it has an id property
+      const updatedFlow = { ...apiFlow, id: apiFlow._id || apiFlow.id };
       
       // ➜ on recopie le rôle qu'on connaît déjà
       updatedFlow.userRole = currentFlow.userRole;
@@ -369,7 +378,10 @@ export const FlowManagerProvider = ({ children }) => {
     setError(null);
     try {
       // Call the API to switch variants
-      const updatedFlow = await flowService.switchFlowVariant(currentFlow.id, versionIndex);
+      const apiFlow = await flowService.switchFlowVariant(currentFlow.id, versionIndex);
+      
+      // Normalize flow to ensure it has an id property
+      const updatedFlow = { ...apiFlow, id: apiFlow._id || apiFlow.id };
       
       // Préserver le rôle utilisateur et les collaborateurs lors du changement de version
       updatedFlow.userRole = currentFlow.userRole;

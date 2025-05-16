@@ -8,6 +8,10 @@ import './styles/Auth.css';
 import App from './App.jsx';
 import theme from './theme';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+
+console.log('🌈 React bundle chargé !');
+
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
@@ -15,7 +19,9 @@ createRoot(document.getElementById('root')).render(
       <CssBaseline />
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
