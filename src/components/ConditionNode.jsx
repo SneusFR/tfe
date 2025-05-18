@@ -117,32 +117,7 @@ const ConditionNode = ({ data, id }) => {
         style={getExecutionHandleStyle('right')}
       />
       
-      {/* Default handles for connections */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="default-out"
-        style={{ 
-          background: DATA_LINK_COLOR, 
-          width: '6px', 
-          height: '6px',
-          bottom: 0,
-          right: '30%'
-        }}
-      />
-      
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="default-in"
-        style={{ 
-          background: DATA_LINK_COLOR, 
-          width: '6px', 
-          height: '6px',
-          top: 0,
-          left: '30%'
-        }}
-      />
+      {/* Default handles for connections removed as they're not needed */}
       
       {/* Connection indicator */}
       {connectionIndicator}

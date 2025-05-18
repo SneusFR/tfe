@@ -133,38 +133,7 @@ const TextNode = ({ data, id }) => {
         )}
       </div>
       
-      {/* Execution flow handles (triangles) - better integrated with the node */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="execution"
-        style={{ 
-          background: 'transparent', 
-          width: 0,
-          height: 0,
-          borderTop: '6px solid transparent',
-          borderBottom: '6px solid transparent',
-          borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
-          top: 0,
-          left: -10,
-        }}
-      />
-      
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="execution"
-        style={{ 
-          background: 'transparent', 
-          width: 0,
-          height: 0,
-          borderTop: '6px solid transparent',
-          borderBottom: '6px solid transparent',
-          borderLeft: '10px solid ' + EXECUTION_LINK_COLOR,
-          top: 0,
-          right: -10,
-        }}
-      />
+      {/* Execution flow handles removed as TextNode doesn't have its own processing */}
       
       {/* Output handle for data */}
       <Handle
@@ -179,32 +148,7 @@ const TextNode = ({ data, id }) => {
         }}
       />
       
-      {/* Default handles for connections */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="default-out"
-        style={{ 
-          background: DATA_LINK_COLOR, 
-          width: '6px', 
-          height: '6px',
-          bottom: 0,
-          right: '30%'
-        }}
-      />
-      
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="default-in"
-        style={{ 
-          background: DATA_LINK_COLOR, 
-          width: '6px', 
-          height: '6px',
-          top: 0,
-          left: '30%'
-        }}
-      />
+      {/* Default handles for connections removed as they're not needed */}
     </div>
   );
 };
