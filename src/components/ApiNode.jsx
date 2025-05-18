@@ -1,6 +1,5 @@
-import { memo, useState, useCallback, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
-import ApiNodeModal from './ApiNodeModal';
 
 const methodColors = {
   get: '#61affe',    // Blue
@@ -79,7 +78,6 @@ const TriangleHandle = ({ type, position, id, style }) => {
 };
 
 function ApiNodeComponent({ data, id }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { setNodes } = useReactFlow();
   
   // Memoize extracted data to prevent unnecessary recalculations
@@ -130,36 +128,7 @@ function ApiNodeComponent({ data, id }) {
     }));
   }, [bodySchema]);
   
-  // Memoize the condition for clickable nodes
-  const isClickable = useMemo(() => 
-    bodySchema && (method === 'post' || method === 'put' || method === 'patch'),
-    [bodySchema, method]
-  );
-  
-  // Handle node click to open the modal
-  const handleNodeClick = useCallback(() => {
-    if (isClickable) {
-      setIsModalOpen(true);
-    }
-  }, [isClickable]);
-  
-  // Handle form save
-  const handleFormSave = useCallback((formValues) => {
-    setNodes(nodes => 
-      nodes.map(node => {
-        if (node.id === id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              defaultBody: formValues
-            }
-          };
-        }
-        return node;
-      })
-    );
-  }, [id, setNodes]);
+  // No longer need clickable behavior or form save handler
   
   // Memoize node style to prevent recreation on each render
   const nodeStyle = useMemo(() => ({
@@ -174,23 +143,14 @@ function ApiNodeComponent({ data, id }) {
     zIndex: 10,
     position: 'relative',
     transition: 'box-shadow 0.3s ease, transform 0.2s ease',
-    cursor: isClickable ? 'pointer' : 'default'
-  }), [method, isClickable]);
+    cursor: 'default'
+  }), [method]);
   
   return (
     <div 
       className="api-node" 
       style={nodeStyle}
-      onClick={handleNodeClick}
     >
-      {/* Modal for editing body schema */}
-      <ApiNodeModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        bodySchema={bodySchema}
-        defaultBody={defaultBody}
-        onSave={handleFormSave}
-      />
       {/* Delete button */}
       {data.deleteButton}
       
@@ -279,7 +239,8 @@ function ApiNodeComponent({ data, id }) {
           style={{ 
             marginTop: '8px',
             borderTop: '1px solid #eee',
-            paddingTop: '8px'
+            paddingTop: '8px',
+            paddingLeft: '0'
           }}
         >
           <div 
@@ -297,7 +258,8 @@ function ApiNodeComponent({ data, id }) {
             style={{ 
               display: 'flex',
               flexDirection: 'column',
-              gap: '4px'
+              gap: '4px',
+              paddingLeft: '0'
             }}
           >
             {parameters.map((param, index) => (
@@ -320,7 +282,7 @@ function ApiNodeComponent({ data, id }) {
                     background: methodColors[method] || '#555', 
                     width: '6px', 
                     height: '6px',
-                    left: -4,
+                    left: 0,
                     border: '1px solid white',
                     boxShadow: '0 0 2px rgba(0,0,0,0.3)'
                   }}
@@ -329,7 +291,8 @@ function ApiNodeComponent({ data, id }) {
                   className="param-name" 
                   style={{ 
                     fontWeight: '500',
-                    marginRight: '4px'
+                    marginRight: '4px',
+                    marginLeft: '10px'
                   }}
                 >
                   {param.name}
@@ -386,7 +349,7 @@ function ApiNodeComponent({ data, id }) {
                         background: methodColors[method] || '#555', 
                         width: '6px', 
                         height: '6px',
-                        left: -4,
+                        left: 0,
                         border: '1px solid white',
                         boxShadow: '0 0 2px rgba(0,0,0,0.3)'
                       }}
@@ -395,7 +358,8 @@ function ApiNodeComponent({ data, id }) {
                       className="body-field-name" 
                       style={{ 
                         fontWeight: '500',
-                        marginRight: '4px'
+                        marginRight: '4px',
+                        marginLeft: '10px'
                       }}
                     >
                       {field.label}
@@ -446,7 +410,8 @@ function ApiNodeComponent({ data, id }) {
           style={{ 
             marginTop: '8px',
             borderTop: '1px solid #eee',
-            paddingTop: '8px'
+            paddingTop: '8px',
+            paddingLeft: '0'
           }}
         >
           <div 
@@ -507,7 +472,8 @@ function ApiNodeComponent({ data, id }) {
           style={{ 
             marginTop: '8px',
             borderTop: '1px solid #eee',
-            paddingTop: '8px'
+            paddingTop: '8px',
+            paddingLeft: '0'
           }}
         >
           <div 
