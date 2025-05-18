@@ -1,4 +1,4 @@
-import { createContext, useRef, useEffect, useState, useContext } from 'react';
+import { createContext, useRef, useEffect, useState, useContext, useMemo } from 'react';
 import { runFlow } from '../services/flowClient.js';
 import { useAuth } from './AuthContext';
 import conditionStore from '../store/conditionStore';
@@ -22,12 +22,26 @@ export const FlowProvider = ({ children, nodes, edges, flowId }) => {
     return await runFlow(nodes, edges, task, backendConfigId, flowId);
   });
   
-  // Update the executeFlowRef when nodes, edges, backendConfigId, or flowId change
+  // Stabilize the nodes and edges references using useRef
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  
+  // Only update the refs when the actual content changes
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+  
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
+  
+  // Update the executeFlowRef when backendConfigId or flowId change
+  // Use the refs for nodes and edges to maintain stable function identity
   useEffect(() => {
     executeFlowRef.current = async (task) => {
-      return await runFlow(nodes, edges, task, backendConfigId, flowId);
+      return await runFlow(nodesRef.current, edgesRef.current, task, backendConfigId, flowId);
     };
-  }, [nodes, edges, backendConfigId, flowId]);
+  }, [backendConfigId, flowId]); // Removed nodes and edges from dependencies
 
   // Update condition store when flowId changes
   useEffect(() => {
@@ -70,15 +84,18 @@ export const FlowProvider = ({ children, nodes, edges, flowId }) => {
     }
   }, [api, backendConfigId, flowId]);
 
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    executeFlowRef, 
+    backendConfigId, 
+    setBackendConfigId,
+    backendConfigs,
+    loading,
+    flowId
+  }), [backendConfigId, backendConfigs, loading, flowId]);
+  
   return (
-    <FlowContext.Provider value={{ 
-      executeFlowRef, 
-      backendConfigId, 
-      setBackendConfigId,
-      backendConfigs,
-      loading,
-      flowId
-    }}>
+    <FlowContext.Provider value={contextValue}>
       {children}
     </FlowContext.Provider>
   );

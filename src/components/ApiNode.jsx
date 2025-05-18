@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import ApiNodeModal from './ApiNodeModal';
 
@@ -78,50 +78,70 @@ const TriangleHandle = ({ type, position, id, style }) => {
   );
 };
 
-const ApiNode = ({ data, id }) => {
+function ApiNodeComponent({ data, id }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { setNodes } = useReactFlow();
   
-  // Default values if data is missing
-  const method = data?.method || 'get';
-  const path = data?.path || '/unknown';
-  const summary = data?.summary || '';
-  const parameters = data?.parameters || [];
-  const bodySchema = data?.bodySchema || null;
-  const defaultBody = data?.defaultBody || {};
-  const bindings = data?.bindings || {};
-  const responses = data?.responses || {};
-  const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
-  const connectionIndicator = data?.connectionIndicator;
+  // Memoize extracted data to prevent unnecessary recalculations
+  const {
+    method,
+    path,
+    summary,
+    parameters,
+    bodySchema,
+    defaultBody,
+    bindings,
+    responses,
+    isConnectedToStartingNode,
+    connectionIndicator
+  } = useMemo(() => ({
+    method: data?.method || 'get',
+    path: data?.path || '/unknown',
+    summary: data?.summary || '',
+    parameters: data?.parameters || [],
+    bodySchema: data?.bodySchema || null,
+    defaultBody: data?.defaultBody || {},
+    bindings: data?.bindings || {},
+    responses: data?.responses || {},
+    isConnectedToStartingNode: data?.isConnectedToStartingNode || false,
+    connectionIndicator: data?.connectionIndicator
+  }), [data]);
   
-  // Determine if the node has inputs (parameters or request body)
-  const hasInputs = parameters.length > 0 || bodySchema;
+  // Memoize derived values
+  const hasInputs = useMemo(() => parameters.length > 0 || bodySchema, [parameters, bodySchema]);
+  const hasOutputs = useMemo(() => Object.keys(responses).length > 0, [responses]);
   
-  // Determine if the node has outputs (responses) and prepare output data structure
-  const hasOutputs = Object.keys(responses).length > 0;
-  
-  // Define possible output data fields based on response
-  const outputFields = [
+  // Memoize static output fields
+  const outputFields = useMemo(() => [
     { id: 'response', label: 'Response', description: 'Complete response object' },
     { id: 'body', label: 'Body', description: 'Response body data' },
     { id: 'status', label: 'Status', description: 'HTTP status code' }
-  ];
+  ], []);
   
-  // Generate body field handles based on the schema
-  const bodyFields = bodySchema && bodySchema.properties ? 
-    Object.keys(bodySchema.properties).map(key => ({
+  // Memoize body fields to prevent recreation on each render
+  const bodyFields = useMemo(() => {
+    if (!bodySchema || !bodySchema.properties) return [];
+    
+    return Object.keys(bodySchema.properties).map(key => ({
       id: key,
       label: key,
       required: bodySchema.required?.includes(key) || false,
       type: bodySchema.properties[key].type
-    })) : [];
+    }));
+  }, [bodySchema]);
+  
+  // Memoize the condition for clickable nodes
+  const isClickable = useMemo(() => 
+    bodySchema && (method === 'post' || method === 'put' || method === 'patch'),
+    [bodySchema, method]
+  );
   
   // Handle node click to open the modal
   const handleNodeClick = useCallback(() => {
-    if (bodySchema && (method === 'post' || method === 'put' || method === 'patch')) {
+    if (isClickable) {
       setIsModalOpen(true);
     }
-  }, [bodySchema, method]);
+  }, [isClickable]);
   
   // Handle form save
   const handleFormSave = useCallback((formValues) => {
@@ -141,23 +161,26 @@ const ApiNode = ({ data, id }) => {
     );
   }, [id, setNodes]);
   
+  // Memoize node style to prevent recreation on each render
+  const nodeStyle = useMemo(() => ({
+    borderTop: `3px solid ${methodColors[method] || '#999'}`,
+    backgroundColor: 'white',
+    border: '1px solid #ddd',
+    borderRadius: '5px',
+    padding: '10px',
+    minWidth: '200px',
+    minHeight: '100px',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+    zIndex: 10,
+    position: 'relative',
+    transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+    cursor: isClickable ? 'pointer' : 'default'
+  }), [method, isClickable]);
+  
   return (
     <div 
       className="api-node" 
-      style={{ 
-        borderTop: `3px solid ${methodColors[method] || '#999'}`,
-        backgroundColor: 'white',
-        border: '1px solid #ddd',
-        borderRadius: '5px',
-        padding: '10px',
-        minWidth: '200px',
-        minHeight: '100px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-        zIndex: 10,
-        position: 'relative',
-        transition: 'box-shadow 0.3s ease, transform 0.2s ease',
-        cursor: bodySchema && (method === 'post' || method === 'put' || method === 'patch') ? 'pointer' : 'default'
-      }}
+      style={nodeStyle}
       onClick={handleNodeClick}
     >
       {/* Modal for editing body schema */}
@@ -332,86 +355,86 @@ const ApiNode = ({ data, id }) => {
                 )}
               </div>
             ))}
-      {bodySchema && (
-        <div 
-          className="api-node-request-body" 
-          style={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            fontSize: '10px',
-            position: 'relative',
-            gap: '4px'
-          }}
-        >
-          {bodyFields.map((field, index) => (
-            <div 
-              key={index} 
-              className="api-node-body-field" 
-              style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: '10px',
-                position: 'relative'
-              }}
-            >
-              {/* Handle for each body field */}
-              <Handle
-                type="target"
-                position={Position.Left}
-                id={`body-${field.id}`}
+            {bodySchema && (
+              <div 
+                className="api-node-request-body" 
                 style={{ 
-                  background: methodColors[method] || '#555', 
-                  width: '6px', 
-                  height: '6px',
-                  left: -4,
-                  border: '1px solid white',
-                  boxShadow: '0 0 2px rgba(0,0,0,0.3)'
-                }}
-              />
-              <span 
-                className="body-field-name" 
-                style={{ 
-                  fontWeight: '500',
-                  marginRight: '4px'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  fontSize: '10px',
+                  position: 'relative',
+                  gap: '4px'
                 }}
               >
-                {field.label}
-              </span>
-              <span 
-                className="body-field-type" 
-                style={{ 
-                  color: '#666'
-                }}
-              >
-                {field.type}
-              </span>
-              {field.required && (
-                <span 
-                  className="body-field-required" 
-                  style={{ 
-                    color: '#f93e3e',
-                    marginLeft: '2px'
-                  }}
-                >
-                  *
-                </span>
-              )}
-              {bindings[field.id] && (
-                <span 
-                  className="body-field-bound" 
-                  style={{ 
-                    color: '#49cc90',
-                    marginLeft: '4px',
-                    fontSize: '8px'
-                  }}
-                >
-                  (connected)
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                {bodyFields.map((field, index) => (
+                  <div 
+                    key={index} 
+                    className="api-node-body-field" 
+                    style={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '10px',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* Handle for each body field */}
+                    <Handle
+                      type="target"
+                      position={Position.Left}
+                      id={`body-${field.id}`}
+                      style={{ 
+                        background: methodColors[method] || '#555', 
+                        width: '6px', 
+                        height: '6px',
+                        left: -4,
+                        border: '1px solid white',
+                        boxShadow: '0 0 2px rgba(0,0,0,0.3)'
+                      }}
+                    />
+                    <span 
+                      className="body-field-name" 
+                      style={{ 
+                        fontWeight: '500',
+                        marginRight: '4px'
+                      }}
+                    >
+                      {field.label}
+                    </span>
+                    <span 
+                      className="body-field-type" 
+                      style={{ 
+                        color: '#666'
+                      }}
+                    >
+                      {field.type}
+                    </span>
+                    {field.required && (
+                      <span 
+                        className="body-field-required" 
+                        style={{ 
+                          color: '#f93e3e',
+                          marginLeft: '2px'
+                        }}
+                      >
+                        *
+                      </span>
+                    )}
+                    {bindings[field.id] && (
+                      <span 
+                        className="body-field-bound" 
+                        style={{ 
+                          color: '#49cc90',
+                          marginLeft: '4px',
+                          fontSize: '8px'
+                        }}
+                      >
+                        (connected)
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -553,9 +576,10 @@ const ApiNode = ({ data, id }) => {
           </div>
         </div>
       )}
-      
     </div>
   );
-};
+}
 
-export default memo(ApiNode);
+// Export the memoized component
+const ApiNode = memo(ApiNodeComponent);
+export default ApiNode;

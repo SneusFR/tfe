@@ -5,6 +5,7 @@ import React, {
   useState,
   useMemo
 } from 'react';
+import { isEqual } from 'lodash';
 import { FaTimes } from 'react-icons/fa';
 import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
@@ -167,6 +168,7 @@ const DiagramEditor = ({
   const throttledApply = useRef(
     throttle((changes) => {
       setNodes(prev => {
+        // Only apply changes if they're actually different
         const next = applyNodeChanges(changes, prev);
         nodesRef.current = next;            // garde la référence à jour
         return next;
@@ -716,59 +718,126 @@ const DiagramEditor = ({
   // We no longer need to manually add connection indicators
   // They are now handled by CSS with .connected-node::after
 
-  // Memoize nodes with connection status to avoid unnecessary re-renders
-  const memoNodes = useMemo(() => nodes.map(n => {
-    const connected = connectedIdsRef.current.has(n.id);
-    const isSelected = n.id === selectedNodeId;
-    
-    // Add delete button component if node is selected
-    const deleteButton = isSelected ? (
-      <div 
-        className="node-delete-button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleNodeDelete(n.id);
-        }}
-        style={{
-          position: 'absolute',
-          top: '-8px',
-          right: '-8px',
-          width: '20px',
-          height: '20px',
-          borderRadius: '50%',
-          backgroundColor: '#ff4d4f',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          fontSize: '12px',
-          boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-          zIndex: 100
-        }}
-      >
-        <FaTimes />
-      </div>
-    ) : null;
-    
-    return {
-      ...n,
-      className: `${connected ? 'connected-node' : ''} ${isSelected ? 'selected-node' : ''}`,
-      data: { 
-        ...n.data, 
-        isConnectedToStartingNode: connected,
-        deleteButton: deleteButton
-      }
-    };
-  }), [nodes, connectedIds, selectedNodeId, handleNodeDelete]); // Only depends on nodes, connectedIds state, and selected node
+  // Memoized delete button component with stable style object
+  const deleteButtonStyle = useMemo(() => ({
+    position: 'absolute',
+    top: '-8px',
+    right: '-8px',
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    backgroundColor: '#ff4d4f',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    fontSize: '12px',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+    zIndex: 100
+  }), []);
 
+  const DeleteButton = useCallback(({ nodeId }) => (
+    <div 
+      className="node-delete-button"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleNodeDelete(nodeId);
+      }}
+      style={deleteButtonStyle}
+    >
+      <FaTimes />
+    </div>
+  ), [handleNodeDelete, deleteButtonStyle]);
+
+  // Cache for previous node data to avoid unnecessary updates
+  const prevNodesDataRef = useRef(new Map());
+  
+  // Memoize nodes with connection status to avoid unnecessary re-renders
+  const memoNodes = useMemo(() => {
+    // Create a stable reference to the connected nodes set
+    const connectedNodesSet = connectedIdsRef.current;
+    const result = nodes.map(n => {
+      const connected = connectedNodesSet.has(n.id);
+      const isSelected = n.id === selectedNodeId;
+      const className = `${connected ? 'connected-node' : ''} ${isSelected ? 'selected-node' : ''}`;
+      
+      // Check if we need to update this node's data
+      const prevNodeData = prevNodesDataRef.current.get(n.id);
+      const prevConnected = prevNodeData?.isConnectedToStartingNode;
+      const prevSelected = prevNodeData?.isSelected;
+      
+      // Only create a new data object if something has changed
+      if (!prevNodeData || 
+          prevConnected !== connected || 
+          prevSelected !== isSelected) {
+        
+        // Create new data object only when needed
+        const newData = {
+          ...n.data,
+          isConnectedToStartingNode: connected,
+          isSelected,
+          // Use a stable reference to the delete button component
+          deleteButton: isSelected ? <DeleteButton nodeId={n.id} /> : null
+        };
+        
+        // Store the current state for future comparison
+        prevNodesDataRef.current.set(n.id, {
+          isConnectedToStartingNode: connected,
+          isSelected
+        });
+        
+        return {
+          ...n,
+          className,
+          data: newData
+        };
+      }
+      
+      // If nothing changed, return the node with minimal updates
+      return {
+        ...n,
+        className,
+        data: {
+          ...n.data,
+          deleteButton: isSelected ? <DeleteButton nodeId={n.id} /> : null
+        }
+      };
+    });
+    
+    // Clean up any nodes that no longer exist
+    const currentNodeIds = new Set(nodes.map(n => n.id));
+    for (const nodeId of prevNodesDataRef.current.keys()) {
+      if (!currentNodeIds.has(nodeId)) {
+        prevNodesDataRef.current.delete(nodeId);
+      }
+    }
+    
+    return result;
+  }, [nodes, selectedNodeId, DeleteButton]); // Removed connectedIds from dependencies
+
+  // Cache for previous edge data to avoid unnecessary updates
+  const prevEdgesDataRef = useRef(new Map());
+  
   // Memoize edges with connection styling
-  const computedEdges = useMemo(
-    () =>
-      edges.map(e => {
-        if (e.data?.isExecutionLink) {
-          const connected =
-            connectedIdsRef.current.has(e.source) && connectedIdsRef.current.has(e.target);
+  const computedEdges = useMemo(() => {
+    // Create a stable reference to the connected nodes set
+    const connectedNodesSet = connectedIdsRef.current;
+    
+    const result = edges.map(e => {
+      if (e.data?.isExecutionLink) {
+        const connected =
+          connectedNodesSet.has(e.source) && connectedNodesSet.has(e.target);
+        
+        // Check if we need to update this edge
+        const prevEdgeData = prevEdgesDataRef.current.get(e.id);
+        const prevConnected = prevEdgeData?.connected;
+        
+        // Only create a new edge object if the connection status has changed
+        if (!prevEdgeData || prevConnected !== connected) {
+          // Store the current state for future comparison
+          prevEdgesDataRef.current.set(e.id, { connected });
+          
           return {
             ...e,
             style: connected ? CONNECTED_EXECUTION_LINK_STYLE : EXECUTION_LINK_STYLE,
@@ -776,10 +845,20 @@ const DiagramEditor = ({
             className: connected ? 'connected-edge' : ''
           };
         }
-        return e;
-      }),
-    [edges, connectedIds] // Only depends on edges and connectedIds state (not the ref)
-  );
+      }
+      return e;
+    });
+    
+    // Clean up any edges that no longer exist
+    const currentEdgeIds = new Set(edges.map(e => e.id));
+    for (const edgeId of prevEdgesDataRef.current.keys()) {
+      if (!currentEdgeIds.has(edgeId)) {
+        prevEdgesDataRef.current.delete(edgeId);
+      }
+    }
+    
+    return result;
+  }, [edges]); // Removed connectedIds from dependencies
 
   return (
     <div

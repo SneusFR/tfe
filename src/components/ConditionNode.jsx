@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 
 // Connection colors
@@ -8,30 +8,48 @@ const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 const ConditionNode = ({ data, id }) => {
   // ConditionNode component initialization
   
-  // Default values if data is missing
-  const returnText = data?.returnText || 'Condition Output';
-  const conditionText = data?.conditionText || 'Mail condition';
-  const isStartingPoint = data?.isStartingPoint || false;
-  const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
-  const connectionIndicator = data?.connectionIndicator;
+  // Memoize extracted data from props to prevent unnecessary recalculations
+  const {
+    returnText,
+    conditionText,
+    isStartingPoint,
+    isConnectedToStartingNode,
+    connectionIndicator,
+    emailAttributes
+  } = useMemo(() => {
+    const returnText = data?.returnText || 'Condition Output';
+    const conditionText = data?.conditionText || 'Mail condition';
+    const isStartingPoint = data?.isStartingPoint || false;
+    const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
+    const connectionIndicator = data?.connectionIndicator;
+    
+    // Email attributes for starting point nodes
+    const emailAttributes = isStartingPoint ? (data?.emailAttributes || {
+      email_id: 'email-123', // Added email_id field
+      fromEmail: 'sender@example.com',
+      fromDisplayName: 'Sender Name',
+      toEmail: 'recipient@example.com',
+      toDisplayName: 'Recipient Name',
+      subject: 'Email Subject',
+      date: new Date().toISOString(),
+      content: 'Email content...',
+      attachments: [],
+      cc: [],
+      bcc: []
+    }) : null;
+    
+    return {
+      returnText,
+      conditionText,
+      isStartingPoint,
+      isConnectedToStartingNode,
+      connectionIndicator,
+      emailAttributes
+    };
+  }, [data]);
   
-  // Email attributes for starting point nodes
-  const emailAttributes = isStartingPoint ? (data?.emailAttributes || {
-    email_id: 'email-123', // Added email_id field
-    fromEmail: 'sender@example.com',
-    fromDisplayName: 'Sender Name',
-    toEmail: 'recipient@example.com',
-    toDisplayName: 'Recipient Name',
-    subject: 'Email Subject',
-    date: new Date().toISOString(),
-    content: 'Email content...',
-    attachments: [],
-    cc: [],
-    bcc: []
-  }) : null;
-  
-  // Define attribute colors for handles
-  const attributeColors = {
+  // Define attribute colors for handles - memoized to prevent recreation
+  const attributeColors = useMemo(() => ({
     from: '#4CAF50',     // Green
     to: '#4CAF50',       // Green (same as from)
     subject: '#2196F3',  // Blue
@@ -40,10 +58,10 @@ const ConditionNode = ({ data, id }) => {
     attachments: '#795548', // Brown
     cc: '#607D8B',       // Blue Grey
     bcc: '#F44336'       // Red
-  };
+  }), []);
   
-  // Common styles for data handles
-  const getDataHandleStyle = (color) => {
+  // Common styles for data handles - memoized to prevent recreation on each render
+  const getDataHandleStyle = useCallback((color) => {
     return {
       background: color,
       width: '10px',
@@ -51,10 +69,10 @@ const ConditionNode = ({ data, id }) => {
       right: 0,
       cursor: 'crosshair',
     };
-  };
+  }, []);
   
-  // Execution handle styles
-  const getExecutionHandleStyle = (position) => {
+  // Execution handle styles - memoized to prevent recreation on each render
+  const getExecutionHandleStyle = useCallback((position) => {
     const baseStyle = {
       background: 'transparent',
       width: 0,
@@ -80,24 +98,27 @@ const ConditionNode = ({ data, id }) => {
         opacity: 0.8,
       };
     }
-  };
+  }, []);
+  
+  // Memoize node style to prevent recreation on each render
+  const nodeStyle = useMemo(() => ({
+    borderTop: `3px solid ${isStartingPoint ? '#e74c3c' : '#8e44ad'}`, // Red for starting points, purple for regular
+    backgroundColor: isStartingPoint ? '#fef9f9' : 'white',
+    border: `1px solid ${isStartingPoint ? '#f7d9d9' : '#ddd'}`,
+    borderRadius: '5px',
+    padding: '10px',
+    minWidth: '200px',
+    minHeight: isStartingPoint ? '200px' : '100px', // Taller for starting points with attributes
+    boxShadow: isStartingPoint ? '0 4px 12px rgba(231, 76, 60, 0.25)' : '0 4px 8px rgba(0, 0, 0, 0.2)',
+    zIndex: isStartingPoint ? 15 : 10, // Higher z-index for starting points
+    position: 'relative',
+    transition: 'box-shadow 0.3s ease, transform 0.2s ease'
+  }), [isStartingPoint]);
   
   return (
     <div 
       className={`condition-node ${isStartingPoint ? 'starting-point' : ''}`}
-      style={{ 
-        borderTop: `3px solid ${isStartingPoint ? '#e74c3c' : '#8e44ad'}`, // Red for starting points, purple for regular
-        backgroundColor: isStartingPoint ? '#fef9f9' : 'white',
-        border: `1px solid ${isStartingPoint ? '#f7d9d9' : '#ddd'}`,
-        borderRadius: '5px',
-        padding: '10px',
-        minWidth: '200px',
-        minHeight: isStartingPoint ? '200px' : '100px', // Taller for starting points with attributes
-        boxShadow: isStartingPoint ? '0 4px 12px rgba(231, 76, 60, 0.25)' : '0 4px 8px rgba(0, 0, 0, 0.2)',
-        zIndex: isStartingPoint ? 15 : 10, // Higher z-index for starting points
-        position: 'relative',
-        transition: 'box-shadow 0.3s ease, transform 0.2s ease'
-      }}
+      style={nodeStyle}
     >
       {/* Delete button */}
       {data.deleteButton}
