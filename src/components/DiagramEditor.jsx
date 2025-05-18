@@ -8,6 +8,7 @@ import React, {
 import { FaTimes } from 'react-icons/fa';
 import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
+import { updateApiNodeBindings } from '../utils/apiNodeUtils';
 import FlowMenuButton from './FlowMenuButton';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { FlowProvider } from '../context/FlowContext';
@@ -190,9 +191,24 @@ const DiagramEditor = ({
       setEdges(updatedEdges);
       if (onEdgesChange) onEdgesChange(updatedEdges);
       
+      // Check if any edges were removed and update API node bindings
+      const removedEdges = changes.filter(change => change.type === 'remove');
+      if (removedEdges.length > 0) {
+        // For each removed edge, check if it was connected to an API node
+        removedEdges.forEach(change => {
+          const edge = edges.find(e => e.id === change.id);
+          if (edge && edge.targetHandle?.startsWith('body-')) {
+            // Update the API node bindings
+            const updatedNodes = updateApiNodeBindings(nodes, updatedEdges, edge.target);
+            setNodes(updatedNodes);
+            if (onNodesChange) onNodesChange(updatedNodes);
+          }
+        });
+      }
+      
       // No automatic saving - changes are stored in local state only
     },
-    [edges, setEdges, onEdgesChange, canEdit]
+    [edges, nodes, setEdges, setNodes, onEdgesChange, onNodesChange, canEdit]
   );
 
   const handleEdgeClick = useCallback(
@@ -209,10 +225,18 @@ const DiagramEditor = ({
         if (onEdgesChange) onEdgesChange(updatedEdges);
         if (onEdgeDelete) onEdgeDelete(edge, updatedEdges);
         
+        // Check if the deleted edge was connected to an API node body field
+        if (edge.targetHandle?.startsWith('body-')) {
+          // Update the API node bindings
+          const updatedNodes = updateApiNodeBindings(nodes, updatedEdges, edge.target);
+          setNodes(updatedNodes);
+          if (onNodesChange) onNodesChange(updatedNodes);
+        }
+        
         // No automatic saving - changes are stored in local state only
       }
     },
-    [edges, setEdges, onEdgesChange, onEdgeDelete, canEdit]
+    [edges, nodes, setEdges, setNodes, onEdgesChange, onEdgeDelete, onNodesChange, canEdit]
   );
   
   // Handle node click to show delete button
@@ -352,6 +376,14 @@ const DiagramEditor = ({
       setEdges(updatedEdges);
       if (onConnect) onConnect(updatedEdges);
       
+      // Check if the connection is to an API node body field
+      if (targetHandle?.startsWith('body-')) {
+        // Update the API node bindings
+        const updatedNodes = updateApiNodeBindings(nodes, updatedEdges, params.target);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      }
+      
       // No automatic saving - changes are stored in local state only
       
       // If this is an execution link and the source is connected to a starting node,
@@ -372,7 +404,7 @@ const DiagramEditor = ({
         }, 100);
       }
     },
-    [edges, nodes, setEdges, setNodes, onConnect, connectedIds, canEdit]
+    [edges, nodes, setEdges, setNodes, onConnect, onNodesChange, connectedIds, canEdit]
   );
 
   const onInit = useCallback(

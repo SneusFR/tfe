@@ -80,6 +80,29 @@ const EditorApp = () => {
     );
 
     endpoints.forEach(({ path, method, operation }, idx) => {
+      // Extract the request body schema for POST, PUT, and PATCH methods
+      let bodySchema = null;
+      let defaultBody = {};
+      
+      if (['post', 'put', 'patch'].includes(method) && operation.requestBody) {
+        const contentType = operation.requestBody.content?.['application/json'];
+        if (contentType && contentType.schema) {
+          bodySchema = contentType.schema;
+          
+          // If the schema is a reference, resolve it
+          if (bodySchema.$ref) {
+            const refPath = bodySchema.$ref.replace('#/', '').split('/');
+            let resolvedSchema = spec;
+            
+            for (const part of refPath) {
+              resolvedSchema = resolvedSchema[part];
+            }
+            
+            bodySchema = resolvedSchema;
+          }
+        }
+      }
+      
       nodes.push({
         id: `api-${idx + 1}`,
         type: 'apiNode',
@@ -92,6 +115,9 @@ const EditorApp = () => {
           parameters: operation.parameters || [],
           requestBody: operation.requestBody || null,
           responses: operation.responses || {},
+          bodySchema, // Add the body schema
+          defaultBody, // Add empty default body
+          bindings: {}, // Add empty bindings
         },
       });
     });
