@@ -6,7 +6,7 @@ import React, {
   useMemo
 } from 'react';
 import { isEqual } from 'lodash';
-import { FaTimes } from 'react-icons/fa';
+import DeleteButton from './DeleteButton';
 import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
 import { updateApiNodeBindings } from '../utils/apiNodeUtils';
@@ -718,37 +718,7 @@ const DiagramEditor = ({
   // We no longer need to manually add connection indicators
   // They are now handled by CSS with .connected-node::after
 
-  // Memoized delete button component with stable style object
-  const deleteButtonStyle = useMemo(() => ({
-    position: 'absolute',
-    top: '-8px',
-    right: '-8px',
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    backgroundColor: '#ff4d4f',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    fontSize: '12px',
-    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-    zIndex: 100
-  }), []);
-
-  const DeleteButton = useCallback(({ nodeId }) => (
-    <div 
-      className="node-delete-button"
-      onClick={(e) => {
-        e.stopPropagation();
-        handleNodeDelete(nodeId);
-      }}
-      style={deleteButtonStyle}
-    >
-      <FaTimes />
-    </div>
-  ), [handleNodeDelete, deleteButtonStyle]);
+  // No need for local DeleteButton component as we're importing it
 
   // Cache for previous node data to avoid unnecessary updates
   const prevNodesDataRef = useRef(new Map());
@@ -778,7 +748,7 @@ const DiagramEditor = ({
           isConnectedToStartingNode: connected,
           isSelected,
           // Use a stable reference to the delete button component
-          deleteButton: isSelected ? <DeleteButton nodeId={n.id} /> : null
+          deleteButton: isSelected ? <DeleteButton id={n.id} onDelete={handleNodeDelete} /> : null
         };
         
         // Store the current state for future comparison
@@ -800,7 +770,7 @@ const DiagramEditor = ({
         className,
         data: {
           ...n.data,
-          deleteButton: isSelected ? <DeleteButton nodeId={n.id} /> : null
+          deleteButton: isSelected ? <DeleteButton id={n.id} onDelete={handleNodeDelete} /> : null
         }
       };
     });

@@ -124,12 +124,15 @@ const ConditionNode = ({ data, id }) => {
       {data.deleteButton}
       
       {/* Execution flow handles (triangles) - better integrated with the node */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="execution"
-        style={getExecutionHandleStyle('left')}
-      />
+      {/* Only show left handle if not a starting point */}
+      {!isStartingPoint && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="execution"
+          style={getExecutionHandleStyle('left')}
+        />
+      )}
       
       <Handle
         type="source"
