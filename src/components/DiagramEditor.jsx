@@ -139,8 +139,117 @@ const DiagramEditor = ({
     
     // Load nodes
     if (version.nodes) {
-      setNodes(version.nodes);
-      if (onNodesChange) onNodesChange(version.nodes);
+      // Process loaded nodes to reattach callbacks
+      let loaded = version.nodes || [];
+      
+      // Reattach callbacks to TextNodes
+      loaded = loaded.map(n => {
+        if (n.type === 'textNode') {
+          // Store the callback in the ref
+          const nodeId = n.id;
+          nodeCallbacksRef.current[nodeId] = {
+            onTextChange: (newText) => {
+              setNodes(prevNodes => {
+                const updated = prevNodes.map(node =>
+                  node.id === nodeId
+                    ? { ...node, data: { ...node.data, text: newText } }
+                    : node
+                );
+                // Update our ref
+                nodesRef.current = updated;
+                // Notify the parent INSIDE setNodes
+                onNodesChange?.(updated);
+                return updated;
+              });
+            }
+          };
+          
+          // Inject the reference into data
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onTextChange: (newText) => nodeCallbacksRef.current[nodeId].onTextChange(newText)
+            }
+          };
+        } else if (n.type === 'intNode') {
+          // Also reattach callbacks to IntNodes
+          const nodeId = n.id;
+          nodeCallbacksRef.current[nodeId] = {
+            onValueChange: (newValue) => {
+              setNodes(prevNodes => {
+                const updated = prevNodes.map(node =>
+                  node.id === nodeId
+                    ? { ...node, data: { ...node.data, value: newValue } }
+                    : node
+                );
+                // Update our ref
+                nodesRef.current = updated;
+                // Notify the parent INSIDE setNodes
+                onNodesChange?.(updated);
+                return updated;
+              });
+            }
+          };
+          
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onValueChange: (newValue) => nodeCallbacksRef.current[nodeId].onValueChange(newValue)
+            }
+          };
+        } else if (n.type === 'aiNode') {
+          // Also reattach callbacks to AINodes
+          const nodeId = n.id;
+          nodeCallbacksRef.current[nodeId] = {
+            onPromptChange: (newPrompt) => {
+              setNodes(prevNodes => {
+                const updated = prevNodes.map(node =>
+                  node.id === nodeId
+                    ? { ...node, data: { ...node.data, prompt: newPrompt } }
+                    : node
+                );
+                // Update our ref
+                nodesRef.current = updated;
+                // Notify the parent INSIDE setNodes
+                onNodesChange?.(updated);
+                return updated;
+              });
+            },
+            onInputChange: (newInput) => {
+              setNodes(prevNodes => {
+                const updated = prevNodes.map(node =>
+                  node.id === nodeId
+                    ? { ...node, data: { ...node.data, input: newInput } }
+                    : node
+                );
+                // Update our ref
+                nodesRef.current = updated;
+                // Notify the parent INSIDE setNodes
+                onNodesChange?.(updated);
+                return updated;
+              });
+            }
+          };
+          
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onPromptChange: (newPrompt) => nodeCallbacksRef.current[nodeId].onPromptChange(newPrompt),
+              onInputChange: (newInput) => nodeCallbacksRef.current[nodeId].onInputChange(newInput)
+            }
+          };
+        }
+        return n;
+      });
+      
+      // Make sure to synchronize nodesRef
+      nodesRef.current = loaded;
+      
+      setNodes(loaded);
+      if (onNodesChange) onNodesChange(loaded);
     } else {
       setNodes([]);
       if (onNodesChange) onNodesChange([]);
@@ -515,18 +624,18 @@ const DiagramEditor = ({
         // Store the callback in the ref
         nodeCallbacksRef.current[nodeId] = {
           onTextChange: (newText) => {
-            setNodes((prevNodes) =>
-              prevNodes.map((n) =>
-                n.id === nodeId ? { ...n, data: { ...n.data, text: newText } } : n
-              )
-            );
-            if (onNodesChange) {
-              onNodesChange(
-                prevNodes => prevNodes.map((n) =>
-                  n.id === nodeId ? { ...n, data: { ...n.data, text: newText } } : n
-                )
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, text: newText } }
+                  : node
               );
-            }
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
           }
         };
         
@@ -553,18 +662,18 @@ const DiagramEditor = ({
         // Store the callback in the ref
         nodeCallbacksRef.current[nodeId] = {
           onValueChange: (newValue) => {
-            setNodes((prevNodes) =>
-              prevNodes.map((n) =>
-                n.id === nodeId ? { ...n, data: { ...n.data, value: newValue } } : n
-              )
-            );
-            if (onNodesChange) {
-              onNodesChange(
-                prevNodes => prevNodes.map((n) =>
-                  n.id === nodeId ? { ...n, data: { ...n.data, value: newValue } } : n
-                )
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, value: newValue } }
+                  : node
               );
-            }
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
           }
         };
         
@@ -636,32 +745,32 @@ const DiagramEditor = ({
         // Store the callbacks in the ref
         nodeCallbacksRef.current[nodeId] = {
           onPromptChange: (newPrompt) => {
-            setNodes((prevNodes) =>
-              prevNodes.map((n) =>
-                n.id === nodeId ? { ...n, data: { ...n.data, prompt: newPrompt } } : n
-              )
-            );
-            if (onNodesChange) {
-              onNodesChange(
-                prevNodes => prevNodes.map((n) =>
-                  n.id === nodeId ? { ...n, data: { ...n.data, prompt: newPrompt } } : n
-                )
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, prompt: newPrompt } }
+                  : node
               );
-            }
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
           },
           onInputChange: (newInput) => {
-            setNodes((prevNodes) =>
-              prevNodes.map((n) =>
-                n.id === nodeId ? { ...n, data: { ...n.data, input: newInput } } : n
-              )
-            );
-            if (onNodesChange) {
-              onNodesChange(
-                prevNodes => prevNodes.map((n) =>
-                  n.id === nodeId ? { ...n, data: { ...n.data, input: newInput } } : n
-                )
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, input: newInput } }
+                  : node
               );
-            }
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
           }
         };
         
