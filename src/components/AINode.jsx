@@ -273,17 +273,19 @@ const AINode = ({ data, id }) => {
         }}
       />
       
-      {/* Input handles */}
+      {/* Input handles - Made more prominent */}
       <Handle
         type="target"
         position={Position.Left}
         id="attr-prompt"
         style={{ 
           background: promptColor, 
-          width: '8px', 
-          height: '8px',
+          width: '10px', 
+          height: '10px',
           top: '25%',
-          left: 0
+          left: -5,
+          border: '2px solid white',
+          boxShadow: '0 0 3px rgba(0,0,0,0.3)'
         }}
       />
       
@@ -293,53 +295,32 @@ const AINode = ({ data, id }) => {
         id="attr-input"
         style={{ 
           background: inputColor, 
-          width: '8px', 
-          height: '8px',
+          width: '10px', 
+          height: '10px',
           top: '50%',
-          left: 0
+          left: -5,
+          border: '2px solid white',
+          boxShadow: '0 0 3px rgba(0,0,0,0.3)'
         }}
       />
       
-      {/* Output handle */}
+      {/* Output handle - Repositioned to align exactly with the edge connection */}
       <Handle
         type="source"
         position={Position.Right}
         id="attr-output"
         style={{ 
           background: outputColor, 
-          width: '8px', 
-          height: '8px',
-          top: '75%',
-          right: 0
+          width: '10px', 
+          height: '10px',
+          top: '75%', // Position it exactly where the edge connects
+          right: -5,
+          border: '2px solid white',
+          boxShadow: '0 0 3px rgba(0,0,0,0.3)'
         }}
       />
       
-      {/* Default handles for connections */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="default-out"
-        style={{ 
-          background: DATA_LINK_COLOR, 
-          width: '6px', 
-          height: '6px',
-          bottom: 0,
-          right: '30%'
-        }}
-      />
-      
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="default-in"
-        style={{ 
-          background: DATA_LINK_COLOR, 
-          width: '6px', 
-          height: '6px',
-          top: 0,
-          left: '30%'
-        }}
-      />
+      {/* Removed default handles for connections as requested */}
     </div>
   );
 };
