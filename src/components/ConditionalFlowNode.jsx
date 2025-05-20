@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, useMemo, createRef } from 'react';
 import { Handle, Position } from 'reactflow';
 
 // Connection colors
@@ -112,6 +112,14 @@ const ConditionalFlowNode = ({ data, id }) => {
     
     return paths;
   }, [conditionType, trueColor, falseColor, defaultColor]);
+  
+  // Create refs for output path elements
+  const pathRefs = useRef(outputPaths.map(() => createRef()));
+  
+  // Update refs when outputPaths change
+  useEffect(() => {
+    pathRefs.current = outputPaths.map(() => createRef());
+  }, [outputPaths]);
   
   // Memoize node style to prevent recreation on each render
   const nodeStyle = useMemo(() => ({
@@ -286,7 +294,8 @@ const ConditionalFlowNode = ({ data, id }) => {
                 padding: '4px',
                 borderRadius: '3px',
                 backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                border: `1px solid ${path.color}`
+                border: `1px solid ${path.color}`,
+                position: 'relative'
               }}
             >
               <div 
@@ -302,6 +311,19 @@ const ConditionalFlowNode = ({ data, id }) => {
               <div className="path-label" style={{ fontSize: '12px', flex: 1 }}>
                 {path.label}
               </div>
+              {/* Inline handle for each path */}
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={`execution-${path.id}`}
+                style={{ 
+                  ...getExecutionHandleStyle('right'),
+                  position: 'absolute',
+                  top: '50%',
+                  right: 0,
+                  transform: 'translate(100%, -50%)'
+                }}
+              />
             </div>
           ))}
         </div>
@@ -326,24 +348,6 @@ const ConditionalFlowNode = ({ data, id }) => {
           left: -5
         }}
       />
-      
-      {/* Output execution handles - one for each path */}
-      {outputPaths.map((path, index) => {
-        const verticalPosition = 30 + (index * 25); // Distribute handles vertically
-        return (
-          <Handle
-            key={path.id}
-            type="source"
-            position={Position.Right}
-            id={`execution-${path.id}`}
-            style={{ 
-              ...getExecutionHandleStyle('right'),
-              top: `${verticalPosition}%`,
-              right: -10
-            }}
-          />
-        );
-      })}
     </div>
   );
 };
