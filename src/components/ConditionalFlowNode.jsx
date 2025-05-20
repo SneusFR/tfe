@@ -8,7 +8,8 @@ const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 const ConditionalFlowNode = ({ data, id }) => {
   // Default values if data is missing
   const [conditionType, setConditionType] = useState(data?.conditionType || 'equals');
-  const [value, setValue] = useState(data?.value || '');
+  const [compareValue, setCompareValue] = useState(data?.value || '');
+  const [inputValue, setInputValue] = useState(data?.inputValue || '');
   
   // Store callback in a ref to prevent recreation on each render
   const callbacksRef = useRef({});
@@ -25,9 +26,14 @@ const ConditionalFlowNode = ({ data, id }) => {
         if (data.onValueChange) {
           data.onValueChange(newValue);
         }
+      },
+      onInputValueChange: (newInputValue) => {
+        if (data.onInputValueChange) {
+          data.onInputValueChange(newInputValue);
+        }
       }
     };
-  }, [id, data.onConditionTypeChange, data.onValueChange]);
+  }, [id, data.onConditionTypeChange, data.onValueChange, data.onInputValueChange]);
   
   // Update local state when data changes
   useEffect(() => {
@@ -35,11 +41,15 @@ const ConditionalFlowNode = ({ data, id }) => {
       setConditionType(data.conditionType);
     }
     if (data?.value !== undefined) {
-      setValue(data.value);
+      setCompareValue(data.value);
     }
-  }, [data?.conditionType, data?.value]);
+    if (data?.inputValue !== undefined) {
+      setInputValue(data.inputValue);
+    }
+  }, [data?.conditionType, data?.value, data?.inputValue]);
   
   const [isEditingValue, setIsEditingValue] = useState(false);
+  const [isEditingInputValue, setIsEditingInputValue] = useState(false);
   const isConnectedToStartingNode = data?.isConnectedToStartingNode || false;
   const connectionIndicator = data?.connectionIndicator;
   
@@ -74,15 +84,31 @@ const ConditionalFlowNode = ({ data, id }) => {
   // Memoized handlers to prevent recreation on each render
   const handleValueBlur = useCallback(() => {
     setIsEditingValue(false);
-    callbacksRef.current[id]?.onValueChange?.(value);
-  }, [id, value]);
+    callbacksRef.current[id]?.onValueChange?.(compareValue);
+  }, [id, compareValue]);
   
   const handleValueKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       setIsEditingValue(false);
-      callbacksRef.current[id]?.onValueChange?.(value);
+      callbacksRef.current[id]?.onValueChange?.(compareValue);
     }
-  }, [id, value]);
+  }, [id, compareValue]);
+  
+  const handleInputValueDoubleClick = () => {
+    setIsEditingInputValue(true);
+  };
+  
+  const handleInputValueBlur = useCallback(() => {
+    setIsEditingInputValue(false);
+    callbacksRef.current[id]?.onInputValueChange?.(inputValue);
+  }, [id, inputValue]);
+  
+  const handleInputValueKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      setIsEditingInputValue(false);
+      callbacksRef.current[id]?.onInputValueChange?.(inputValue);
+    }
+  }, [id, inputValue]);
   
   const handleConditionTypeChange = useCallback((e) => {
     const newType = e.target.value;
@@ -150,7 +176,7 @@ const ConditionalFlowNode = ({ data, id }) => {
       return {
         ...baseStyle,
         borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
-        top: 50,
+        top: 0,
         left: -10,
         opacity: 0.8,
       };
@@ -232,11 +258,54 @@ const ConditionalFlowNode = ({ data, id }) => {
         </select>
       </div>
       
-      {/* Value Input - Only shown for conditions that need a comparison value */}
+      {/* Value Input */}
+      <div className="conditional-flow-node-section">
+        <div className="conditional-flow-node-label" style={{ fontSize: '11px', marginBottom: '4px', color: '#555' }}>
+          Value condition:
+        </div>
+        <div 
+          className="conditional-flow-node-value" 
+          style={{ 
+            fontSize: '12px',
+            color: '#333',
+            marginBottom: '8px',
+            padding: '4px',
+            borderRadius: '3px',
+            background: '#fff',
+            minHeight: '30px',
+            border: '1px solid #ffe0b2',
+            cursor: 'pointer'
+          }}
+          onDoubleClick={handleInputValueDoubleClick}
+        >
+          {isEditingInputValue ? (
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onBlur={handleInputValueBlur}
+              onKeyDown={handleInputValueKeyDown}
+              autoFocus
+              style={{
+                width: '100%',
+                border: 'none',
+                outline: 'none',
+                fontSize: '12px',
+                padding: '0',
+                background: 'transparent'
+              }}
+            />
+          ) : (
+            inputValue || 'Double-click to enter value...'
+          )}
+        </div>
+      </div>
+      
+      {/* Compare Value Input - Only shown for conditions that need a comparison value */}
       {showValueInput && (
         <div className="conditional-flow-node-section">
           <div className="conditional-flow-node-label" style={{ fontSize: '11px', marginBottom: '4px', color: '#555' }}>
-            Compare Value:
+            Value to compare:
           </div>
           <div 
             className="conditional-flow-node-value" 
@@ -256,8 +325,8 @@ const ConditionalFlowNode = ({ data, id }) => {
             {isEditingValue ? (
               <input
                 type="text"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
+                value={compareValue}
+                onChange={(e) => setCompareValue(e.target.value)}
                 onBlur={handleValueBlur}
                 onKeyDown={handleValueKeyDown}
                 autoFocus
@@ -271,7 +340,7 @@ const ConditionalFlowNode = ({ data, id }) => {
                 }}
               />
             ) : (
-              value || 'Double-click to enter comparison value...'
+              compareValue || 'Double-click to enter comparison value...'
             )}
           </div>
         </div>
@@ -337,14 +406,24 @@ const ConditionalFlowNode = ({ data, id }) => {
         style={getExecutionHandleStyle('left')}
       />
       
-      {/* Input data handle */}
+      {/* Input data handles */}
       <Handle
         type="target"
         position={Position.Left}
-        id="input"
+        id="value-input"
         style={{ 
           ...getDataHandleStyle(inputColor),
-          top: '46%',
+          top: '38%',
+          left: -5
+        }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="compare-input"
+        style={{ 
+          ...getDataHandleStyle(inputColor),
+          top: '55%',
           left: -5
         }}
       />
