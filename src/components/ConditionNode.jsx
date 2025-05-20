@@ -85,7 +85,7 @@ const ConditionNode = ({ data, id }) => {
       return {
         ...baseStyle,
         borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
-        top: 0,
+        top: 50,
         left: -10,
         opacity: 0.8,
       };

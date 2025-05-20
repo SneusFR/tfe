@@ -282,7 +282,7 @@ const AINode = ({ data, id }) => {
           background: promptColor, 
           width: '10px', 
           height: '10px',
-          top: '25%',
+          top: '32%',
           left: -5,
           border: '2px solid white',
           boxShadow: '0 0 3px rgba(0,0,0,0.3)'
@@ -297,7 +297,7 @@ const AINode = ({ data, id }) => {
           background: inputColor, 
           width: '10px', 
           height: '10px',
-          top: '50%',
+          top: '58%',
           left: -5,
           border: '2px solid white',
           boxShadow: '0 0 3px rgba(0,0,0,0.3)'
@@ -313,7 +313,7 @@ const AINode = ({ data, id }) => {
           background: outputColor, 
           width: '10px', 
           height: '10px',
-          top: '75%', // Position it exactly where the edge connects
+          top: '88%', // Position it exactly where the edge connects
           right: -5,
           border: '2px solid white',
           boxShadow: '0 0 3px rgba(0,0,0,0.3)'
