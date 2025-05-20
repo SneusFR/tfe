@@ -135,6 +135,14 @@ const NodesInventory = ({ apiNodes = [] }) => {
               AI Nodes
             </motion.button>
             <motion.button 
+              className={`inventory-tab ${activeCategory === 'conditional-flow' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('conditional-flow')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Conditional Flow
+            </motion.button>
+            <motion.button 
               className={`inventory-tab ${activeCategory === 'api-nodes' ? 'active' : ''}`}
               onClick={() => setActiveCategory('api-nodes')}
               whileHover={{ scale: 1.05 }}
@@ -505,6 +513,114 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     </div>
                     <div className="condition-description">
                       Process text with AI using customizable prompts and inputs
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+            
+            {activeCategory === 'conditional-flow' && (
+              <motion.div
+                key="conditional-flow"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="condition-items">
+                  {/* Conditional Flow Node */}
+                  <motion.div 
+                    className="condition-item conditional-flow-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'conditionalFlowNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ borderTop: '3px solid #FF9800' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#FF9800' }}>CONDITION</div>
+                      </Tooltip>
+                      <div className="condition-return">Conditional Flow</div>
+                    </div>
+                    <div className="condition-description">
+                      Create conditional paths with various comparison operators (equals, contains, greater than, etc.)
+                    </div>
+                  </motion.div>
+                  
+                  {/* Switch Node */}
+                  <motion.div 
+                    className="condition-item switch-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'switchNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    style={{ borderTop: '3px solid #9C27B0' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#9C27B0' }}>SWITCH</div>
+                      </Tooltip>
+                      <div className="condition-return">Switch Flow</div>
+                    </div>
+                    <div className="condition-description">
+                      Create multiple execution paths based on case matching (similar to switch/case statements)
+                    </div>
+                  </motion.div>
+                  
+                  {/* Logical Operator Node */}
+                  <motion.div 
+                    className="condition-item logical-operator-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'logicalOperatorNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    style={{ borderTop: '3px solid #00BCD4' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#00BCD4' }}>LOGIC</div>
+                      </Tooltip>
+                      <div className="condition-return">Logical Operator</div>
+                    </div>
+                    <div className="condition-description">
+                      Combine multiple boolean inputs with logical operators (AND, OR, XOR, etc.)
                     </div>
                   </motion.div>
                 </div>

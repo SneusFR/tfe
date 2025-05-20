@@ -34,6 +34,9 @@ import '../styles/DiagramEditor.css';
 
 import ApiNode from './ApiNode';
 import ConditionNode from './ConditionNode';
+import ConditionalFlowNode from './ConditionalFlowNode';
+import SwitchNode from './SwitchNode';
+import LogicalOperatorNode from './LogicalOperatorNode';
 import SendingMailNode from './SendingMailNode';
 import EmailAttachmentNode from './EmailAttachmentNode';
 import TextNode from './TextNode';
@@ -69,6 +72,9 @@ const CONNECTED_EXECUTION_LINK_STYLE = {
 const nodeTypes = {
   apiNode: ApiNode,
   conditionNode: ConditionNode,
+  conditionalFlowNode: ConditionalFlowNode,
+  switchNode: SwitchNode,
+  logicalOperatorNode: LogicalOperatorNode,
   sendingMailNode: SendingMailNode,
   emailAttachmentNode: EmailAttachmentNode,
   textNode: TextNode,
@@ -432,9 +438,9 @@ const DiagramEditor = ({
       
       // Determine if this is an execution link or a data link
       // Execution links connect handles with IDs 'execution'
-      const isExecutionLink = 
-        sourceHandle === 'execution' && 
-        targetHandle === 'execution';
+      const isExecutionLink =
+      sourceHandle?.startsWith('execution') &&
+      targetHandle?.startsWith('execution');
       
       const linkColor = isExecutionLink ? EXECUTION_LINK_COLOR : DATA_LINK_COLOR;
       
@@ -777,6 +783,157 @@ const DiagramEditor = ({
         // Set the callback references
         newNode.data.onPromptChange = (newPrompt) => nodeCallbacksRef.current[nodeId].onPromptChange(newPrompt);
         newNode.data.onInputChange = (newInput) => nodeCallbacksRef.current[nodeId].onInputChange(newInput);
+        
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'conditionalFlowNode') {
+        const nodeId = `conditional-flow-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'conditionalFlowNode',
+          position,
+          data: {
+            conditionType: 'equals',
+            value: '',
+            onConditionTypeChange: null, // Will be set via ref
+            onValueChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callbacks in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onConditionTypeChange: (newType) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, conditionType: newType } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          },
+          onValueChange: (newValue) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, value: newValue } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+        };
+        
+        // Set the callback references
+        newNode.data.onConditionTypeChange = (newType) => nodeCallbacksRef.current[nodeId].onConditionTypeChange(newType);
+        newNode.data.onValueChange = (newValue) => nodeCallbacksRef.current[nodeId].onValueChange(newValue);
+        
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'switchNode') {
+        const nodeId = `switch-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'switchNode',
+          position,
+          data: {
+            cases: [
+              { id: '1', value: '', label: 'Case 1' },
+              { id: '2', value: '', label: 'Case 2' }
+            ],
+            onCasesChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callbacks in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onCasesChange: (newCases) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, cases: newCases } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+        };
+        
+        // Set the callback references
+        newNode.data.onCasesChange = (newCases) => nodeCallbacksRef.current[nodeId].onCasesChange(newCases);
+        
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'logicalOperatorNode') {
+        const nodeId = `logical-operator-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'logicalOperatorNode',
+          position,
+          data: {
+            operatorType: 'AND',
+            inputCount: 2,
+            onOperatorTypeChange: null, // Will be set via ref
+            onInputCountChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callbacks in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onOperatorTypeChange: (newType) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, operatorType: newType } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          },
+          onInputCountChange: (newCount) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, inputCount: newCount } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+        };
+        
+        // Set the callback references
+        newNode.data.onOperatorTypeChange = (newType) => nodeCallbacksRef.current[nodeId].onOperatorTypeChange(newType);
+        newNode.data.onInputCountChange = (newCount) => nodeCallbacksRef.current[nodeId].onInputCountChange(newCount);
         
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
