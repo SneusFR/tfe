@@ -201,8 +201,66 @@ export const FlowManagerProvider = ({ children }) => {
     
     const versionIndex = currentFlow.currentVersionIndex || 0;
     const version = currentFlow.versions?.[versionIndex] || {};
-    const nodesToSave = Array.isArray(nodes) ? nodes : version.nodes || [];
-    const edgesToSave = Array.isArray(edges) ? edges : version.edges || [];
+    
+    // Clean nodes to remove React components and functions before saving
+    const nodesToSave = Array.isArray(nodes) ? nodes.map(node => {
+      // Extract only the serializable data from each node
+      const { id, type, position, data, ...rest } = node;
+      
+      // Create a clean data object without React components or functions
+      const cleanData = { ...data };
+      
+      // Remove React components and functions that cause circular references
+      delete cleanData.deleteButton;
+      delete cleanData.onTextChange;
+      delete cleanData.onValueChange;
+      delete cleanData.onPromptChange;
+      delete cleanData.onInputChange;
+      delete cleanData.onConditionTypeChange;
+      delete cleanData.onInputValueChange;
+      delete cleanData.onCasesChange;
+      delete cleanData.onOperatorTypeChange;
+      delete cleanData.onInputCountChange;
+      
+      // Return a clean node object
+      return {
+        id,
+        type,
+        position,
+        data: cleanData,
+        ...rest
+      };
+    }) : version.nodes || [];
+    
+    // Clean edges to remove any non-serializable properties
+    const edgesToSave = Array.isArray(edges) ? edges.map(edge => {
+      // Extract only the serializable data from each edge
+      const { 
+        id, 
+        source, 
+        target, 
+        sourceHandle, 
+        targetHandle, 
+        type, 
+        animated,
+        data
+      } = edge;
+      
+      // Return a clean edge object with only the essential properties
+      return {
+        id,
+        source,
+        target,
+        sourceHandle,
+        targetHandle,
+        type,
+        animated,
+        data: data ? { 
+          isExecutionLink: data.isExecutionLink,
+          isConnected: data.isConnected
+        } : undefined
+      };
+    }) : version.edges || [];
     
     setLoading(true);
     setError(null);
