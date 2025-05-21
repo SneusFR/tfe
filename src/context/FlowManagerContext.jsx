@@ -243,6 +243,8 @@ export const FlowManagerProvider = ({ children }) => {
         targetHandle, 
         type, 
         animated,
+        style,
+        markerEnd,
         data
       } = edge;
       
@@ -255,6 +257,8 @@ export const FlowManagerProvider = ({ children }) => {
         targetHandle,
         type,
         animated,
+        style,           // ← on conserve
+        markerEnd,       // ← on conserve
         data: data ? { 
           isExecutionLink: data.isExecutionLink,
           isConnected: data.isConnected
