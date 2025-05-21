@@ -18,16 +18,19 @@ const ConditionalFlowNode = ({ data, id }) => {
   useEffect(() => {
     callbacksRef.current[id] = {
       onConditionTypeChange: (newType) => {
+        setConditionType(newType);
         if (data.onConditionTypeChange) {
           data.onConditionTypeChange(newType);
         }
       },
       onValueChange: (newValue) => {
+        setCompareValue(newValue);
         if (data.onValueChange) {
           data.onValueChange(newValue);
         }
       },
       onInputValueChange: (newInputValue) => {
+        setInputValue(newInputValue);
         if (data.onInputValueChange) {
           data.onInputValueChange(newInputValue);
         }

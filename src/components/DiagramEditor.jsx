@@ -247,6 +247,61 @@ const DiagramEditor = ({
               onInputChange: (newInput) => nodeCallbacksRef.current[nodeId].onInputChange(newInput)
             }
           };
+        } else if (n.type === 'conditionalFlowNode') {
+          const nodeId = n.id;
+          nodeCallbacksRef.current[nodeId] = {
+          onConditionTypeChange: newType => {
+            setNodes(prev => {
+              const updated = prev.map(nd =>
+                nd.id === nodeId
+                  ? { ...nd, data: { ...nd.data, conditionType: newType } }
+                  : nd
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          },
+          onValueChange: newValue => {
+            setNodes(prev => {
+              const updated = prev.map(nd =>
+                nd.id === nodeId
+                  ? { ...nd, data: { ...nd.data, value: newValue } }
+                  : nd
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          },
+          onInputValueChange: newInputValue => {
+            setNodes(prev => {
+              const updated = prev.map(nd =>
+                nd.id === nodeId
+                  ? { ...nd, data: { ...nd.data, inputValue: newInputValue } }
+                  : nd
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+          };
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onConditionTypeChange: newType => nodeCallbacksRef.current[nodeId].onConditionTypeChange(newType),
+              onValueChange: newVal => nodeCallbacksRef.current[nodeId].onValueChange(newVal),
+              onInputValueChange: newInputValue => nodeCallbacksRef.current[nodeId].onInputValueChange(newInputValue)
+            }
+          };
         }
         return n;
       });
@@ -798,8 +853,10 @@ const DiagramEditor = ({
           data: {
             conditionType: 'equals',
             value: '',
+            inputValue: '',
             onConditionTypeChange: null, // Will be set via ref
             onValueChange: null, // Will be set via ref
+            onInputValueChange: null, // Will be set via ref
           },
         };
         
@@ -832,12 +889,27 @@ const DiagramEditor = ({
               onNodesChange?.(updated);
               return updated;
             });
+          },
+          onInputValueChange: (newInputValue) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, inputValue: newInputValue } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
           }
         };
         
         // Set the callback references
         newNode.data.onConditionTypeChange = (newType) => nodeCallbacksRef.current[nodeId].onConditionTypeChange(newType);
         newNode.data.onValueChange = (newValue) => nodeCallbacksRef.current[nodeId].onValueChange(newValue);
+        newNode.data.onInputValueChange = (newInputValue) => nodeCallbacksRef.current[nodeId].onInputValueChange(newInputValue);
         
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
