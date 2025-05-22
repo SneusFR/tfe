@@ -44,6 +44,7 @@ import IntNode from './IntNode';
 import OcrNode from './OcrNode';
 import ConsoleLogNode from './ConsoleLogNode';
 import AINode from './AINode';
+import MailBodyNode from './MailBodyNode';
 import conditionStore from '../store/conditionStore';
 
 // Connection colors and styles
@@ -82,6 +83,7 @@ const nodeTypes = {
   ocrNode: OcrNode,
   consoleLogNode: ConsoleLogNode,
   aiNode: AINode,
+  mailBodyNode: MailBodyNode,
 };
 
 // Define edge types outside the component
@@ -1006,6 +1008,44 @@ const DiagramEditor = ({
         // Set the callback references
         newNode.data.onOperatorTypeChange = (newType) => nodeCallbacksRef.current[nodeId].onOperatorTypeChange(newType);
         newNode.data.onInputCountChange = (newCount) => nodeCallbacksRef.current[nodeId].onInputCountChange(newCount);
+        
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'mailBodyNode') {
+        const nodeId = `mail-body-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'mailBodyNode',
+          position,
+          data: {
+            content: '',
+            onContentChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callback in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onContentChange: (newContent) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, content: newContent } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+        };
+        
+        // Set the callback reference
+        newNode.data.onContentChange = (newContent) => nodeCallbacksRef.current[nodeId].onContentChange(newContent);
         
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);

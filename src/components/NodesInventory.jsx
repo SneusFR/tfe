@@ -111,6 +111,14 @@ const NodesInventory = ({ apiNodes = [] }) => {
               Text Nodes
             </motion.button>
             <motion.button 
+              className={`inventory-tab ${activeCategory === 'mail-body' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('mail-body')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Mail Body
+            </motion.button>
+            <motion.button 
               className={`inventory-tab ${activeCategory === 'int-nodes' ? 'active' : ''}`}
               onClick={() => setActiveCategory('int-nodes')}
               whileHover={{ scale: 1.05 }}
@@ -387,6 +395,49 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     </div>
                     <div className="condition-description">
                       Add text content that can connect to colored attribute handles
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+            
+            {activeCategory === 'mail-body' && (
+              <motion.div
+                key="mail-body"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="condition-items">
+                  <motion.div 
+                    className="condition-item mail-body-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'mailBodyNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ borderTop: '3px solid #FF6D00' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#FF6D00' }}>MAIL BODY</div>
+                      </Tooltip>
+                      <div className="condition-return">Email Template</div>
+                    </div>
+                    <div className="condition-description">
+                      Create rich text email templates with dynamic variables using $variable syntax
                     </div>
                   </motion.div>
                 </div>
