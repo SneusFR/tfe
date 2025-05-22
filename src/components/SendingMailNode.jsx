@@ -47,18 +47,30 @@ const SendingMailNode = ({ data, id }) => {
   };
   
   // Common styles for data handles
-  const getDataHandleStyle = (color, handleId) => {
+  const getDataHandleStyle = (color, handleId, position) => {
     const isHovered = hoveredHandle === handleId;
-    return {
+    const baseStyle = {
       background: color,
       width: isHovered ? '14px' : '10px',
       height: isHovered ? '14px' : '10px',
-      left: 0,
       border: isHovered ? '2px solid white' : 'none',
       boxShadow: isHovered ? `0 0 6px ${color}` : 'none',
       transition: 'all 0.2s ease',
       cursor: 'crosshair',
     };
+    
+    // Position the handle correctly based on whether it's on the left or right
+    if (position === Position.Left) {
+      return {
+        ...baseStyle,
+        left: 0,
+      };
+    } else {
+      return {
+        ...baseStyle,
+        right: 0,
+      };
+    }
   };
   
   // Execution handle styles
@@ -182,7 +194,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-account_id' ? 'rgba(255, 87, 34, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-account_id' || hoveredHandle === 'out-account_id' ? 'rgba(255, 87, 34, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -198,13 +210,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>Account ID:</strong> {emailAttributes.account_id || 'Required'}
             </div>
-            {/* Handle for Account ID attribute */}
+            {/* Input Handle for Account ID attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-account_id"
-              style={getDataHandleStyle(attributeColors.account_id, 'attr-account_id')}
+              style={getDataHandleStyle(attributeColors.account_id, 'attr-account_id', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-account_id')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for Account ID attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-account_id"
+              style={getDataHandleStyle(attributeColors.account_id, 'out-account_id', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-account_id')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -217,7 +238,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-fromEmail' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-fromEmail' || hoveredHandle === 'out-fromEmail' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -233,13 +254,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>FromEmail:</strong> {emailAttributes.fromEmail}
             </div>
-            {/* Handle for FromEmail attribute */}
+            {/* Input Handle for FromEmail attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-fromEmail"
-              style={getDataHandleStyle(attributeColors.from, 'attr-fromEmail')}
+              style={getDataHandleStyle(attributeColors.from, 'attr-fromEmail', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-fromEmail')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for FromEmail attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-fromEmail"
+              style={getDataHandleStyle(attributeColors.from, 'out-fromEmail', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-fromEmail')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -252,7 +282,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-fromDisplayName' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-fromDisplayName' || hoveredHandle === 'out-fromDisplayName' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -268,13 +298,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>FromDisplayName:</strong> {emailAttributes.fromDisplayName}
             </div>
-            {/* Handle for FromDisplayName attribute */}
+            {/* Input Handle for FromDisplayName attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-fromDisplayName"
-              style={getDataHandleStyle(attributeColors.from, 'attr-fromDisplayName')}
+              style={getDataHandleStyle(attributeColors.from, 'attr-fromDisplayName', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-fromDisplayName')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for FromDisplayName attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-fromDisplayName"
+              style={getDataHandleStyle(attributeColors.from, 'out-fromDisplayName', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-fromDisplayName')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -287,7 +326,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-toEmail' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-toEmail' || hoveredHandle === 'out-toEmail' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -303,13 +342,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>ToEmail:</strong> {emailAttributes.toEmail || 'Required'}
             </div>
-            {/* Handle for ToEmail attribute */}
+            {/* Input Handle for ToEmail attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-toEmail"
-              style={getDataHandleStyle(attributeColors.to, 'attr-toEmail')}
+              style={getDataHandleStyle(attributeColors.to, 'attr-toEmail', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-toEmail')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for ToEmail attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-toEmail"
+              style={getDataHandleStyle(attributeColors.to, 'out-toEmail', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-toEmail')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -322,7 +370,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-toDisplayName' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-toDisplayName' || hoveredHandle === 'out-toDisplayName' ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -338,13 +386,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>ToDisplayName:</strong> {emailAttributes.toDisplayName || 'Required'}
             </div>
-            {/* Handle for ToDisplayName attribute */}
+            {/* Input Handle for ToDisplayName attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-toDisplayName"
-              style={getDataHandleStyle(attributeColors.to, 'attr-toDisplayName')}
+              style={getDataHandleStyle(attributeColors.to, 'attr-toDisplayName', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-toDisplayName')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for ToDisplayName attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-toDisplayName"
+              style={getDataHandleStyle(attributeColors.to, 'out-toDisplayName', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-toDisplayName')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -357,7 +414,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-subject' ? 'rgba(33, 150, 243, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-subject' || hoveredHandle === 'out-subject' ? 'rgba(33, 150, 243, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -373,13 +430,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>Subject:</strong> {emailAttributes.subject}
             </div>
-            {/* Handle for Subject attribute */}
+            {/* Input Handle for Subject attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-subject"
-              style={getDataHandleStyle(attributeColors.subject, 'attr-subject')}
+              style={getDataHandleStyle(attributeColors.subject, 'attr-subject', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-subject')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for Subject attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-subject"
+              style={getDataHandleStyle(attributeColors.subject, 'out-subject', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-subject')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -392,7 +458,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-body' ? 'rgba(156, 39, 176, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-body' || hoveredHandle === 'out-body' ? 'rgba(156, 39, 176, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -408,13 +474,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>Body:</strong> {emailAttributes.content ? emailAttributes.content.substring(0, 30) + '...' : 'Required'}
             </div>
-            {/* Handle for Body attribute */}
+            {/* Input Handle for Body attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-body"
-              style={getDataHandleStyle(attributeColors.body, 'attr-body')}
+              style={getDataHandleStyle(attributeColors.body, 'attr-body', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-body')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for Body attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-body"
+              style={getDataHandleStyle(attributeColors.body, 'out-body', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-body')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -427,7 +502,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-reply_to' ? 'rgba(255, 152, 0, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-reply_to' || hoveredHandle === 'out-reply_to' ? 'rgba(255, 152, 0, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -443,13 +518,22 @@ const SendingMailNode = ({ data, id }) => {
             <div style={{ flex: 1 }}>
               <strong>Reply To:</strong> {emailAttributes.reply_to || 'Optional'}
             </div>
-            {/* Handle for Reply To attribute */}
+            {/* Input Handle for Reply To attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-reply_to"
-              style={getDataHandleStyle(attributeColors.reply_to, 'attr-reply_to')}
+              style={getDataHandleStyle(attributeColors.reply_to, 'attr-reply_to', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-reply_to')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for Reply To attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-reply_to"
+              style={getDataHandleStyle(attributeColors.reply_to, 'out-reply_to', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-reply_to')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -462,7 +546,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-cc' ? 'rgba(96, 125, 139, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-cc' || hoveredHandle === 'out-cc' ? 'rgba(96, 125, 139, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -480,13 +564,22 @@ const SendingMailNode = ({ data, id }) => {
                 ? `${emailAttributes.cc.length} recipients` 
                 : 'Optional'}
             </div>
-            {/* Handle for CC attribute */}
+            {/* Input Handle for CC attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-cc"
-              style={getDataHandleStyle(attributeColors.cc, 'attr-cc')}
+              style={getDataHandleStyle(attributeColors.cc, 'attr-cc', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-cc')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for CC attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-cc"
+              style={getDataHandleStyle(attributeColors.cc, 'out-cc', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-cc')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -499,7 +592,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-bcc' ? 'rgba(244, 67, 54, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-bcc' || hoveredHandle === 'out-bcc' ? 'rgba(244, 67, 54, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -517,13 +610,22 @@ const SendingMailNode = ({ data, id }) => {
                 ? `${emailAttributes.bcc.length} recipients` 
                 : 'Optional'}
             </div>
-            {/* Handle for BCC attribute */}
+            {/* Input Handle for BCC attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-bcc"
-              style={getDataHandleStyle(attributeColors.bcc, 'attr-bcc')}
+              style={getDataHandleStyle(attributeColors.bcc, 'attr-bcc', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-bcc')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for BCC attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-bcc"
+              style={getDataHandleStyle(attributeColors.bcc, 'out-bcc', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-bcc')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
@@ -536,7 +638,7 @@ const SendingMailNode = ({ data, id }) => {
             position: 'relative',
             padding: '2px 4px',
             borderRadius: '3px',
-            backgroundColor: hoveredHandle === 'attr-custom_headers' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
+            backgroundColor: hoveredHandle === 'attr-custom_headers' || hoveredHandle === 'out-custom_headers' ? 'rgba(121, 85, 72, 0.1)' : 'transparent',
             transition: 'background-color 0.2s ease'
           }}>
             <div 
@@ -554,13 +656,22 @@ const SendingMailNode = ({ data, id }) => {
                 ? `${emailAttributes.custom_headers.length} headers` 
                 : 'Optional'}
             </div>
-            {/* Handle for Custom Headers attribute */}
+            {/* Input Handle for Custom Headers attribute */}
             <Handle
               type="target"
               position={Position.Left}
               id="attr-custom_headers"
-              style={getDataHandleStyle(attributeColors.custom_headers, 'attr-custom_headers')}
+              style={getDataHandleStyle(attributeColors.custom_headers, 'attr-custom_headers', Position.Left)}
               onMouseEnter={() => handleMouseEnter('attr-custom_headers')}
+              onMouseLeave={handleMouseLeave}
+            />
+            {/* Output Handle for Custom Headers attribute */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="out-custom_headers"
+              style={getDataHandleStyle(attributeColors.custom_headers, 'out-custom_headers', Position.Right)}
+              onMouseEnter={() => handleMouseEnter('out-custom_headers')}
               onMouseLeave={handleMouseLeave}
             />
           </div>
