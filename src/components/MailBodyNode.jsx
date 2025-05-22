@@ -33,9 +33,6 @@ const MailBodyNode = ({ data, id }) => {
     return EditorState.createWithContent(ContentState.createFromText('Enter your email template here...'));
   });
   
-  // Track if the editor is focused for showing/hiding toolbar
-  const [isFocused, setIsFocused] = useState(false);
-  
   // Track detected variables in the content
   const [variables, setVariables] = useState([]);
   
@@ -103,16 +100,13 @@ const MailBodyNode = ({ data, id }) => {
   }, [editorState]);
   
   // Focus the editor when clicking on the node
-  const focusEditor = useCallback(() => {
+  const focusEditor = useCallback((e) => {
+    // Stop propagation to prevent the node from being selected
+    e.stopPropagation();
+    
     if (editorRef.current) {
       editorRef.current.focus();
-      setIsFocused(true);
     }
-  }, []);
-  
-  // Handle editor blur
-  const handleBlur = useCallback(() => {
-    setIsFocused(false);
   }, []);
   
   // Memoize node style to prevent recreation on each render
@@ -208,11 +202,29 @@ const MailBodyNode = ({ data, id }) => {
     .getBlockForKey(editorState.getSelection().getStartKey())
     .getType();
   
+  // Handle toolbar button click without losing focus
+  const handleToolbarButtonClick = useCallback((action, value = null) => (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (action === 'toggleInlineStyle') {
+      toggleInlineStyle(value);
+    } else if (action === 'toggleBlockType') {
+      toggleBlockType(value);
+    }
+    
+    // Re-focus the editor after applying the style
+    if (editorRef.current) {
+      setTimeout(() => {
+        editorRef.current.focus();
+      }, 0);
+    }
+  }, [toggleInlineStyle, toggleBlockType]);
+  
   return (
     <div
       className="mail-body-node"
       style={nodeStyle}
-      onClick={focusEditor}
     >
       {/* Delete button */}
       {data.deleteButton}
@@ -230,83 +242,81 @@ const MailBodyNode = ({ data, id }) => {
         </div>
       </div>
       
-      {/* Formatting toolbar (visible when editor is focused) */}
-      {isFocused && (
-        <div className="mail-body-toolbar" style={toolbarStyle}>
-          <button
-            type="button"
-            style={currentInlineStyles.has('BOLD') ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleInlineStyle('BOLD')}
-            title="Bold"
-          >
-            <FormatBoldIcon fontSize="small" />
-          </button>
-          <button
-            type="button"
-            style={currentInlineStyles.has('ITALIC') ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleInlineStyle('ITALIC')}
-            title="Italic"
-          >
-            <FormatItalicIcon fontSize="small" />
-          </button>
-          <button
-            type="button"
-            style={currentInlineStyles.has('UNDERLINE') ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleInlineStyle('UNDERLINE')}
-            title="Underline"
-          >
-            <FormatUnderlinedIcon fontSize="small" />
-          </button>
-          <button
-            type="button"
-            style={currentBlockType === 'header-one' ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleBlockType('header-one')}
-            title="Heading 1"
-          >
-            <FormatSizeIcon fontSize="small" />1
-          </button>
-          <button
-            type="button"
-            style={currentBlockType === 'header-two' ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleBlockType('header-two')}
-            title="Heading 2"
-          >
-            <FormatSizeIcon fontSize="small" />2
-          </button>
-          <button
-            type="button"
-            style={currentBlockType === 'unordered-list-item' ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleBlockType('unordered-list-item')}
-            title="Bullet List"
-          >
-            <FormatListBulletedIcon fontSize="small" />
-          </button>
-          <button
-            type="button"
-            style={currentBlockType === 'ordered-list-item' ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleBlockType('ordered-list-item')}
-            title="Numbered List"
-          >
-            <FormatListNumberedIcon fontSize="small" />
-          </button>
-          <button
-            type="button"
-            style={currentBlockType === 'blockquote' ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleBlockType('blockquote')}
-            title="Quote"
-          >
-            <FormatQuoteIcon fontSize="small" />
-          </button>
-          <button
-            type="button"
-            style={currentBlockType === 'code-block' ? activeToolbarButtonStyle : toolbarButtonStyle}
-            onClick={() => toggleBlockType('code-block')}
-            title="Code Block"
-          >
-            <CodeIcon fontSize="small" />
-          </button>
-        </div>
-      )}
+      {/* Formatting toolbar (always visible) */}
+      <div className="mail-body-toolbar" style={toolbarStyle} onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          style={currentInlineStyles.has('BOLD') ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleInlineStyle', 'BOLD')}
+          title="Bold"
+        >
+          <FormatBoldIcon fontSize="small" />
+        </button>
+        <button
+          type="button"
+          style={currentInlineStyles.has('ITALIC') ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleInlineStyle', 'ITALIC')}
+          title="Italic"
+        >
+          <FormatItalicIcon fontSize="small" />
+        </button>
+        <button
+          type="button"
+          style={currentInlineStyles.has('UNDERLINE') ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleInlineStyle', 'UNDERLINE')}
+          title="Underline"
+        >
+          <FormatUnderlinedIcon fontSize="small" />
+        </button>
+        <button
+          type="button"
+          style={currentBlockType === 'header-one' ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleBlockType', 'header-one')}
+          title="Heading 1"
+        >
+          <FormatSizeIcon fontSize="small" />1
+        </button>
+        <button
+          type="button"
+          style={currentBlockType === 'header-two' ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleBlockType', 'header-two')}
+          title="Heading 2"
+        >
+          <FormatSizeIcon fontSize="small" />2
+        </button>
+        <button
+          type="button"
+          style={currentBlockType === 'unordered-list-item' ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleBlockType', 'unordered-list-item')}
+          title="Bullet List"
+        >
+          <FormatListBulletedIcon fontSize="small" />
+        </button>
+        <button
+          type="button"
+          style={currentBlockType === 'ordered-list-item' ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleBlockType', 'ordered-list-item')}
+          title="Numbered List"
+        >
+          <FormatListNumberedIcon fontSize="small" />
+        </button>
+        <button
+          type="button"
+          style={currentBlockType === 'blockquote' ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleBlockType', 'blockquote')}
+          title="Quote"
+        >
+          <FormatQuoteIcon fontSize="small" />
+        </button>
+        <button
+          type="button"
+          style={currentBlockType === 'code-block' ? activeToolbarButtonStyle : toolbarButtonStyle}
+          onClick={handleToolbarButtonClick('toggleBlockType', 'code-block')}
+          title="Code Block"
+        >
+          <CodeIcon fontSize="small" />
+        </button>
+      </div>
       
       {/* Rich text editor */}
       <div
@@ -319,7 +329,6 @@ const MailBodyNode = ({ data, id }) => {
           editorState={editorState}
           onChange={handleEditorChange}
           handleKeyCommand={handleKeyCommand}
-          onBlur={handleBlur}
           placeholder="Enter your email template here..."
           spellCheck={true}
         />
@@ -376,8 +385,6 @@ const MailBodyNode = ({ data, id }) => {
         id="output-content"
         style={handleStyle}
       />
-      
-      {/* No need for separate input handles as they're now integrated with each variable */}
     </div>
   );
 };
