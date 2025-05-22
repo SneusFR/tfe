@@ -416,20 +416,23 @@ const ConditionalFlowNode = ({ data, id }) => {
         id="value-input"
         style={{ 
           ...getDataHandleStyle(inputColor),
-          top: '38%',
+          top: showValueInput ? '38%' : '45%',  // Center it when it's the only handle
           left: -5
         }}
       />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="compare-input"
-        style={{ 
-          ...getDataHandleStyle(inputColor),
-          top: '55%',
-          left: -5
-        }}
-      />
+      {/* Only show compare input handle for conditions that need comparison */}
+      {showValueInput && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="compare-input"
+          style={{ 
+            ...getDataHandleStyle(inputColor),
+            top: '55%',
+            left: -5
+          }}
+        />
+      )}
     </div>
   );
 };
