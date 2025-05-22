@@ -103,12 +103,12 @@ const NodesInventory = ({ apiNodes = [] }) => {
               Sending Mail
             </motion.button>
             <motion.button 
-              className={`inventory-tab ${activeCategory === 'text-nodes' ? 'active' : ''}`}
-              onClick={() => setActiveCategory('text-nodes')}
+              className={`inventory-tab ${activeCategory === 'input-nodes' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('input-nodes')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Text Nodes
+              Input Nodes
             </motion.button>
             <motion.button 
               className={`inventory-tab ${activeCategory === 'mail-body' ? 'active' : ''}`}
@@ -359,15 +359,16 @@ const NodesInventory = ({ apiNodes = [] }) => {
               </motion.div>
             )}
           
-            {activeCategory === 'text-nodes' && (
+            {activeCategory === 'input-nodes' && (
               <motion.div
-                key="text-nodes"
+                key="input-nodes"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
                 <div className="condition-items">
+                  {/* Text Node */}
                   <motion.div 
                     className="condition-item text-node-item"
                     draggable={true}
@@ -386,6 +387,7 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
+                    style={{ borderTop: '3px solid #9C27B0' }}
                   >
                     <div className="condition-item-header">
                       <Tooltip title="Drag to add to diagram" arrow placement="top">
@@ -395,6 +397,102 @@ const NodesInventory = ({ apiNodes = [] }) => {
                     </div>
                     <div className="condition-description">
                       Add text content that can connect to colored attribute handles
+                    </div>
+                  </motion.div>
+                  
+                  {/* Int Node */}
+                  <motion.div 
+                    className="condition-item int-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'intNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    style={{ borderTop: '3px solid #2196F3' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#2196F3' }}>INT</div>
+                      </Tooltip>
+                      <div className="condition-return">Int Node</div>
+                    </div>
+                    <div className="condition-description">
+                      Add integer values that can connect to colored attribute handles
+                    </div>
+                  </motion.div>
+                  
+                  {/* Boolean Node */}
+                  <motion.div 
+                    className="condition-item boolean-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'booleanNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    style={{ borderTop: '3px solid #4CAF50' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#4CAF50' }}>BOOLEAN</div>
+                      </Tooltip>
+                      <div className="condition-return">Boolean Node</div>
+                    </div>
+                    <div className="condition-description">
+                      Toggle switch for true/false values with output handle
+                    </div>
+                  </motion.div>
+                  
+                  {/* Token Node */}
+                  <motion.div 
+                    className="condition-item token-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'tokenNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                    style={{ borderTop: '3px solid #FF9800' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#FF9800' }}>TOKEN</div>
+                      </Tooltip>
+                      <div className="condition-return">Token Node</div>
+                    </div>
+                    <div className="condition-description">
+                      Securely store and transmit sensitive values with masked display
                     </div>
                   </motion.div>
                 </div>
@@ -444,47 +542,6 @@ const NodesInventory = ({ apiNodes = [] }) => {
               </motion.div>
             )}
           
-            {activeCategory === 'int-nodes' && (
-              <motion.div
-                key="int-nodes"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="condition-items">
-                  <motion.div 
-                    className="condition-item int-node-item"
-                    draggable={true}
-                    onDragStart={(e) => {
-                      if (!canEdit) {
-                        e.preventDefault();
-                        return;
-                      }
-                      // Set the node type as drag data
-                      e.dataTransfer.setData('application/nodeType', 'intNode');
-                      e.dataTransfer.effectAllowed = 'move';
-                    }}
-                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
-                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
-                    whileTap={{ scale: 0.98 }}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="condition-item-header">
-                      <Tooltip title="Drag to add to diagram" arrow placement="top">
-                        <div className="condition-badge" style={{ backgroundColor: '#2196F3' }}>INT</div>
-                      </Tooltip>
-                      <div className="condition-return">Int Node</div>
-                    </div>
-                    <div className="condition-description">
-                      Add integer values that can connect to colored attribute handles
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            )}
           
             {activeCategory === 'debug' && (
               <motion.div

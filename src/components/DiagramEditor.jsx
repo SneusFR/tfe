@@ -41,6 +41,8 @@ import SendingMailNode from './SendingMailNode';
 import EmailAttachmentNode from './EmailAttachmentNode';
 import TextNode from './TextNode';
 import IntNode from './IntNode';
+import BooleanNode from './BooleanNode';
+import TokenNode from './TokenNode';
 import OcrNode from './OcrNode';
 import ConsoleLogNode from './ConsoleLogNode';
 import AINode from './AINode';
@@ -80,6 +82,8 @@ const nodeTypes = {
   emailAttachmentNode: EmailAttachmentNode,
   textNode: TextNode,
   intNode: IntNode,
+  booleanNode: BooleanNode,
+  tokenNode: TokenNode,
   ocrNode: OcrNode,
   consoleLogNode: ConsoleLogNode,
   aiNode: AINode,
@@ -1008,6 +1012,82 @@ const DiagramEditor = ({
         // Set the callback references
         newNode.data.onOperatorTypeChange = (newType) => nodeCallbacksRef.current[nodeId].onOperatorTypeChange(newType);
         newNode.data.onInputCountChange = (newCount) => nodeCallbacksRef.current[nodeId].onInputCountChange(newCount);
+        
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'booleanNode') {
+        const nodeId = `boolean-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'booleanNode',
+          position,
+          data: {
+            value: false,
+            onValueChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callback in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onValueChange: (newValue) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, value: newValue } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+        };
+        
+        // Set the callback reference
+        newNode.data.onValueChange = (newValue) => nodeCallbacksRef.current[nodeId].onValueChange(newValue);
+        
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'tokenNode') {
+        const nodeId = `token-node-${Date.now()}`;
+        
+        // Create the node without inline callbacks
+        const newNode = {
+          id: nodeId,
+          type: 'tokenNode',
+          position,
+          data: {
+            token: '',
+            onTokenChange: null, // Will be set via ref
+          },
+        };
+        
+        // Store the callback in the ref
+        nodeCallbacksRef.current[nodeId] = {
+          onTokenChange: (newToken) => {
+            setNodes(prevNodes => {
+              const updated = prevNodes.map(node =>
+                node.id === nodeId
+                  ? { ...node, data: { ...node.data, token: newToken } }
+                  : node
+              );
+              // Update our ref
+              nodesRef.current = updated;
+              // Notify the parent INSIDE setNodes
+              onNodesChange?.(updated);
+              return updated;
+            });
+          }
+        };
+        
+        // Set the callback reference
+        newNode.data.onTokenChange = (newToken) => nodeCallbacksRef.current[nodeId].onTokenChange(newToken);
         
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
