@@ -329,21 +329,40 @@ const MailBodyNode = ({ data, id }) => {
       {variables.length > 0 && (
         <div className="mail-body-variables" style={{ marginTop: '8px', fontSize: '11px' }}>
           <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Template Variables:</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {variables.map(variable => (
               <div 
                 key={variable} 
                 style={{ 
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <div style={{ 
                   background: '#F3E5F5', 
                   border: '1px solid #E1BEE7', 
                   borderRadius: '3px', 
                   padding: '2px 6px',
                   fontSize: '10px',
                   display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                ${variable}
+                  alignItems: 'center',
+                  marginLeft: '12px' // Space for the handle
+                }}>
+                  ${variable}
+                </div>
+                {/* Input handle positioned to the left of each variable */}
+                <Handle
+                  type="target"
+                  position={Position.Left}
+                  id={`var-${variable}`}
+                  style={{
+                    ...variableHandleStyle,
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)'
+                  }}
+                />
               </div>
             ))}
           </div>
@@ -358,19 +377,7 @@ const MailBodyNode = ({ data, id }) => {
         style={handleStyle}
       />
       
-      {/* Input handles for each detected variable */}
-      {variables.map((variable, index) => (
-        <Handle
-          key={variable}
-          type="target"
-          position={Position.Left}
-          id={`var-${variable}`}
-          style={{
-            ...variableHandleStyle,
-            top: 50 + (index * 20) // Position handles vertically with spacing
-          }}
-        />
-      ))}
+      {/* No need for separate input handles as they're now integrated with each variable */}
     </div>
   );
 };
