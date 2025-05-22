@@ -1,4 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import RemoveIcon from '@mui/icons-material/Remove';
+import AddIcon from '@mui/icons-material/Add';
 import { Handle, Position } from 'reactflow';
 import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw } from 'draft-js';
 import 'draft-js/dist/Draft.css';
@@ -19,6 +21,15 @@ const DATA_LINK_COLOR = '#3498db'; // Blue for data links
 const MAIL_BODY_COLOR = '#FF6D00'; // Orange for mail body nodes
 
 const MailBodyNode = ({ data, id }) => {
+  // State to control visibility of the editor content
+  const [isContentVisible, setIsContentVisible] = useState(true);
+  
+  // Toggle content visibility
+  const toggleContentVisibility = useCallback((e) => {
+    e.stopPropagation();
+    setIsContentVisible(prev => !prev);
+  }, []);
+  
   // Initialize editor state from data or with empty content
   const [editorState, setEditorState] = useState(() => {
     if (data?.content) {
@@ -233,16 +244,38 @@ const MailBodyNode = ({ data, id }) => {
       {data.connectionIndicator}
       
       {/* Node header */}
-      <div className="mail-body-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+      <div className="mail-body-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', justifyContent: 'space-between' }}>
         <div
           className="mail-body-node-type"
           style={headerTypeStyle}
         >
           MAIL BODY
         </div>
+        <button
+          type="button"
+          onClick={toggleContentVisibility}
+          style={{
+            border: 'none',
+            background: MAIL_BODY_COLOR,
+            color: 'white',
+            borderRadius: '3px',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            padding: 0,
+            fontSize: '16px'
+          }}
+          title={isContentVisible ? "Hide editor" : "Show editor"}
+        >
+          {isContentVisible ? <RemoveIcon fontSize="small" /> : <AddIcon fontSize="small" />}
+        </button>
       </div>
       
-      {/* Formatting toolbar (always visible) */}
+      {/* Formatting toolbar (conditionally visible) */}
+      {isContentVisible && (
       <div className="mail-body-toolbar" style={toolbarStyle} onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
@@ -318,21 +351,25 @@ const MailBodyNode = ({ data, id }) => {
         </button>
       </div>
       
-      {/* Rich text editor */}
-      <div
-        className="mail-body-content"
-        style={contentStyle}
-        onClick={focusEditor}
-      >
-        <Editor
-          ref={editorRef}
-          editorState={editorState}
-          onChange={handleEditorChange}
-          handleKeyCommand={handleKeyCommand}
-          placeholder="Enter your email template here..."
-          spellCheck={true}
-        />
-      </div>
+      )}
+      
+      {/* Rich text editor (conditionally visible) */}
+      {isContentVisible && (
+        <div
+          className="mail-body-content"
+          style={contentStyle}
+          onClick={focusEditor}
+        >
+          <Editor
+            ref={editorRef}
+            editorState={editorState}
+            onChange={handleEditorChange}
+            handleKeyCommand={handleKeyCommand}
+            placeholder="Enter your email template here..."
+            spellCheck={true}
+          />
+        </div>
+      )}
       
       {/* Variables section */}
       {variables.length > 0 && (
