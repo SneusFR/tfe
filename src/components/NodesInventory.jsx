@@ -151,6 +151,14 @@ const NodesInventory = ({ apiNodes = [] }) => {
               Conditional Flow
             </motion.button>
             <motion.button 
+              className={`inventory-tab ${activeCategory === 'flow-control' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('flow-control')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Flow Control
+            </motion.button>
+            <motion.button 
               className={`inventory-tab ${activeCategory === 'api-nodes' ? 'active' : ''}`}
               onClick={() => setActiveCategory('api-nodes')}
               whileHover={{ scale: 1.05 }}
@@ -735,6 +743,50 @@ const NodesInventory = ({ apiNodes = [] }) => {
               </motion.div>
             )}
           
+            {activeCategory === 'flow-control' && (
+              <motion.div
+                key="flow-control"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="condition-items">
+                  {/* End Node */}
+                  <motion.div 
+                    className="condition-item end-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'endNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ borderTop: '3px solid #f93e3e' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#f93e3e' }}>END</div>
+                      </Tooltip>
+                      <div className="condition-return">End Node</div>
+                    </div>
+                    <div className="condition-description">
+                      Marks the end of a flow execution path with a single input handle
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+
             {activeCategory === 'api-nodes' && (
               <motion.div
                 key="api-nodes"

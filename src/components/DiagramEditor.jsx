@@ -47,6 +47,7 @@ import OcrNode from './OcrNode';
 import ConsoleLogNode from './ConsoleLogNode';
 import AINode from './AINode';
 import MailBodyNode from './MailBodyNode';
+import EndNode from './EndNode';
 import conditionStore from '../store/conditionStore';
 
 // Connection colors and styles
@@ -88,6 +89,7 @@ const nodeTypes = {
   consoleLogNode: ConsoleLogNode,
   aiNode: AINode,
   mailBodyNode: MailBodyNode,
+  endNode: EndNode,
 };
 
 // Define edge types outside the component
@@ -1127,6 +1129,16 @@ const DiagramEditor = ({
         // Set the callback reference
         newNode.data.onContentChange = (newContent) => nodeCallbacksRef.current[nodeId].onContentChange(newContent);
         
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'endNode') {
+        const newNode = {
+          id: `end-node-${Date.now()}`,
+          type: 'endNode',
+          position,
+          data: {},
+        };
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
