@@ -1,111 +1,124 @@
-import { createContext, useRef, useEffect, useState, useContext, useMemo } from 'react';
+// FlowContext.jsx
+import {
+  createContext,
+  useRef,
+  useEffect,
+  useState,
+  useContext,
+  useMemo,
+} from 'react';
 import { runFlow } from '../services/flowClient.js';
 import { useAuth } from './AuthContext';
 import conditionStore from '../store/conditionStore';
 import backendConfigStore from '../store/backendConfigStore';
 
-// Create a context for the flow
+/* ------------------------------------------------------------------ */
+/*  Contexte                                                          */
+/* ------------------------------------------------------------------ */
 export const FlowContext = createContext(null);
 
-// Create a provider component
-export const FlowProvider = ({ children, nodes, edges, flowId }) => {
+/* ------------------------------------------------------------------ */
+/*  Provider                                                          */
+/* ------------------------------------------------------------------ */
+export const FlowProvider = ({
+  children,
+  nodes,
+  edges,
+  flowId,
+  subFlowOriginals = new Map(), // ← nouvelle prop
+}) => {
   const { api } = useAuth();
-  // State to store the selected backend config ID
+
+  /* ---------------- Backend config sélectionnée ------------------- */
   const [backendConfigId, setBackendConfigId] = useState(null);
-  // State to store all available backend configs
-  const [backendConfigs, setBackendConfigs] = useState([]);
-  // State to track loading state
-  const [loading, setLoading] = useState(false);
-  
-  // Create a ref to hold the executeFlow function
-  const executeFlowRef = useRef(async (task) => {
-    return await runFlow(nodes, edges, task, backendConfigId, flowId);
-  });
-  
-  // Stabilize the nodes and edges references using useRef
+  const [backendConfigs, setBackendConfigs]   = useState([]);
+  const [loading, setLoading]                 = useState(false);
+
+  /* ---------------- Références « stables » ------------------------ */
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
-  
-  // Only update the refs when the actual content changes
-  useEffect(() => {
-    nodesRef.current = nodes;
-  }, [nodes]);
-  
-  useEffect(() => {
-    edgesRef.current = edges;
-  }, [edges]);
-  
-  // Update the executeFlowRef when backendConfigId or flowId change
-  // Use the refs for nodes and edges to maintain stable function identity
+
+  useEffect(() => { nodesRef.current = nodes;  }, [nodes]);
+  useEffect(() => { edgesRef.current = edges;  }, [edges]);
+
+  /* ---------------- Fonction d’exécution (mutable ref) ------------ */
+  const executeFlowRef = useRef(async (task) => {
+    const { flattenSubflows } = await import(
+      '../utils/flattenSubflows.js'
+    );
+    const { nodes: flatN, edges: flatE } = flattenSubflows(
+      nodesRef.current,
+      edgesRef.current,
+      subFlowOriginals
+    );
+    console.log('[DEBUG] flattenSubflows →', { nodes: flatN.length, edges: flatE.length, first5: flatN.slice(0,5) });
+    return runFlow(flatN, flatE, task, backendConfigId, flowId);
+  });
+
+  // remet à jour la fonction si backendConfigId ou flowId changent
   useEffect(() => {
     executeFlowRef.current = async (task) => {
-      return await runFlow(nodesRef.current, edgesRef.current, task, backendConfigId, flowId);
+      const { flattenSubflows } = await import(
+        '../utils/flattenSubflows.js'
+      );
+      const { nodes: flatN, edges: flatE } = flattenSubflows(
+        nodesRef.current,
+        edgesRef.current,
+        subFlowOriginals
+      );
+      console.log('[DEBUG] flattenSubflows →', { nodes: flatN.length, edges: flatE.length, first5: flatN.slice(0,5) });
+      return runFlow(flatN, flatE, task, backendConfigId, flowId);
     };
-  }, [backendConfigId, flowId]); // Removed nodes and edges from dependencies
+  }, [backendConfigId, flowId, subFlowOriginals]);
 
-  // Update condition store when flowId changes
+  /* ---------------- Mises à jour annexes -------------------------- */
   useEffect(() => {
-    if (flowId) {
-      conditionStore.setCurrentFlowId(flowId);
-    }
+    if (flowId) conditionStore.setCurrentFlowId(flowId);
   }, [flowId]);
 
-  // Fetch backend configurations
+  // Charge/rafraîchit les configurations backend
   useEffect(() => {
-    const fetchBackendConfigs = async () => {
+    const load = async () => {
       try {
         setLoading(true);
-        
-        // Set the current flow ID in the store
-        if (flowId) {
-          backendConfigStore.setCurrentFlowId(flowId);
-        }
-        
-        // Get all backend configs
-        const configs = await backendConfigStore.getAll();
-        setBackendConfigs(configs);
-        
-        // Set the active backend config as selected if no selection exists
+        if (flowId) backendConfigStore.setCurrentFlowId(flowId);
+        const cfgs = await backendConfigStore.getAll();
+        setBackendConfigs(cfgs);
+
         if (!backendConfigId) {
-          const activeConfig = configs.find(config => config.isActive);
-          if (activeConfig) {
-            setBackendConfigId(activeConfig.id);
-          }
+          const active = cfgs.find((c) => c.isActive);
+          if (active) setBackendConfigId(active.id);
         }
-      } catch (error) {
-        console.error('Error fetching backend configs:', error);
+      } catch (e) {
+        console.error('[FlowProvider] backend config error', e);
       } finally {
         setLoading(false);
       }
     };
-    
-    if (api) {
-      fetchBackendConfigs();
-    }
+    if (api) load();
   }, [api, backendConfigId, flowId]);
 
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    executeFlowRef, 
-    backendConfigId, 
-    setBackendConfigId,
-    backendConfigs,
-    loading,
-    flowId
-  }), [backendConfigId, backendConfigs, loading, flowId]);
-  
-  return (
-    <FlowContext.Provider value={contextValue}>
-      {children}
-    </FlowContext.Provider>
+  /* ---------------- Valeur du contexte ---------------------------- */
+  const ctx = useMemo(
+    () => ({
+      executeFlowRef,
+      backendConfigId,
+      setBackendConfigId,
+      backendConfigs,
+      loading,
+      flowId,
+    }),
+    [backendConfigId, backendConfigs, loading, flowId]
   );
+
+  return <FlowContext.Provider value={ctx}>{children}</FlowContext.Provider>;
 };
 
-// Custom hook to use the flow context
+/* ------------------------------------------------------------------ */
+/*  Hook utilisateur                                                  */
+/* ------------------------------------------------------------------ */
 export const useFlow = () => {
-  const context = useContext(FlowContext);
-  if (!context) {
-    throw new Error('useFlow must be used within a FlowProvider');
-  }
-  return context;
+  const ctx = useContext(FlowContext);
+  if (!ctx) throw new Error('useFlow must be used within a FlowProvider');
+  return ctx;
 };
