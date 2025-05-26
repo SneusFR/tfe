@@ -193,7 +193,7 @@ export const FlowManagerProvider = ({ children }) => {
   };
   
   // Save the current flow
-  const saveCurrentFlow = async (nodes, edges) => {
+  const saveCurrentFlow = async (nodes, edges, subflowMetadata = null) => {
     if (!currentFlow) {
       console.log("Cannot save: No current flow selected");
       return;
@@ -221,6 +221,42 @@ export const FlowManagerProvider = ({ children }) => {
       delete cleanData.onCasesChange;
       delete cleanData.onOperatorTypeChange;
       delete cleanData.onInputCountChange;
+      delete cleanData.onExpand;
+      delete cleanData.onCollapse;
+      
+      // For SubFlowNodes, preserve the collapsed state and original data
+      if (type === 'subFlowNode') {
+        // Keep the essential subflow data
+        cleanData.isCollapsed = data.isCollapsed !== false; // Default to collapsed
+        cleanData.subFlowName = data.subFlowName;
+        cleanData.startNodeData = data.startNodeData;
+        cleanData.endNodeData = data.endNodeData;
+        cleanData.intermediateNodes = data.intermediateNodes;
+        cleanData.originalPath = data.originalPath;
+        
+        // Store original nodes and edges in the node data for persistence
+        if (data.originals) {
+          cleanData.originals = {
+            nodes: data.originals.nodes.map(n => {
+              const { data: nodeData, ...nodeRest } = n;
+              const cleanNodeData = { ...nodeData };
+              // Remove callbacks from original nodes too
+              delete cleanNodeData.deleteButton;
+              delete cleanNodeData.onTextChange;
+              delete cleanNodeData.onValueChange;
+              delete cleanNodeData.onPromptChange;
+              delete cleanNodeData.onInputChange;
+              delete cleanNodeData.onConditionTypeChange;
+              delete cleanNodeData.onInputValueChange;
+              delete cleanNodeData.onCasesChange;
+              delete cleanNodeData.onOperatorTypeChange;
+              delete cleanNodeData.onInputCountChange;
+              return { ...nodeRest, data: cleanNodeData };
+            }),
+            edges: data.originals.edges
+          };
+        }
+      }
       
       // Return a clean node object
       return {

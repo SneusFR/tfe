@@ -592,12 +592,32 @@ const DiagramEditor = ({
               onInputValueChange: newInputValue => nodeCallbacksRef.current[nodeId].onInputValueChange(newInputValue)
             }
           };
+        } else if (n.type === 'subFlowNode') {
+          // ⚠️ Re-brancher les callbacks perdus lors de la sauvegarde
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onExpand:   id => expandSubFlowHandlerRef.current(id),
+              onCollapse: id => collapseSubFlowHandler(id)
+            }
+          };
         }
         return n;
       });
       
       // Make sure to synchronize nodesRef
       nodesRef.current = loaded;
+
+      // ---------- NOUVEAU : reconstruire la Map originals ----------
+      const rebuilt = new Map();
+      loaded.forEach(n => {
+        if (n.type === 'subFlowNode' && n.data?.originals) {
+          rebuilt.set(n.id, n.data.originals);
+        }
+      });
+      setOriginalNodesAndEdges(rebuilt);
+      // -------------------------------------------------------------
       
       setNodes(loaded);
       if (onNodesChange) onNodesChange(loaded);
