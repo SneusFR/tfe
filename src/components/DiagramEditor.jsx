@@ -43,6 +43,7 @@ import TextNode from './TextNode';
 import IntNode from './IntNode';
 import BooleanNode from './BooleanNode';
 import TokenNode from './TokenNode';
+import Base64Node from './Base64Node';
 import OcrNode from './OcrNode';
 import ConsoleLogNode from './ConsoleLogNode';
 import AINode from './AINode';
@@ -94,6 +95,7 @@ const nodeTypes = {
   intNode: IntNode,
   booleanNode: BooleanNode,
   tokenNode: TokenNode,
+  base64Node: Base64Node,
   ocrNode: OcrNode,
   consoleLogNode: ConsoleLogNode,
   aiNode: AINode,
@@ -1393,6 +1395,16 @@ const DiagramEditor = ({
         // Set the callback reference
         newNode.data.onTokenChange = (newToken) => nodeCallbacksRef.current[nodeId].onTokenChange(newToken);
         
+        const updatedNodes = nodes.concat(newNode);
+        setNodes(updatedNodes);
+        if (onNodesChange) onNodesChange(updatedNodes);
+      } else if (nodeType === 'base64Node') {
+        const newNode = {
+          id: `base64-node-${Date.now()}`,
+          type: 'base64Node',
+          position,
+          data: {},
+        };
         const updatedNodes = nodes.concat(newNode);
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);

@@ -503,6 +503,38 @@ const NodesInventory = ({ apiNodes = [] }) => {
                       Securely store and transmit sensitive values with masked display
                     </div>
                   </motion.div>
+                  
+                  {/* Base64 Node */}
+                  <motion.div 
+                    className="condition-item base64-node-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Set the node type as drag data
+                      e.dataTransfer.setData('application/nodeType', 'base64Node');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ y: -5, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)" }}
+                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.4 }}
+                    style={{ borderTop: '3px solid #FF9800' }}
+                  >
+                    <div className="condition-item-header">
+                      <Tooltip title="Drag to add to diagram" arrow placement="top">
+                        <div className="condition-badge" style={{ backgroundColor: '#FF9800' }}>B64</div>
+                      </Tooltip>
+                      <div className="condition-return">Base64 Encoder</div>
+                    </div>
+                    <div className="condition-description">
+                      Convert text strings to Base64 encoding for email content processing
+                    </div>
+                  </motion.div>
                 </div>
               </motion.div>
             )}
