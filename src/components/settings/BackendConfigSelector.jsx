@@ -59,29 +59,18 @@ export default function BackendConfigSelector() {
         <CircularProgress size={20} sx={{ mx: 2 }} />
       ) : (
         <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="backend-config-select-label">Configuration</InputLabel>
           <Select
-            labelId="backend-config-select-label"
             value={selectedId}
-            label="Configuration"
             onChange={handleChange}
             displayEmpty
             renderValue={(selected) => {
               if (!selected) {
-                return (
-                  <Typography variant="body2" color="text.secondary">
-                    {activeConfig ? `${activeConfig.name} (Active)` : "Select configuration"}
-                  </Typography>
-                );
+                return activeConfig ? `${activeConfig.name} (Active)` : "Select configuration";
               }
               
               const config = backendConfigs.find(c => c.id === selected);
-              return (
-                <Typography variant="body2">
-                  {config ? config.name : "Unknown configuration"}
-                  {config && config.isActive && " (Active)"}
-                </Typography>
-              );
+              const displayName = config ? config.name : "Unknown configuration";
+              return displayName + (config && config.isActive ? " (Active)" : "");
             }}
           >
             <MenuItem value="">

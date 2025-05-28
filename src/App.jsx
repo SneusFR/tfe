@@ -6,16 +6,13 @@ import './App.css';
 // UI & pages
 // ──────────────────────────────────────────────────────────────
 import HomePage from './components/HomePage';
-import ApiImporter from './components/ApiImporter';
 import DiagramEditor from './components/DiagramEditor';
 import NodesInventory from './components/NodesInventory';
 import EmailBrowser from './components/EmailBrowser';
 import FlowLogsPanel from './components/FlowLogsPanel.jsx';
 import LogsPanelWrapper from './components/LogsPanelWrapper.jsx';
 import CollaboratorsManager from './components/CollaboratorsManager';
-import ConditionCreator from './components/ConditionCreator';
-import ConditionManager from './components/ConditionManager';
-import TaskManager from './components/TaskManager';
+import ModernSidebar from './components/ModernSidebar';
 import FlowModal from './components/FlowModal';
 import FlowVersionSelector from './components/FlowVersionSelector';
 import BackendSettings from './components/settings/BackendSettings';
@@ -194,28 +191,14 @@ const EditorApp = () => {
 
           {/* ─────── Main layout ─────── */}
           <main className="app-content">
-            {/* Sidebar */}
-            <div className="sidebar">
-              <ApiImporter onApiImport={handleApiImport} />
-
-              <div className="sidebar-section">
-                <h3>Mail Conditions</h3>
-                <div className="condition-controls">
-                  <ConditionCreator onCreateCondition={handleCreateCondition} />
-                  <ConditionManager />
-                  <TaskManager />
-                </div>
-              </div>
-
-              {apiSpec && activeTab === 'diagram' && (
-                <div className="api-info">
-                  <h3>Loaded API: {apiSpec.info?.title || 'Untitled API'}</h3>
-                  <p>{apiSpec.info?.description || ''}</p>
-                  <p>Version: {apiSpec.info?.version || 'Unknown'}</p>
-                  <p>Endpoints: {apiInventoryNodes.length}</p>
-                </div>
-              )}
-            </div>
+            {/* Modern Sidebar */}
+            <ModernSidebar
+              apiSpec={apiSpec}
+              apiInventoryNodes={apiInventoryNodes}
+              onApiImport={handleApiImport}
+              onCreateCondition={handleCreateCondition}
+              activeTab={activeTab}
+            />
 
             {/* Content area */}
             <div className="content-container">

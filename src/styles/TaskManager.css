@@ -82,11 +82,19 @@
 
 .task-actions-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   padding: 8px 20px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #eee;
+}
+
+.refreshing-indicator {
+  display: flex;
+  align-items: center;
+  color: #666;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .refresh-button {

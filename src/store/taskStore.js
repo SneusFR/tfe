@@ -165,6 +165,50 @@ const taskStore = {
     return data;
   },
 
+  // Vérifier le statut des tâches en cours d'exécution
+  async checkRunningTasksStatus(currentFlow) {
+    const runningTasks = tasksCache.data.filter(task => 
+      task.status === 'running' || 
+      task.status === 'in_progress' || 
+      task.status === 'executing'
+    );
+
+    if (runningTasks.length === 0) {
+      return { hasRunningTasks: false, statusChanged: false };
+    }
+
+    try {
+      const flowApi = getFlowApiFor(currentFlow);
+      const { data } = await flowApi.get('/tasks');
+      const updatedTasks = data.data || [];
+
+      // Vérifier si des tâches ont changé de statut
+      const statusChanged = runningTasks.some(runningTask => {
+        const updatedTask = updatedTasks.find(t => t.id === runningTask.id);
+        return updatedTask && updatedTask.status !== runningTask.status;
+      });
+
+      if (statusChanged) {
+        // Mettre à jour le cache avec les nouvelles données
+        tasksCache.data = updatedTasks;
+        tasksCache.lastFetched = Date.now();
+      }
+
+      return { 
+        hasRunningTasks: updatedTasks.some(task => 
+          task.status === 'running' || 
+          task.status === 'in_progress' || 
+          task.status === 'executing'
+        ), 
+        statusChanged,
+        tasks: updatedTasks
+      };
+    } catch (error) {
+      console.error('Error checking running tasks status:', error);
+      return { hasRunningTasks: true, statusChanged: false };
+    }
+  },
+
   /* ------------------------ Divers -------------------------------- */
   clearCache() {
     tasksCache = { data: [], lastFetched: null, loading: false };

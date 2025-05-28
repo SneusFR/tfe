@@ -17,6 +17,7 @@ import { FlowContext } from '../context/FlowContext';
 import { useAuth } from '../context/AuthContext';
 import { useFlowManager } from '../context/FlowManagerContext';
 import { useFlowAccess } from '../hooks/useFlowAccess.js';
+import useTaskStatusUpdater from '../hooks/useTaskStatusUpdater';
 import taskStore from '../store/taskStore';
 import '../styles/TaskManager.css';
 
@@ -25,12 +26,16 @@ const TaskManager = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [runningTask, setRunningTask] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshingAfterExecution, setRefreshingAfterExecution] = useState(false);
   const [error, setError] = useState(null);
   
   // Get contexts
   const { isAuthenticated } = useAuth();
   const { currentFlowId } = useFlowManager();
   const { hasAccess: canEdit } = useFlowAccess('editor');
+
+  // Use the task status updater hook
+  const { forceRefresh } = useTaskStatusUpdater(tasks, setTasks, currentFlowId, runningTask);
 
   // Load tasks from store
   useEffect(() => {
@@ -150,6 +155,18 @@ const TaskManager = () => {
       alert(`Error executing task: ${error.message || 'Unknown error'}`);
     } finally {
       setRunningTask(null);
+      
+      // Rafraîchir immédiatement les tâches après l'exécution
+      console.log('🔄 [TASK MANAGER] Refreshing tasks immediately after execution');
+      setRefreshingAfterExecution(true);
+      try {
+        const updatedTasks = await taskStore.getAllTasks({ forceRefresh: true }, { id: currentFlowId });
+        setTasks(updatedTasks);
+      } catch (refreshError) {
+        console.error('❌ [TASK MANAGER] Error refreshing tasks after execution:', refreshError);
+      } finally {
+        setRefreshingAfterExecution(false);
+      }
     }
   };
 
@@ -213,11 +230,17 @@ const TaskManager = () => {
               </div>
               
               <div className="task-actions-header">
+                {refreshingAfterExecution && (
+                  <div className="refreshing-indicator">
+                    <CircularProgress size={14} />
+                    <span style={{ fontSize: '12px', marginLeft: '6px' }}>Updating...</span>
+                  </div>
+                )}
                 <Tooltip title="Refresh tasks" arrow placement="top">
                   <motion.button 
                     className="refresh-button"
                     onClick={handleRefresh}
-                    disabled={loading}
+                    disabled={loading || refreshingAfterExecution}
                     whileHover={{ rotate: 180 }}
                     transition={{ duration: 0.5 }}
                   >
