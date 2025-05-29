@@ -440,14 +440,31 @@ export const FlowManagerProvider = ({ children }) => {
     }
   };
   
-  // Generate a simple thumbnail representation of the flow
+  // Generate a thumbnail representation of the flow with visual data
   const generateThumbnail = (nodes, edges) => {
-    // This is a placeholder - in a real implementation, you might
-    // want to generate an actual image or a more sophisticated representation
+    if (!nodes || nodes.length === 0) {
+      return null;
+    }
+
+    // Create a simplified representation for preview
+    const thumbnailNodes = nodes.map(node => ({
+      id: node.id,
+      type: node.type,
+      position: node.position || { x: 0, y: 0 }
+    }));
+
+    const thumbnailEdges = edges ? edges.map(edge => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target
+    })) : [];
+
     return {
       nodeCount: nodes.length,
-      edgeCount: edges.length,
+      edgeCount: edges ? edges.length : 0,
       nodeTypes: [...new Set(nodes.map(node => node.type))],
+      nodes: thumbnailNodes,
+      edges: thumbnailEdges
     };
   };
   

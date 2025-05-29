@@ -31,7 +31,9 @@ import {
   IconButton,
   Drawer,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useFlowManager } from '../context/FlowManagerContext';
@@ -99,6 +101,11 @@ const ModernSidebar = ({
     in_progress: true,
     completed: false
   });
+  
+  // Snackbar states
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   
   // Auth and permissions
   const { isAuthenticated } = useAuth();
@@ -195,30 +202,42 @@ const ModernSidebar = ({
           }
           break;
         case 'run':
+          const startTime = Date.now();
           try {
-            // Get the task data
-            const task = await taskStore.getTaskById(taskId, { id: currentFlowId });
-            if (!task) {
-              console.error(`Task not found: ${taskId}`);
-              alert('Task not found');
-              return;
-            }
+            console.log(`🚀 [MODERN SIDEBAR] Running task: ${taskId}`);
             
-            console.log(`🚀 [MODERN SIDEBAR] Running task: ${taskId} - ${task.type}`);
+            // Utiliser la nouvelle méthode executeTask qui gère automatiquement les statuts
+            const result = await taskStore.executeTask(
+              taskId,
+              async (taskToExecute) => {
+                // Mettre à jour l'état local avec la tâche en cours
+                const updatedTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
+                setTasks(updatedTasks);
+                
+                // Exécuter le flow
+                return await executeFlowRef.current(taskToExecute);
+              },
+              { id: currentFlowId }
+            );
             
-            // Execute the flow
-            const result = await executeFlowRef.current(task);
+            const executionTime = Date.now() - startTime;
             
             if (result.success) {
               console.log(`✅ [MODERN SIDEBAR] Task executed successfully:`, result);
-              alert(`Task executed successfully!`);
+              setSnackbarMessage(`Task executed successfully in ${executionTime}ms`);
+              setSnackbarSeverity('success');
             } else {
               console.error(`❌ [MODERN SIDEBAR] Task execution failed:`, result.error);
-              alert(`Task execution failed: ${result.error}`);
+              setSnackbarMessage(`Task execution failed: ${result.error}`);
+              setSnackbarSeverity('error');
             }
+            setSnackbarOpen(true);
           } catch (error) {
             console.error(`❌ [MODERN SIDEBAR] Error executing task:`, error);
-            alert(`Error executing task: ${error.message || 'Unknown error'}`);
+            const executionTime = Date.now() - startTime;
+            setSnackbarMessage(`Error executing task: ${error.message || 'Unknown error'} (${executionTime}ms)`);
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
           }
           break;
       }
@@ -811,6 +830,17 @@ const ModernSidebar = ({
           loadTasks();
         }}
       />
+      
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

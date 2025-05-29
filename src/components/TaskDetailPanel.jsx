@@ -27,7 +27,9 @@ import {
   Typography,
   Divider,
   Box,
-  Tooltip
+  Tooltip,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { FlowContext } from '../context/FlowContext';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +58,11 @@ const TaskDetailPanel = ({ taskId, isOpen, onClose, onTaskUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState({});
   const [runningTask, setRunningTask] = useState(false);
+  
+  // Snackbar states
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   // Contexts
   const { executeFlowRef } = useContext(FlowContext);
@@ -112,20 +119,46 @@ const TaskDetailPanel = ({ taskId, isOpen, onClose, onTaskUpdate }) => {
 
         case 'run':
           setRunningTask(true);
+          const startTime = Date.now();
           try {
             console.log(`🚀 [TASK DETAIL] Running task: ${taskId} - ${task.type}`);
-            const result = await executeFlowRef.current(task);
+            
+            // Utiliser la nouvelle méthode executeTask qui gère automatiquement les statuts
+            const result = await taskStore.executeTask(
+              taskId,
+              async (taskToExecute) => {
+                // Mettre à jour l'état local avec la tâche en cours
+                setTask(taskToExecute);
+                onTaskUpdate?.(taskToExecute);
+                
+                // Exécuter le flow
+                return await executeFlowRef.current(taskToExecute);
+              },
+              { id: currentFlowId }
+            );
+            
+            const executionTime = Date.now() - startTime;
             
             if (result.success) {
               console.log(`✅ [TASK DETAIL] Task executed successfully:`, result);
-              alert(`Task executed successfully!`);
+              setTask(result.task);
+              onTaskUpdate?.(result.task);
+              setSnackbarMessage(`Task "${task.type}" executed successfully in ${executionTime}ms`);
+              setSnackbarSeverity('success');
             } else {
               console.error(`❌ [TASK DETAIL] Task execution failed:`, result.error);
-              alert(`Task execution failed: ${result.error}`);
+              setTask(result.task);
+              onTaskUpdate?.(result.task);
+              setSnackbarMessage(`Task execution failed: ${result.error}`);
+              setSnackbarSeverity('error');
             }
+            setSnackbarOpen(true);
           } catch (error) {
             console.error(`❌ [TASK DETAIL] Error executing task:`, error);
-            alert(`Error executing task: ${error.message || 'Unknown error'}`);
+            const executionTime = Date.now() - startTime;
+            setSnackbarMessage(`Error executing task: ${error.message || 'Unknown error'} (${executionTime}ms)`);
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
           } finally {
             setRunningTask(false);
           }
@@ -536,6 +569,17 @@ const TaskDetailPanel = ({ taskId, isOpen, onClose, onTaskUpdate }) => {
             )}
           </div>
         </motion.div>
+        
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </motion.div>
     </AnimatePresence>
   );

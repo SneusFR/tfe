@@ -83,6 +83,63 @@ const taskStore = {
     return data;
   },
 
+  /* --------------- Exécuter une tâche avec gestion des statuts ---- */
+  async executeTask(id, executeFunction, currentFlow) {
+    console.log(`🚀 [TASK STORE] Starting execution of task ${id}`);
+    
+    try {
+      // 0. Récupérer la tâche complète d'abord
+      const originalTask = await this.getTaskById(id, currentFlow);
+      if (!originalTask) {
+        throw new Error(`Task ${id} not found`);
+      }
+      
+      // 1. Mettre la tâche en statut "in_progress" avec tous ses champs
+      console.log(`📝 [TASK STORE] Setting task ${id} to in_progress status`);
+      const inProgressTask = await this.updateTask(id, { 
+        ...originalTask,
+        status: 'in_progress' 
+      }, currentFlow);
+      
+      // 2. Exécuter la fonction fournie
+      console.log(`⚡ [TASK STORE] Executing task ${id}`);
+      const result = await executeFunction(inProgressTask);
+      
+      // 3. Selon le résultat, mettre à jour le statut
+      if (result.success) {
+        console.log(`✅ [TASK STORE] Task ${id} executed successfully, setting to completed`);
+        const completedTask = await this.updateTask(id, { 
+          ...inProgressTask,
+          status: 'completed' 
+        }, currentFlow);
+        return { success: true, task: completedTask, result };
+      } else {
+        console.log(`❌ [TASK STORE] Task ${id} execution failed, setting to pending`);
+        const failedTask = await this.updateTask(id, { 
+          ...inProgressTask,
+          status: 'pending' 
+        }, currentFlow);
+        return { success: false, task: failedTask, error: result.error };
+      }
+    } catch (error) {
+      console.error(`💥 [TASK STORE] Error during task ${id} execution:`, error);
+      
+      // En cas d'erreur, remettre la tâche en pending
+      try {
+        // Récupérer la tâche actuelle pour avoir tous ses champs
+        const currentTask = await this.getTaskById(id, currentFlow);
+        const failedTask = await this.updateTask(id, { 
+          ...currentTask,
+          status: 'pending' 
+        }, currentFlow);
+        return { success: false, task: failedTask, error: error.message };
+      } catch (updateError) {
+        console.error(`💥 [TASK STORE] Failed to update task status after error:`, updateError);
+        return { success: false, error: error.message };
+      }
+    }
+  },
+
   /* -------------------- Mise à jour ------------------------------- */
   async updateTask(id, updateData = {}, currentFlow) {
     const flowApi  = getFlowApiFor(currentFlow);
@@ -113,7 +170,7 @@ const taskStore = {
   async getAllTasks(opts = {}, currentFlow) {
     const now = Date.now();
 
-    // Cache frais ? on renvoie la copie
+    // Cache frais ? on renvoie la copie
     if (
       tasksCache.data.length &&
       tasksCache.lastFetched &&

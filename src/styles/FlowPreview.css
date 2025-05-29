@@ -1,0 +1,72 @@
+/* Flow Preview Styles */
+.flow-preview {
+  position: relative;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.flow-preview-svg {
+  display: block;
+}
+
+.flow-preview-stats {
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.7rem;
+  color: #6c757d;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 2px 4px;
+  border-radius: 3px;
+  backdrop-filter: blur(2px);
+}
+
+.flow-preview-stats span {
+  line-height: 1;
+  font-weight: 500;
+}
+
+/* Hover effect for better visibility */
+.flow-preview:hover .flow-preview-stats {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #495057;
+}
+
+/* Animation for smooth transitions */
+.flow-preview {
+  transition: all 0.2s ease;
+}
+
+.flow-preview:hover {
+  border-color: #8e44ad;
+  box-shadow: 0 2px 8px rgba(142, 68, 173, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .flow-preview-stats {
+    font-size: 0.65rem;
+    padding: 1px 3px;
+  }
+}

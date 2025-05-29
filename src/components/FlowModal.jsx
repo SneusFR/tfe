@@ -4,6 +4,7 @@ import { useFlowManager } from '../context/FlowManagerContext';
 import { useAuth } from '../context/AuthContext';
 import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import CollaboratorsManager from './CollaboratorsManager';
+import FlowPreview from './FlowPreview';
 import '../styles/FlowModal.css';
 
 const FlowModal = () => {
@@ -306,14 +307,12 @@ const FlowModal = () => {
                             onClick={() => loadFlow(flow.id)}
                           >
                             <div className="flow-thumbnail">
-                              {flow.thumbnail ? (
-                                <div className="thumbnail-stats">
-                                  <span>{flow.thumbnail.nodeCount} nodes</span>
-                                  <span>{flow.thumbnail.edgeCount} connections</span>
-                                </div>
-                              ) : (
-                                <div className="empty-thumbnail">No preview</div>
-                              )}
+                              <FlowPreview 
+                                nodes={flow.thumbnail?.nodes || flow.versions?.[flow.currentVersionIndex || 0]?.nodes || []}
+                                edges={flow.thumbnail?.edges || flow.versions?.[flow.currentVersionIndex || 0]?.edges || []}
+                                width={240}
+                                height={120}
+                              />
                             </div>
                             <div className="flow-info">
                               <h3>{flow.name}</h3>
