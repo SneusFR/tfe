@@ -17,7 +17,10 @@ import {
   Schedule as ScheduleIcon,
   Close as CloseIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  PlaylistPlay as PlaylistPlayIcon,
+  AccountTree as ConditionalFlowIcon,
+  Start as StartIcon
 } from '@mui/icons-material';
 import { 
   Badge,
@@ -50,6 +53,8 @@ import '../styles/ModernSidebar.css';
 const SIDEBAR_TABS = {
   CONDITIONS: 'conditions',
   TASKS: 'tasks',
+  STARTING_POINTS: 'starting_points',
+  CONDITIONAL_FLOW: 'conditional_flow',
   INVENTORY: 'inventory'
 };
 
@@ -102,10 +107,19 @@ const ModernSidebar = ({
     completed: false
   });
   
+  // Conditional Flow Nodes state
+  const [conditionalFlowSearchTerm, setConditionalFlowSearchTerm] = useState('');
+  
+  // Starting Points state
+  const [startingPointsSearchTerm, setStartingPointsSearchTerm] = useState('');
+  
   // Snackbar states
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  
+  // Bulk execution state
+  const [isExecutingAll, setIsExecutingAll] = useState(false);
   
   // Auth and permissions
   const { isAuthenticated } = useAuth();
@@ -314,6 +328,107 @@ const ModernSidebar = ({
     }
   };
 
+  // Execute all pending tasks in sequence
+  const handleExecuteAllPendingTasks = async () => {
+    if (!canEdit) {
+      alert('You need editor permissions to perform this action');
+      return;
+    }
+
+    const pendingTasks = tasks.filter(t => t.status === TASK_STATUS.PENDING);
+    
+    if (pendingTasks.length === 0) {
+      setSnackbarMessage('No pending tasks to execute');
+      setSnackbarSeverity('info');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to execute all ${pendingTasks.length} pending tasks in sequence?`)) {
+      return;
+    }
+
+    setIsExecutingAll(true);
+    const startTime = Date.now();
+    let successCount = 0;
+    let failureCount = 0;
+    const results = [];
+
+    try {
+      console.log(`🚀 [MODERN SIDEBAR] Starting bulk execution of ${pendingTasks.length} pending tasks`);
+      
+      for (let i = 0; i < pendingTasks.length; i++) {
+        const task = pendingTasks[i];
+        
+        try {
+          console.log(`🚀 [MODERN SIDEBAR] Executing task ${i + 1}/${pendingTasks.length}: ${task.id}`);
+          
+          const result = await taskStore.executeTask(
+            task.id,
+            async (taskToExecute) => {
+              // Mettre à jour l'état local avec la tâche en cours
+              const updatedTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
+              setTasks(updatedTasks);
+              
+              // Exécuter le flow
+              return await executeFlowRef.current(taskToExecute);
+            },
+            { id: currentFlowId }
+          );
+          
+          if (result.success) {
+            successCount++;
+            console.log(`✅ [MODERN SIDEBAR] Task ${i + 1}/${pendingTasks.length} executed successfully`);
+          } else {
+            failureCount++;
+            console.error(`❌ [MODERN SIDEBAR] Task ${i + 1}/${pendingTasks.length} execution failed:`, result.error);
+          }
+          
+          results.push({
+            taskId: task.id,
+            description: task.description,
+            success: result.success,
+            error: result.error
+          });
+          
+        } catch (error) {
+          failureCount++;
+          console.error(`❌ [MODERN SIDEBAR] Error executing task ${i + 1}/${pendingTasks.length}:`, error);
+          results.push({
+            taskId: task.id,
+            description: task.description,
+            success: false,
+            error: error.message || 'Unknown error'
+          });
+        }
+        
+        // Refresh tasks after each execution
+        const updatedTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
+        setTasks(updatedTasks);
+      }
+      
+      const totalTime = Date.now() - startTime;
+      const message = `Bulk execution completed: ${successCount} successful, ${failureCount} failed (${totalTime}ms)`;
+      
+      console.log(`📊 [MODERN SIDEBAR] ${message}`);
+      setSnackbarMessage(message);
+      setSnackbarSeverity(failureCount === 0 ? 'success' : 'warning');
+      setSnackbarOpen(true);
+      
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      console.error(`❌ [MODERN SIDEBAR] Bulk execution failed:`, error);
+      setSnackbarMessage(`Bulk execution failed: ${error.message || 'Unknown error'} (${totalTime}ms)`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsExecutingAll(false);
+      // Final refresh
+      const updatedTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
+      setTasks(updatedTasks);
+    }
+  };
+
   // Render tab content
   const renderTabContent = () => {
     switch (activeTab) {
@@ -489,6 +604,37 @@ const ModernSidebar = ({
                   </Select>
                 </FormControl>
               </div>
+              
+              {/* Execute all pending tasks button */}
+              {groupedTasks.pending.length > 0 && (
+                <div className="bulk-actions" style={{ marginTop: '12px', marginBottom: '8px' }}>
+                  <Tooltip title={`Execute all ${groupedTasks.pending.length} pending tasks in sequence`}>
+                    <IconButton
+                      onClick={handleExecuteAllPendingTasks}
+                      disabled={!canEdit || isExecutingAll}
+                      sx={{
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: 'primary.dark',
+                        },
+                        '&:disabled': {
+                          backgroundColor: 'action.disabled',
+                          color: 'action.disabled',
+                        },
+                        width: '100%',
+                        borderRadius: 1,
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        fontWeight: 'medium'
+                      }}
+                    >
+                      <PlaylistPlayIcon sx={{ mr: 1 }} />
+                      {isExecutingAll ? 'Executing...' : `Execute All Pending (${groupedTasks.pending.length})`}
+                    </IconButton>
+                  </Tooltip>
+                </div>
+              )}
             </div>
 
             {/* Task groups */}
@@ -620,6 +766,264 @@ const ModernSidebar = ({
           </div>
         );
 
+      case SIDEBAR_TABS.STARTING_POINTS:
+        return (
+          <div className="tab-content">
+            <div className="section-header">
+              <h3>Starting Point Nodes</h3>
+              <Badge badgeContent={conditions.length} color="primary" max={99}>
+                <StartIcon />
+              </Badge>
+            </div>
+            
+            {/* Search starting points */}
+            <div className="task-filters">
+              <TextField
+                size="small"
+                placeholder="Search starting points..."
+                value={startingPointsSearchTerm}
+                onChange={(e) => setStartingPointsSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                }}
+                fullWidth
+              />
+            </div>
+
+            {/* Starting Points list */}
+            <div className="task-groups">
+              {conditionsLoading && (
+                <div className="loading-state">
+                  Loading starting points...
+                </div>
+              )}
+
+              {conditionsError && (
+                <div className="error-state">
+                  {conditionsError}
+                </div>
+              )}
+
+              {!conditionsLoading && conditions.length === 0 && (
+                <div className="empty-group">
+                  No conditions created yet. Create conditions to use them as starting points.
+                </div>
+              )}
+
+              {!conditionsLoading && conditions.length > 0 && (
+                <div className="task-group">
+                  <div className="group-header">
+                    <div className="group-title">
+                      <StartIcon />
+                      <span>STARTING POINTS ({conditions.filter(condition => 
+                        condition.conditionText?.toLowerCase().includes(startingPointsSearchTerm.toLowerCase()) ||
+                        condition.returnText?.toLowerCase().includes(startingPointsSearchTerm.toLowerCase())
+                      ).length})</span>
+                    </div>
+                  </div>
+                  
+                  <div className="task-list">
+                    {conditions
+                      .filter(condition => 
+                        condition.conditionText?.toLowerCase().includes(startingPointsSearchTerm.toLowerCase()) ||
+                        condition.returnText?.toLowerCase().includes(startingPointsSearchTerm.toLowerCase())
+                      )
+                      .map(condition => (
+                        <motion.div
+                          key={condition.id}
+                          className="task-item"
+                          draggable={true}
+                          onDragStart={(e) => {
+                            if (!canEdit) {
+                              e.preventDefault();
+                              return;
+                            }
+                            e.dataTransfer.setData('application/conditionId', condition.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          whileHover={{ x: 3 }}
+                          layout
+                          style={{ borderLeft: '3px solid #4CAF50', cursor: canEdit ? 'grab' : 'default' }}
+                        >
+                          <div className="task-main">
+                            <div className="task-header">
+                              <Chip 
+                                label="STARTING POINT" 
+                                size="small" 
+                                variant="outlined"
+                                sx={{ fontSize: '10px', height: '20px', backgroundColor: '#4CAF50', color: 'white' }}
+                              />
+                            </div>
+                            <div className="task-description">
+                              <strong>{condition.returnText}</strong>
+                            </div>
+                            <div className="task-description" style={{ marginTop: '4px', fontSize: '11px', color: '#666' }}>
+                              {condition.conditionText.length > 70 
+                                ? `${condition.conditionText.substring(0, 70)}...` 
+                                : condition.conditionText}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {!conditionsLoading && conditions.length > 0 && 
+               conditions.filter(condition => 
+                 condition.conditionText?.toLowerCase().includes(startingPointsSearchTerm.toLowerCase()) ||
+                 condition.returnText?.toLowerCase().includes(startingPointsSearchTerm.toLowerCase())
+               ).length === 0 && startingPointsSearchTerm && (
+                <div className="empty-group">
+                  No starting points match your search
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case SIDEBAR_TABS.CONDITIONAL_FLOW:
+        return (
+          <div className="tab-content">
+            <div className="section-header">
+              <h3>Conditional Flow Nodes</h3>
+              <Badge badgeContent={3} color="primary" max={99}>
+                <ConditionalFlowIcon />
+              </Badge>
+            </div>
+            
+            {/* Search conditional flow nodes */}
+            <div className="task-filters">
+              <TextField
+                size="small"
+                placeholder="Search nodes..."
+                value={conditionalFlowSearchTerm}
+                onChange={(e) => setConditionalFlowSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                }}
+                fullWidth
+              />
+            </div>
+
+            {/* Conditional Flow Nodes list */}
+            <div className="task-groups">
+              <div className="task-group">
+                <div className="group-header">
+                  <div className="group-title">
+                    <ConditionalFlowIcon />
+                    <span>CONDITIONAL FLOW NODES (3)</span>
+                  </div>
+                </div>
+                
+                <div className="task-list">
+                  {/* Conditional Flow Node */}
+                  <motion.div
+                    className="task-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.dataTransfer.setData('application/nodeType', 'conditionalFlowNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ x: 3 }}
+                    layout
+                    style={{ borderLeft: '3px solid #FF9800', cursor: canEdit ? 'grab' : 'default' }}
+                  >
+                    <div className="task-main">
+                      <div className="task-header">
+                        <Chip 
+                          label="CONDITION" 
+                          size="small" 
+                          variant="outlined"
+                          sx={{ fontSize: '10px', height: '20px', backgroundColor: '#FF9800', color: 'white' }}
+                        />
+                      </div>
+                      <div className="task-description">
+                        <strong>Conditional Flow</strong>
+                      </div>
+                      <div className="task-description" style={{ marginTop: '4px', fontSize: '11px', color: '#666' }}>
+                        Create conditional paths with various comparison operators (equals, contains, greater than, etc.)
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Switch Node */}
+                  <motion.div
+                    className="task-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.dataTransfer.setData('application/nodeType', 'switchNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ x: 3 }}
+                    layout
+                    style={{ borderLeft: '3px solid #9C27B0', cursor: canEdit ? 'grab' : 'default' }}
+                  >
+                    <div className="task-main">
+                      <div className="task-header">
+                        <Chip 
+                          label="SWITCH" 
+                          size="small" 
+                          variant="outlined"
+                          sx={{ fontSize: '10px', height: '20px', backgroundColor: '#9C27B0', color: 'white' }}
+                        />
+                      </div>
+                      <div className="task-description">
+                        <strong>Switch Flow</strong>
+                      </div>
+                      <div className="task-description" style={{ marginTop: '4px', fontSize: '11px', color: '#666' }}>
+                        Create multiple execution paths based on case matching (similar to switch/case statements)
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Logical Operator Node */}
+                  <motion.div
+                    className="task-item"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.dataTransfer.setData('application/nodeType', 'logicalOperatorNode');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    whileHover={{ x: 3 }}
+                    layout
+                    style={{ borderLeft: '3px solid #00BCD4', cursor: canEdit ? 'grab' : 'default' }}
+                  >
+                    <div className="task-main">
+                      <div className="task-header">
+                        <Chip 
+                          label="LOGIC" 
+                          size="small" 
+                          variant="outlined"
+                          sx={{ fontSize: '10px', height: '20px', backgroundColor: '#00BCD4', color: 'white' }}
+                        />
+                      </div>
+                      <div className="task-description">
+                        <strong>Logical Operator</strong>
+                      </div>
+                      <div className="task-description" style={{ marginTop: '4px', fontSize: '11px', color: '#666' }}>
+                        Combine multiple boolean inputs with logical operators (AND, OR, XOR, etc.)
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
       case SIDEBAR_TABS.INVENTORY:
         return (
           <div className="tab-content">
@@ -692,6 +1096,32 @@ const ModernSidebar = ({
         
         {/* Toggle sidebar visibility */}
         <div className="sidebar-divider"></div>
+        
+        <Tooltip title="Starting Points" placement="right">
+          <div
+            className={`tab-icon ${activeTab === SIDEBAR_TABS.STARTING_POINTS ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab(SIDEBAR_TABS.STARTING_POINTS);
+              if (isCollapsed) setIsCollapsed(false);
+            }}
+          >
+            <Badge badgeContent={conditions.length} color="primary" max={99}>
+              <StartIcon />
+            </Badge>
+          </div>
+        </Tooltip>
+        
+        <Tooltip title="Conditional Flow" placement="right">
+          <div
+            className={`tab-icon ${activeTab === SIDEBAR_TABS.CONDITIONAL_FLOW ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab(SIDEBAR_TABS.CONDITIONAL_FLOW);
+              if (isCollapsed) setIsCollapsed(false);
+            }}
+          >
+            <ConditionalFlowIcon />
+          </div>
+        </Tooltip>
         <Tooltip title={isCollapsed ? "Expand sidebar" : "Hide sidebar"} placement="right">
           <div
             className="tab-icon toggle-icon"
