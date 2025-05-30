@@ -322,26 +322,30 @@
   }
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling for all scrollable content */
 .task-groups::-webkit-scrollbar,
-.conditions-content::-webkit-scrollbar {
+.conditions-content::-webkit-scrollbar,
+.tab-content .task-groups::-webkit-scrollbar {
   width: 6px;
 }
 
 .task-groups::-webkit-scrollbar-track,
-.conditions-content::-webkit-scrollbar-track {
+.conditions-content::-webkit-scrollbar-track,
+.tab-content .task-groups::-webkit-scrollbar-track {
   background: #f5f5f5;
   border-radius: 3px;
 }
 
 .task-groups::-webkit-scrollbar-thumb,
-.conditions-content::-webkit-scrollbar-thumb {
+.conditions-content::-webkit-scrollbar-thumb,
+.tab-content .task-groups::-webkit-scrollbar-thumb {
   background-color: #d0d0d0;
   border-radius: 3px;
 }
 
 .task-groups::-webkit-scrollbar-thumb:hover,
-.conditions-content::-webkit-scrollbar-thumb:hover {
+.conditions-content::-webkit-scrollbar-thumb:hover,
+.tab-content .task-groups::-webkit-scrollbar-thumb:hover {
   background-color: #a0a0a0;
 }
 
