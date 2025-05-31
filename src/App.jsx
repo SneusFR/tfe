@@ -7,7 +7,6 @@ import './App.css';
 // ──────────────────────────────────────────────────────────────
 import HomePage from './components/HomePage';
 import DiagramEditor from './components/DiagramEditor';
-import NodesInventory from './components/NodesInventory';
 import EmailBrowser from './components/EmailBrowser';
 import FlowLogsPanel from './components/FlowLogsPanel.jsx';
 import LogsPanelWrapper from './components/LogsPanelWrapper.jsx';
@@ -212,7 +211,6 @@ const EditorApp = () => {
                     onConnect={handleConnect}
                     onEdgeDelete={handleEdgeDelete}
                   />
-                  <NodesInventory apiNodes={apiInventoryNodes} />
                 </div>
               ) : activeTab === 'emails' ? (
                 <EmailBrowser />

@@ -41,7 +41,7 @@
   background-color: #2196F3;
 }
 
-/* Adjust z-index to ensure proper layering with NodesInventory */
+/* Adjust z-index to ensure proper layering */
 .api-inventory-container {
   z-index: 100;
   position: fixed;
