@@ -1,10 +1,12 @@
 /* Flow Version Selector Styles */
 .flow-version-selector {
   position: fixed;
-  bottom: 20px;
-  right: 280px; /* Adjusted position to account for save button */
+  top: 42%;
+  right: 20px;
+  transform: translateY(-50%);
   z-index: 900;
   display: flex;
+  flex-direction: column;
   gap: 10px;
   align-items: center;
 }
@@ -72,8 +74,8 @@
 /* Responsive adjustments */
 @media (max-width: 600px) {
   .flow-version-selector {
-    bottom: 15px;
-    right: 240px;
+    top: 90%;
+    right: 10px;
     gap: 8px;
   }
   
