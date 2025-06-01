@@ -61,20 +61,28 @@ const conditionStore = {
         const { id, ...payload } = newCondition;
         const response = await flowApi.post('/conditions', payload);
         const savedCondition = response.data;
+        
+        // Immediately add to the local conditions array
         conditions.push(savedCondition);
         this.saveToLocalStorage(); // Backup to localStorage
+        
+        console.log('✅ [CONDITION STORE] Condition saved to server and added to local store:', savedCondition.id);
         return savedCondition;
       } catch (error) {
         console.error('Error saving condition to server:', error);
         // Fall back to local storage only
         conditions.push(newCondition);
         this.saveToLocalStorage();
+        
+        console.log('⚠️ [CONDITION STORE] Condition saved to local storage only:', newCondition.id);
         return newCondition;
       }
     } else {
       // No flow ID, just use localStorage
       conditions.push(newCondition);
       this.saveToLocalStorage();
+      
+      console.log('ℹ️ [CONDITION STORE] Condition saved to local storage (no flow ID):', newCondition.id);
       return conditions[conditions.length - 1];
     }
   },

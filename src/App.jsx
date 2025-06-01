@@ -131,7 +131,7 @@ const EditorApp = () => {
   // ---------------------------------------------------------------------------
   // Condition creation helper
   // ---------------------------------------------------------------------------
-  const handleCreateCondition = ({ data }) => {
+  const handleCreateCondition = async ({ data }) => {
     const id = `condition-${Date.now()}`;
     const last = nodes[nodes.length - 1];
     const newNode = {
@@ -145,7 +145,15 @@ const EditorApp = () => {
       },
     };
     setNodes([...nodes, newNode]);
-    conditionStore.addCondition({ conditionText: data.conditionText, returnText: data.returnText });
+    
+    // Add the condition to the store and return the result
+    const newCondition = await conditionStore.addCondition({ 
+      conditionText: data.conditionText, 
+      returnText: data.returnText 
+    });
+    
+    console.log('✅ [APP] Condition created:', newCondition);
+    return newCondition;
   };
 
   // ---------------------------------------------------------------------------

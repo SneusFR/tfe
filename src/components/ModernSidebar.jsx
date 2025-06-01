@@ -123,7 +123,7 @@ const ModernSidebar = ({
     return () => clearInterval(intervalId);
   }, [isAuthenticated, currentFlowId]);
 
-  // Load conditions
+  // Load conditions - only on initial load or when flow changes
   useEffect(() => {
     const loadConditions = async () => {
       if (!isAuthenticated || !currentFlowId) return;
@@ -147,9 +147,10 @@ const ModernSidebar = ({
       }
     };
 
+    // Load conditions only on initial mount or when flow changes
     loadConditions();
-    const intervalId = setInterval(loadConditions, 30000);
-    return () => clearInterval(intervalId);
+    
+    // No automatic refresh interval - only update when a condition is created
   }, [isAuthenticated, currentFlowId]);
 
   // Calculate derived values
@@ -254,10 +255,13 @@ const ModernSidebar = ({
   // Handle condition creation with refresh
   const handleCreateConditionWithRefresh = async (conditionData) => {
     try {
-      await onCreateCondition(conditionData);
-      // Refresh conditions list
+      const newCondition = await onCreateCondition(conditionData);
+      // Immediately update the conditions list without waiting for the next interval
       const updatedConditions = conditionStore.getAllConditions();
       setConditions(updatedConditions);
+      
+      // Log success for debugging
+      console.log('✅ [MODERN SIDEBAR] Condition created and list updated:', newCondition);
     } catch (err) {
       console.error('Error creating condition:', err);
     }

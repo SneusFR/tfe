@@ -951,6 +951,9 @@ const DiagramEditor = ({
         // This allows multiple starting points to be active simultaneously
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
+        
+        // Log successful condition node creation
+        console.log('✅ [DIAGRAM EDITOR] Condition node created:', condition.conditionText);
         return;
       }
 

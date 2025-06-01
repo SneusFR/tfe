@@ -30,7 +30,8 @@ const ConditionCreator = ({ onCreateCondition }) => {
     setIsSubmitting(true);
     
     try {
-      onCreateCondition({
+      // Create the condition
+      const result = await onCreateCondition({
         type: 'conditionNode',
         data: {
           conditionText,
@@ -38,12 +39,15 @@ const ConditionCreator = ({ onCreateCondition }) => {
         }
       });
 
+      console.log('✅ [CONDITION CREATOR] Condition created successfully:', result);
+
       // Reset form and close
       setConditionText('');
       setReturnText('');
       setIsOpen(false);
     } catch (error) {
       console.error('Error creating condition:', error);
+      alert('Failed to create condition. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
