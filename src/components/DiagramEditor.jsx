@@ -16,6 +16,7 @@ import { FlowProvider } from '../context/FlowContext';
 import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import BackendConfigSelector from './settings/BackendConfigSelector';
 import { motion } from 'framer-motion';
+import { Snackbar, Alert } from '@mui/material';
 import ReactFlow, {
   Background,
   Controls,
@@ -119,7 +120,42 @@ const DiagramEditor = ({
   onEdgeDelete,
 }) => {
   const { currentFlow, saveCurrentFlow, toggleFlowModal } = useFlowManager();
-  const { hasAccess: canEdit } = useFlowAccess('editor');
+  const { hasAccess: canEdit, hasAccess } = useFlowAccess('editor');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [severity, setSeverity] = useState('success');
+  const [open, setOpen] = useState(false);
+  
+  // Handle save function
+  const handleSave = async () => {
+    if (!currentFlow) {
+      setMessage('No flow to save!');
+      setSeverity('warning');
+      setOpen(true);
+      return;
+    }
+    
+    if (!canEdit) {
+      console.log("Permission denied: User doesn't have editor rights to save the flow");
+      setMessage("Vous n'avez pas la permission de sauvegarder ce flow");
+      setSeverity('error');
+      setOpen(true);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await saveCurrentFlow(nodes, edges);
+      setMessage('Flow saved successfully!');
+      setSeverity('success');
+    } catch (err) {
+      setMessage(err.message || 'Failed to save flow');
+      setSeverity('error');
+    } finally {
+      setLoading(false);
+      setOpen(true);
+    }
+  };
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [nodes, setNodes] = useNodesState(initialNodes || []);
   const [edges, setEdges] = useEdgesState(initialEdges || []);
@@ -1719,36 +1755,54 @@ const DiagramEditor = ({
           <Background variant="dots" gap={12} size={1} />
           <Panel position="top-right">
             <div className="diagram-info">
-              <h3>API Diagram</h3>
-              <p>{nodes.length} endpoints loaded</p>
-              {nodes.length > 0 && (
-                <button
-                  className="fit-view-button"
-                  onClick={() => {
-                    document.querySelector('.react-flow__controls-fitview')?.click();
-                  }}
-                >
-                  Fit View
-                </button>
-              )}
-              {canEdit && nodes.length > 0 && (
-                <button
-                  className="create-subflows-button"
-                  onClick={createSubFlows}
-                  style={{
-                    marginTop: '10px',
-                    padding: '8px 16px',
-                    backgroundColor: '#2196F3',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  Créer des sous-flux
-                </button>
-              )}
+              <div className="diagram-header">
+                <h3>{currentFlow?.name || "Diagram"}</h3>
+                <span className="endpoints-info">{nodes.length} endpoints loaded</span>
+                {currentFlow?.userRole && (
+                  <span className="user-role-badge">
+                    {currentFlow.userRole.charAt(0).toUpperCase() + currentFlow.userRole.slice(1)}
+                  </span>
+                )}
+              </div>
+              <div className="diagram-buttons">
+                {nodes.length > 0 && (
+                  <button
+                    className="diagram-button fit-view-button"
+                    onClick={() => {
+                      document.querySelector('.react-flow__controls-fitview')?.click();
+                    }}
+                  >
+                    Fit View
+                  </button>
+                )}
+                {canEdit && nodes.length > 0 && (
+                  <button
+                    className="diagram-button save-button"
+                    onClick={handleSave}
+                    disabled={loading || !currentFlow || !hasAccess}
+                    title={!hasAccess ? "You need editor or owner permissions to save" : ""}
+                  >
+                    <i className="fas fa-save"></i> Save
+                  </button>
+                )}
+                {canEdit && nodes.length > 0 && (
+                  <button
+                    className="diagram-button flow-menu-button"
+                    onClick={toggleFlowModal}
+                    disabled={loading}
+                  >
+                    Flow Menu
+                  </button>
+                )}
+                {canEdit && nodes.length > 0 && (
+                  <button
+                    className="diagram-button create-subflows-button"
+                    onClick={createSubFlows}
+                  >
+                    Créer des sous-flux
+                  </button>
+                )}
+              </div>
             </div>
           </Panel>
           
@@ -1757,10 +1811,20 @@ const DiagramEditor = ({
           </Panel>
           </ReactFlow>
           
-          {/* bouton menu + save : n'est PLUS dans <Panel> */}
+          {/* FlowMenuButton is now the only UI element for flow management */}
           <FlowMenuButton />
         </FlowProvider>
       </ReactFlowProvider>
+      <Snackbar
+        open={open}
+        autoHideDuration={6000}
+        onClose={() => setOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setOpen(false)} severity={severity} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

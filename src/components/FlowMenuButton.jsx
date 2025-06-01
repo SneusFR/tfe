@@ -45,46 +45,10 @@ const FlowMenuButton = () => {
     setOpen(true);
   };
 
+  // We don't render the buttons here anymore as they're now in the top panel
   return (
-    <motion.div
-      className="flow-menu-button-container"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="flow-buttons-wrapper">
-        {userRole && (
-          <Chip
-            label={userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-            color={userRole === 'owner' ? 'primary' : userRole === 'editor' ? 'success' : 'default'}
-            size="small"
-            className="role-chip"
-            style={{ marginRight: '10px' }}
-          />
-        )}
-        
-        <motion.button
-          className={`flow-save-button ${loading ? 'loading' : ''}`}
-          onClick={handleSave}
-          whileHover={{ scale: loading || !hasAccess ? 1 : 1.05 }}
-          whileTap={{ scale: loading || !hasAccess ? 1 : 0.95 }}
-          disabled={loading || !currentFlow || !hasAccess}
-          title={!hasAccess ? "You need editor or owner permissions to save" : ""}
-        >
-          {loading ? 'Saving…' : 'Save'}
-        </motion.button>
-
-        <motion.button
-          className="flow-menu-button"
-          onClick={toggleFlowModal}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          disabled={loading}
-        >
-          Flow Menu
-        </motion.button>
-      </div>
-
+    <div style={{ display: 'none' }}>
+      {/* Hidden component - functionality moved to top panel */}
       <Snackbar
         open={open}
         autoHideDuration={6000}
@@ -95,7 +59,7 @@ const FlowMenuButton = () => {
           {message}
         </Alert>
       </Snackbar>
-    </motion.div>
+    </div>
   );
 };
 
