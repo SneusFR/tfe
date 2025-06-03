@@ -1,5 +1,7 @@
 import { memo, useMemo, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
+import NodeFieldSelector from './NodeFieldSelector';
+import { useNodeFields } from '../context/NodeFieldsContext';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
@@ -7,6 +9,7 @@ const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 
 const ConditionNode = ({ data, id }) => {
   // ConditionNode component initialization
+  const { getVisibleFields, updateVisibleFields, getAvailableFields } = useNodeFields();
   
   // Memoize extracted data from props to prevent unnecessary recalculations
   const {
@@ -15,7 +18,8 @@ const ConditionNode = ({ data, id }) => {
     isStartingPoint,
     isConnectedToStartingNode,
     connectionIndicator,
-    emailAttributes
+    emailAttributes,
+    isSelected
   } = useMemo(() => {
     const returnText = data?.returnText || 'Condition Output';
     const conditionText = data?.conditionText || 'Mail condition';
@@ -44,9 +48,25 @@ const ConditionNode = ({ data, id }) => {
       isStartingPoint,
       isConnectedToStartingNode,
       connectionIndicator,
-      emailAttributes
+      emailAttributes,
+      isSelected: data?.isSelected || false
     };
   }, [data]);
+  
+  // Get available fields for this node type
+  const availableFields = useMemo(() => 
+    getAvailableFields('conditionNode'), 
+  [getAvailableFields]);
+  
+  // Get visible fields for this specific node
+  const visibleFields = useMemo(() => 
+    getVisibleFields(id, 'conditionNode'), 
+  [getVisibleFields, id]);
+  
+  // Handle field visibility changes
+  const handleVisibleFieldsChange = useCallback((fields) => {
+    updateVisibleFields(id, fields);
+  }, [updateVisibleFields, id]);
   
   // Define attribute colors for handles - memoized to prevent recreation
   const attributeColors = useMemo(() => ({
@@ -146,22 +166,8 @@ const ConditionNode = ({ data, id }) => {
       {/* Connection indicator */}
       {connectionIndicator}
       
-      {/* Node header with condition type */}
+      {/* Node header with starting point badge */}
       <div className="condition-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-        <div 
-          className="condition-node-type" 
-          style={{ 
-            backgroundColor: '#8e44ad',
-            padding: '2px 6px',
-            borderRadius: '3px',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '10px',
-            marginRight: '8px'
-          }}
-        >
-          CONDITION
-        </div>
         {isStartingPoint && (
           <div 
             className="starting-point-badge" 
@@ -178,16 +184,27 @@ const ConditionNode = ({ data, id }) => {
             START
           </div>
         )}
-        <div 
-          className="condition-node-title" 
-          style={{ 
-            fontWeight: '500',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          Mail Condition
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div 
+            className="condition-node-title" 
+            style={{ 
+              fontWeight: '500',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {returnText}
+          </div>
+          {isStartingPoint && emailAttributes && (
+            <NodeFieldSelector
+              node={id}
+              isSelected={true}
+              fields={availableFields}
+              visibleFields={visibleFields}
+              onVisibleFieldsChange={handleVisibleFieldsChange}
+            />
+          )}
         </div>
       </div>
       
@@ -224,6 +241,8 @@ const ConditionNode = ({ data, id }) => {
       </div>
       
       
+      {/* Field selector gear icon is now moved inside the node header next to the title */}
+      
       {/* Email attributes section for starting points */}
       {isStartingPoint && emailAttributes && (
         <div 
@@ -240,293 +259,311 @@ const ConditionNode = ({ data, id }) => {
           
           <div className="attribute-list" style={{ fontSize: '10px' }}>
             {/* Email ID attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.from,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>Email ID:</strong> {emailAttributes.email_id}
+            {visibleFields.includes('Email ID') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.from,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>Email ID:</strong> {emailAttributes.email_id}
+                </div>
+                {/* Handle for Email ID attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-email_id"
+                  style={getDataHandleStyle(attributeColors.from)}
+                />
               </div>
-              {/* Handle for Email ID attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-email_id"
-                style={getDataHandleStyle(attributeColors.from)}
-              />
-            </div>
+            )}
             
             {/* FromEmail attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.from,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>FromEmail:</strong> {emailAttributes.fromEmail}
+            {visibleFields.includes('FromEmail') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.from,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>FromEmail:</strong> {emailAttributes.fromEmail}
+                </div>
+                {/* Handle for FromEmail attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-fromEmail"
+                  style={getDataHandleStyle(attributeColors.from)}
+                />
               </div>
-              {/* Handle for FromEmail attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-fromEmail"
-                style={getDataHandleStyle(attributeColors.from)}
-              />
-            </div>
+            )}
             
             {/* FromDisplayName attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.from,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>FromDisplayName:</strong> {emailAttributes.fromDisplayName}
+            {visibleFields.includes('FromDisplayName') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.from,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>FromDisplayName:</strong> {emailAttributes.fromDisplayName}
+                </div>
+                {/* Handle for FromDisplayName attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-fromDisplayName"
+                  style={getDataHandleStyle(attributeColors.from)}
+                />
               </div>
-              {/* Handle for FromDisplayName attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-fromDisplayName"
-                style={getDataHandleStyle(attributeColors.from)}
-              />
-            </div>
+            )}
             
             {/* ToEmail attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.to,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>ToEmail:</strong> {emailAttributes.toEmail}
+            {visibleFields.includes('ToEmail') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.to,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>ToEmail:</strong> {emailAttributes.toEmail}
+                </div>
+                {/* Handle for ToEmail attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-toEmail"
+                  style={getDataHandleStyle(attributeColors.to)}
+                />
               </div>
-              {/* Handle for ToEmail attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-toEmail"
-                style={getDataHandleStyle(attributeColors.to)}
-              />
-            </div>
+            )}
             
             {/* ToDisplayName attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.to,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>ToDisplayName:</strong> {emailAttributes.toDisplayName}
+            {visibleFields.includes('ToDisplayName') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.to,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>ToDisplayName:</strong> {emailAttributes.toDisplayName}
+                </div>
+                {/* Handle for ToDisplayName attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-toDisplayName"
+                  style={getDataHandleStyle(attributeColors.to)}
+                />
               </div>
-              {/* Handle for ToDisplayName attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-toDisplayName"
-                style={getDataHandleStyle(attributeColors.to)}
-              />
-            </div>
+            )}
             
             {/* Subject attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.subject,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>Subject:</strong> {emailAttributes.subject}
+            {visibleFields.includes('Subject') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.subject,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>Subject:</strong> {emailAttributes.subject}
+                </div>
+                {/* Handle for Subject attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-subject"
+                  style={getDataHandleStyle(attributeColors.subject)}
+                />
               </div>
-              {/* Handle for Subject attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-subject"
-                style={getDataHandleStyle(attributeColors.subject)}
-              />
-            </div>
+            )}
             
             {/* Date attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.date,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>Date:</strong> {new Date(emailAttributes.date).toLocaleString()}
+            {visibleFields.includes('Date') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.date,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>Date:</strong> {new Date(emailAttributes.date).toLocaleString()}
+                </div>
+                {/* Handle for Date attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-date"
+                  style={getDataHandleStyle(attributeColors.date)}
+                />
               </div>
-              {/* Handle for Date attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-date"
-                style={getDataHandleStyle(attributeColors.date)}
-              />
-            </div>
+            )}
             
             {/* Content attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.content,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>Content:</strong> {emailAttributes.content.substring(0, 30)}...
+            {visibleFields.includes('Content') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.content,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>Content:</strong> {emailAttributes.content.substring(0, 30)}...
+                </div>
+                {/* Handle for Content attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-content"
+                  style={getDataHandleStyle(attributeColors.content)}
+                />
               </div>
-              {/* Handle for Content attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-content"
-                style={getDataHandleStyle(attributeColors.content)}
-              />
-            </div>
+            )}
             
             {/* Attachment ID attribute */}
-            <div className="attribute-item" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              marginBottom: '4px', 
-              position: 'relative',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              backgroundColor: 'transparent'
-            }}>
-              <div 
-                className="attribute-badge"
-                style={{ 
-                  backgroundColor: attributeColors.attachments,
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '4px'
-                }}
-              ></div>
-              <div style={{ flex: 1 }}>
-                <strong>Attachment ID:</strong> {emailAttributes.attachments && emailAttributes.attachments.length > 0 ? 
-                  emailAttributes.attachments[0].id || 'Available' : 'None'}
+            {visibleFields.includes('Attachment ID') && (
+              <div className="attribute-item" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '4px', 
+                position: 'relative',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                backgroundColor: 'transparent'
+              }}>
+                <div 
+                  className="attribute-badge"
+                  style={{ 
+                    backgroundColor: attributeColors.attachments,
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    marginRight: '4px'
+                  }}
+                ></div>
+                <div style={{ flex: 1 }}>
+                  <strong>Attachment ID:</strong> {emailAttributes.attachments && emailAttributes.attachments.length > 0 ? 
+                    emailAttributes.attachments[0].id || 'Available' : 'None'}
+                </div>
+                {/* Handle for Attachment ID attribute */}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="attr-attachment_id"
+                  style={getDataHandleStyle(attributeColors.attachments)}
+                />
               </div>
-              {/* Handle for Attachment ID attribute */}
-              <Handle
-                type="source"
-                position={Position.Right}
-                id="attr-attachment_id"
-                style={getDataHandleStyle(attributeColors.attachments)}
-              />
-            </div>
+            )}
             
             {/* Attachments attribute (if any) */}
             {emailAttributes.attachments && emailAttributes.attachments.length > 0 && (

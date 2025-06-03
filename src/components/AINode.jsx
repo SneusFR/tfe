@@ -95,7 +95,7 @@ const AINode = ({ data, id }) => {
         border: '1px solid #d1c4e9',
         borderRadius: '5px',
         padding: '10px',
-        minWidth: '250px',
+        width: '300px', // Fixed width instead of minWidth
         minHeight: '150px',
         boxShadow: '0 4px 8px rgba(103, 58, 183, 0.25)',
         zIndex: 10,
@@ -146,7 +146,9 @@ const AINode = ({ data, id }) => {
             background: '#fff',
             minHeight: '40px',
             border: '1px solid #d1c4e9',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            wordWrap: 'break-word', // Ensure text wraps
+            overflowWrap: 'break-word'
           }}
           onDoubleClick={handlePromptDoubleClick}
         >
@@ -165,7 +167,9 @@ const AINode = ({ data, id }) => {
                 padding: '0',
                 background: 'transparent',
                 resize: 'vertical',
-                minHeight: '40px'
+                minHeight: '40px',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
               }}
             />
           ) : (
@@ -190,7 +194,9 @@ const AINode = ({ data, id }) => {
             background: '#fff',
             minHeight: '40px',
             border: '1px solid #d1c4e9',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            wordWrap: 'break-word', // Ensure text wraps
+            overflowWrap: 'break-word'
           }}
           onDoubleClick={handleInputDoubleClick}
         >
@@ -209,7 +215,9 @@ const AINode = ({ data, id }) => {
                 padding: '0',
                 background: 'transparent',
                 resize: 'vertical',
-                minHeight: '40px'
+                minHeight: '40px',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
               }}
             />
           ) : (
@@ -233,7 +241,11 @@ const AINode = ({ data, id }) => {
             background: '#f5f5f5',
             minHeight: '40px',
             border: '1px solid #d1c4e9',
-            fontStyle: 'italic'
+            fontStyle: 'italic',
+            wordWrap: 'break-word', // Ensure text wraps
+            overflowWrap: 'break-word',
+            maxHeight: '100px',
+            overflowY: 'auto' // Add scrolling for very long outputs
           }}
         >
           {output || 'AI response will appear here...'}

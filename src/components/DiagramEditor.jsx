@@ -5,6 +5,7 @@ import React, {
   useState,
   useMemo
 } from 'react';
+import SelectionControl from './diagram-editor/components/SelectionControl';
 import { isEqual } from 'lodash';
 import DeleteButton from './DeleteButton';
 import { throttle } from 'lodash';
@@ -168,6 +169,18 @@ const DiagramEditor = ({
   const [animatingEdgeId, setAnimatingEdgeId] = useState(null);
   // Track the selected node to show delete button
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  // State for selection mode and selected nodes
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNodesForSelection, setSelectedNodesForSelection] = useState([]);
+  
+  // Optimization: Throttle selection changes to improve performance
+  const throttledSelectionChange = useRef(
+    throttle((params) => {
+      if (selectionMode) {
+        setSelectedNodesForSelection(params.nodes || []);
+      }
+    }, 100) // Throttle to 100ms
+  ).current;
   
   // Store node callbacks in a ref to prevent recreation on each render
   const nodeCallbacksRef = useRef({});
@@ -1738,6 +1751,12 @@ const DiagramEditor = ({
           edgeUpdaterRadius={10} // Increase the edge updater radius for easier edge manipulation
           edgesFocusable={true} // Make edges focusable
           edgesUpdatable={true} // Allow edges to be updated
+          selectionOnDrag={selectionMode} // Enable selection by dragging when in selection mode
+          selectionMode={selectionMode ? 1 : 0} // 1 = box selection, 0 = default
+          panOnDrag={!selectionMode} // Disable panning when in selection mode
+          nodesDraggable={!selectionMode} // Disable node dragging when in selection mode
+          nodesConnectable={!selectionMode} // Disable node connections when in selection mode
+          onSelectionChange={throttledSelectionChange}
           connectionLineStyle={{ 
             stroke: DATA_LINK_COLOR, 
             strokeWidth: 2.5,
@@ -1813,6 +1832,13 @@ const DiagramEditor = ({
           
           {/* FlowMenuButton is now the only UI element for flow management */}
           <FlowMenuButton />
+          
+          {/* Selection Control */}
+          <SelectionControl 
+            selectionMode={selectionMode}
+            setSelectionMode={setSelectionMode}
+            selectedNodes={selectedNodesForSelection}
+          />
         </FlowProvider>
       </ReactFlowProvider>
       <Snackbar

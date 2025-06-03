@@ -273,6 +273,14 @@ const EmailBrowser = () => {
           // Ajouter la tâche (maintenant asynchrone)
           const newTask = await taskStore.addTask(taskData);
           console.log("📋 [TASK CREATION] Created new task:", JSON.stringify(newTask, null, 2));
+          
+          // Déclencher un événement personnalisé pour notifier la création de tâche
+          // Cela permettra à d'autres composants (comme ModernSidebar) de rafraîchir leur liste de tâches
+          const taskCreatedEvent = new CustomEvent('taskCreated', { 
+            detail: { task: newTask, flowId: taskStore.getCurrentFlowId() } 
+          });
+          window.dispatchEvent(taskCreatedEvent);
+          
           return newTask;
         } catch (error) {
           console.error("❌ [TASK CREATION] Failed to create task:", error);

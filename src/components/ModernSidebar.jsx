@@ -99,29 +99,50 @@ const ModernSidebar = ({
   const { hasAccess: canEdit } = useFlowAccess('editor');
   const { executeFlowRef } = useContext(FlowContext);
 
-  // Load tasks
-  useEffect(() => {
-    const loadTasks = async () => {
-      if (!isAuthenticated || !currentFlowId) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const allTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
-        setTasks(allTasks);
-      } catch (err) {
-        console.error('Error loading tasks:', err);
-        setError('Failed to load tasks');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fonction pour charger les tâches
+  const loadTasks = async () => {
+    if (!isAuthenticated || !currentFlowId) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const allTasks = await taskStore.getAllTasks({}, { id: currentFlowId });
+      setTasks(allTasks);
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+      setError('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Charger les tâches au chargement initial et à intervalles réguliers
+  useEffect(() => {
     loadTasks();
     const intervalId = setInterval(loadTasks, 30000);
     return () => clearInterval(intervalId);
   }, [isAuthenticated, currentFlowId]);
+  
+  // Écouter l'événement personnalisé 'taskCreated' pour rafraîchir la liste des tâches
+  useEffect(() => {
+    const handleTaskCreated = (event) => {
+      console.log('📣 [MODERN SIDEBAR] Task created event received:', event.detail);
+      // Vérifier que l'événement concerne le flow actuel
+      if (event.detail.flowId === currentFlowId) {
+        // Rafraîchir immédiatement la liste des tâches
+        loadTasks();
+      }
+    };
+    
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('taskCreated', handleTaskCreated);
+    
+    // Nettoyer l'écouteur d'événement lors du démontage du composant
+    return () => {
+      window.removeEventListener('taskCreated', handleTaskCreated);
+    };
+  }, [currentFlowId]);
 
   // Load conditions - only on initial load or when flow changes
   useEffect(() => {

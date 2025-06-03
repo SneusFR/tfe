@@ -25,6 +25,7 @@ import AuthPage from './components/auth/AuthPage';
 // Contexts / stores
 import { FlowProvider } from './context/FlowContext';
 import { FlowManagerProvider, useFlowManager } from './context/FlowManagerContext';
+import { NodeFieldsProvider } from './context/NodeFieldsContext';
 import conditionStore from './store/conditionStore';
 
 
@@ -160,7 +161,8 @@ const EditorApp = () => {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <FlowProvider nodes={nodes} edges={edges}>
+    <NodeFieldsProvider>
+      <FlowProvider nodes={nodes} edges={edges}>
         <div className="app-container">
           {/* ─────── Header ─────── */}
           <header className="app-header">
@@ -242,7 +244,8 @@ const EditorApp = () => {
           <FlowModal />
           <FlowVersionSelector />
         </div>
-    </FlowProvider>
+      </FlowProvider>
+    </NodeFieldsProvider>
   );
 };
 
@@ -253,9 +256,11 @@ const BackendSettingsWrapper = () => {
   const { currentFlowId } = useFlowManager();
   
   return (
-    <FlowProvider nodes={[]} edges={[]} flowId={currentFlowId}>
-      <BackendSettings />
-    </FlowProvider>
+    <NodeFieldsProvider>
+      <FlowProvider nodes={[]} edges={[]} flowId={currentFlowId}>
+        <BackendSettings />
+      </FlowProvider>
+    </NodeFieldsProvider>
   );
 };
 

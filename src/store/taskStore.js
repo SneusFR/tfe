@@ -38,6 +38,10 @@ const taskStore = {
     tasksCache.data      = [];
     tasksCache.lastFetched = null;
   },
+  
+  getCurrentFlowId() {
+    return currentFlowId;
+  },
 
   /* -------------------- Création ---------------------------------- */
   async addTask(taskData, currentFlow) {
