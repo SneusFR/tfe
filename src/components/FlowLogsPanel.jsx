@@ -32,7 +32,15 @@ import {
   Pagination,
   Alert,
   Tooltip,
-  FormHelperText
+  FormHelperText,
+  Collapse,
+  Card,
+  CardContent,
+  Divider,
+  Badge,
+  Fade,
+  alpha,
+  useTheme
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -43,20 +51,55 @@ import {
   FileCopy as CopyIcon, 
   Code as CodeIcon,
   Description as FileTextIcon,
-  CalendarToday as CalendarIcon
+  CalendarToday as CalendarIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  FilterAlt as FilterIcon,
+  Search as SearchIcon,
+  ContentCopy as ContentCopyIcon,
+  Info as InfoIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  BugReport as DebugIcon
 } from '@mui/icons-material';
 import { cn } from '../utils/classNames.js';
 
-// Level badge colors and styles
-const levelColors = {
-  info: { bgcolor: 'primary.main', color: 'white' },
-  debug: { bgcolor: 'grey.500', color: 'white' },
-  warn: { bgcolor: 'warning.main', color: 'black' },
-  error: { bgcolor: 'error.main', color: 'white' },
+// Level badge colors, styles and icons - using fixed color values to avoid MUI errors
+const levelConfig = {
+  info: { 
+    bgcolor: '#1976d2', // primary blue
+    color: 'white',
+    lightBg: '#e3f2fd',
+    icon: <InfoIcon fontSize="small" />,
+    label: 'Info'
+  },
+  debug: { 
+    bgcolor: '#757575', // grey
+    color: 'white',
+    lightBg: '#f5f5f5',
+    icon: <DebugIcon fontSize="small" />,
+    label: 'Debug'
+  },
+  warn: { 
+    bgcolor: '#ed6c02', // warning orange
+    color: 'black',
+    lightBg: '#fff4e5',
+    icon: <WarningIcon fontSize="small" />,
+    label: 'Warning'
+  },
+  error: { 
+    bgcolor: '#d32f2f', // error red
+    color: 'white',
+    lightBg: '#fdecea',
+    icon: <ErrorIcon fontSize="small" />,
+    label: 'Error'
+  },
 };
 
 // -- FlowLogsPanel.jsx
 const FlowLogsPanel = ({ flowId }) => {
+  const theme = useTheme();
+  
   useEffect(() => {
     console.log('[FlowLogsPanel] mount, props.flowId =', flowId);
   }, [flowId]);
@@ -79,6 +122,11 @@ const FlowLogsPanel = ({ flowId }) => {
   const [filterLevel, setFilterLevel] = useState(undefined);
   const [filterSince, setFilterSince] = useState(undefined);
   const [filterUntil, setFilterUntil] = useState(undefined);
+  const [filterText, setFilterText] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Expanded rows state
+  const [expandedRows, setExpandedRows] = useState({});
   
   // Dialog states
   const [selectedLog, setSelectedLog] = useState(null);
@@ -112,6 +160,14 @@ const FlowLogsPanel = ({ flowId }) => {
     refetch,
   } = useExecutionLogs(initialFilter, initialPageState);
   
+  // Toggle row expansion
+  const toggleRowExpansion = (logId) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [logId]: !prev[logId]
+    }));
+  };
+  
   // Apply filters
   const handleApplyFilters = useCallback(() => {
     updateFilter({
@@ -126,6 +182,7 @@ const FlowLogsPanel = ({ flowId }) => {
     setFilterLevel(undefined);
     setFilterSince(undefined);
     setFilterUntil(undefined);
+    setFilterText('');
     updateFilter({
       level: undefined,
       since: undefined,
@@ -157,10 +214,22 @@ const FlowLogsPanel = ({ flowId }) => {
     }
   };
   
-  // Copy payload to clipboard
+  // Copy text to clipboard
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
   };
+  
+  // Filter logs by text
+  const filteredLogs = useMemo(() => {
+    if (!filterText) return logs;
+    
+    return logs.filter(log => 
+      log.message?.toLowerCase().includes(filterText.toLowerCase()) ||
+      log.nodeId?.toLowerCase().includes(filterText.toLowerCase()) ||
+      log.nodeType?.toLowerCase().includes(filterText.toLowerCase()) ||
+      log.payload?.toLowerCase().includes(filterText.toLowerCase())
+    );
+  }, [logs, filterText]);
   
   // Calculate total pages
   const totalPages = Math.ceil(pageState.total / pageState.limit);
@@ -169,13 +238,13 @@ const FlowLogsPanel = ({ flowId }) => {
   const renderSkeleton = () => (
     <Box sx={{ p: 2, width: '100%' }}>
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <Skeleton variant="rectangular" width={100} height={40} />
-        <Skeleton variant="rectangular" width={100} height={40} />
-        <Skeleton variant="rectangular" width={100} height={40} />
+        <Skeleton variant="rectangular" width={100} height={40} sx={{ borderRadius: 1 }} />
+        <Skeleton variant="rectangular" width={100} height={40} sx={{ borderRadius: 1 }} />
+        <Skeleton variant="rectangular" width={100} height={40} sx={{ borderRadius: 1 }} />
       </Stack>
       <Stack spacing={1}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} variant="rectangular" width="100%" height={48} />
+          <Skeleton key={i} variant="rectangular" width="100%" height={60} sx={{ borderRadius: 1 }} />
         ))}
       </Stack>
     </Box>
@@ -201,249 +270,366 @@ const FlowLogsPanel = ({ flowId }) => {
     </Box>
   );
   
+  // Render log item
+  const renderLogItem = (log) => {
+    const isExpanded = expandedRows[log.id] || false;
+    const levelInfo = levelConfig[log.level] || levelConfig.debug;
+    
+    return (
+      <Card 
+        key={log.id} 
+        sx={{ 
+          mb: 1, 
+          borderRadius: 1,
+          boxShadow: 'none',
+          border: 1,
+          borderColor: 'divider',
+          transition: 'all 0.2s',
+          '&:hover': {
+            boxShadow: 1,
+            borderColor: 'transparent'
+          }
+        }}
+      >
+        <CardContent sx={{ p: 0 }}>
+          {/* Log header */}
+          <Box 
+            sx={{ 
+              p: 1.5, 
+              display: 'flex', 
+              alignItems: 'center',
+              bgcolor: isExpanded ? alpha(levelInfo.bgcolor, 0.05) : 'white',
+              borderBottom: isExpanded ? 1 : 0,
+              borderColor: 'divider',
+              cursor: 'pointer'
+            }}
+            onClick={() => toggleRowExpansion(log.id)}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+              <Chip 
+                icon={levelInfo.icon}
+                label={levelInfo.label}
+                size="small"
+                sx={{ 
+                  bgcolor: levelInfo.bgcolor, 
+                  color: levelInfo.color,
+                  mr: 2,
+                  '& .MuiChip-icon': {
+                    color: levelInfo.color
+                  }
+                }}
+              />
+              
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontWeight: 500,
+                    overflow: 'visible',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    mb: 0.5
+                  }}
+                >
+                  {log.message}
+                </Typography>
+                
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    color: 'text.secondary',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                    {formatDate(log.timestamp)}
+                  </Typography>
+                  
+                  {log.nodeType && (
+                    <Typography variant="caption">
+                      {log.nodeType}
+                    </Typography>
+                  )}
+                  
+                  {log.nodeId && (
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                      {log.nodeId}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+            
+            <IconButton 
+              size="small" 
+              sx={{ ml: 1 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleRowExpansion(log.id);
+              }}
+            >
+              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
+          </Box>
+          
+          {/* Expanded content */}
+          <Collapse in={isExpanded}>
+            <Box sx={{ p: 2, bgcolor: alpha(levelInfo.bgcolor, 0.03) }}>
+              {/* Message section */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="subtitle2">Message</Typography>
+                  <Tooltip title="Copier le message">
+                    <IconButton 
+                      size="small"
+                      onClick={() => copyToClipboard(log.message || "")}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Paper 
+                  variant="outlined" 
+                  sx={{ 
+                    p: 1.5, 
+                    bgcolor: 'background.paper',
+                    borderRadius: 1,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}
+                >
+                  {log.message}
+                </Paper>
+              </Box>
+              
+              {/* Payload section (if available) */}
+              {log.payload && (
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="subtitle2">Payload</Typography>
+                    <Tooltip title="Copier le payload">
+                      <IconButton 
+                        size="small"
+                        onClick={() => copyToClipboard(log.payload || "")}
+                      >
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                      p: 1.5, 
+                      bgcolor: 'background.paper',
+                      borderRadius: 1,
+                      maxHeight: 300, 
+                      overflow: 'auto',
+                      fontFamily: 'monospace',
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {formatPayload(log.payload)}
+                    </pre>
+                  </Paper>
+                </Box>
+              )}
+            </Box>
+          </Collapse>
+        </CardContent>
+      </Card>
+    );
+  };
+  
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Filter bar */}
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
+      {/* Header with title and actions */}
       <Box sx={{ 
         bgcolor: 'background.paper', 
-        p: 2, 
+        p: 2,
         borderBottom: 1, 
         borderColor: 'divider',
         display: 'flex',
-        flexWrap: 'wrap',
         alignItems: 'center',
-        gap: 2
+        justifyContent: 'space-between',
+        boxShadow: 1
       }}>
-        {/* Level filter */}
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel id="level-filter-label">Niveau</InputLabel>
-          <Select
-            labelId="level-filter-label"
-            value={filterLevel || ''}
-            label="Niveau"
-            onChange={(e) => setFilterLevel(e.target.value || undefined)}
-            displayEmpty
-          >
-            <MenuItem value="">Tous les niveaux</MenuItem>
-            <MenuItem value="info">Info</MenuItem>
-            <MenuItem value="debug">Debug</MenuItem>
-            <MenuItem value="warn">Warn</MenuItem>
-            <MenuItem value="error">Error</MenuItem>
-          </Select>
-        </FormControl>
+        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+          Logs d'exécution
+        </Typography>
         
-        {/* Since date filter */}
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-          <DatePicker
-            label="Depuis"
-            value={filterSince}
-            onChange={(date) => setFilterSince(date || undefined)}
-            slotProps={{
-              textField: {
-                variant: 'outlined',
-                sx: { width: 150 }
-              }
-            }}
-          />
-        </LocalizationProvider>
-        
-        {/* Until date filter */}
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-          <DatePicker
-            label="Jusqu'à"
-            value={filterUntil}
-            onChange={(date) => setFilterUntil(date || undefined)}
-            slotProps={{
-              textField: {
-                variant: 'outlined',
-                sx: { width: 150 }
-              }
-            }}
-          />
-        </LocalizationProvider>
-        
-        {/* Action buttons */}
-        <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
-          <Button 
-            variant="contained" 
-            onClick={handleApplyFilters}
-          >
-            Appliquer
-          </Button>
-          <Button 
-            variant="outlined" 
-            onClick={handleResetFilters}
-          >
-            Réinitialiser
-          </Button>
-          <Button 
-            variant="outlined" 
-            onClick={refetch} 
-            startIcon={<RefreshIcon />}
-            sx={{ ml: 1 }}
-          >
-            Rafraîchir
-          </Button>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Rafraîchir les logs">
+            <IconButton 
+              color="primary"
+              onClick={refetch}
+              sx={{ borderRadius: 1 }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
           
-          {/* Clear logs button (only for owners) */}
+          <Tooltip title="Filtres">
+            <IconButton 
+              color={showFilters ? "primary" : "default"}
+              onClick={() => setShowFilters(!showFilters)}
+              sx={{ 
+                borderRadius: 1,
+                bgcolor: showFilters ? alpha(theme.palette.primary.main, 0.1) : 'transparent'
+              }}
+            >
+              <FilterIcon />
+            </IconButton>
+          </Tooltip>
+          
           {isOwner && (
-            <>
-              <Button 
-                variant="contained" 
-                color="error" 
-                startIcon={<DeleteIcon />}
-                onClick={() => {
-                  // Open confirmation dialog
-                  setOpenDeleteDialog(true);
-                }}
+            <Tooltip title="Effacer tous les logs">
+              <IconButton 
+                color="error"
+                onClick={() => setOpenDeleteDialog(true)}
+                sx={{ borderRadius: 1 }}
               >
-                Effacer les logs
-              </Button>
-              
-              {/* Confirmation dialog */}
-              <Dialog
-                open={openDeleteDialog}
-                onClose={() => setOpenDeleteDialog(false)}
-              >
-                <DialogTitle>Êtes-vous sûr ?</DialogTitle>
-                <DialogContent>
-                  <DialogContentText>
-                    Cette action va supprimer définitivement tous les logs de ce flow.
-                    Cette action est irréversible.
-                  </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => setOpenDeleteDialog(false)}>Annuler</Button>
-                  <Button 
-                    onClick={() => {
-                      handleClearLogs();
-                      setOpenDeleteDialog(false);
-                    }} 
-                    color="error" 
-                    autoFocus
-                  >
-                    Supprimer
-                  </Button>
-                </DialogActions>
-              </Dialog>
-            </>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
           )}
-        </Box>
+        </Stack>
       </Box>
       
-      {/* Logs table */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      {/* Filter panel */}
+      <Collapse in={showFilters}>
+        <Box sx={{ 
+          bgcolor: alpha(theme.palette.primary.main, 0.03),
+          p: 2, 
+          borderBottom: 1, 
+          borderColor: 'divider',
+        }}>
+          <Stack 
+            direction={{ xs: 'column', md: 'row' }} 
+            spacing={2} 
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            sx={{ mb: 2 }}
+          >
+            {/* Search filter */}
+            <TextField
+              placeholder="Rechercher dans les logs..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              variant="outlined"
+              size="small"
+              fullWidth
+              InputProps={{
+                startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+                sx: { borderRadius: 1 }
+              }}
+            />
+            
+            {/* Level filter */}
+            <FormControl sx={{ minWidth: 150 }} size="small">
+              <InputLabel id="level-filter-label">Niveau</InputLabel>
+              <Select
+                labelId="level-filter-label"
+                value={filterLevel || ''}
+                label="Niveau"
+                onChange={(e) => setFilterLevel(e.target.value || undefined)}
+                displayEmpty
+                sx={{ borderRadius: 1 }}
+              >
+                <MenuItem value="">Tous les niveaux</MenuItem>
+                <MenuItem value="info">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {levelConfig.info.icon}
+                    <Typography>Info</Typography>
+                  </Stack>
+                </MenuItem>
+                <MenuItem value="debug">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {levelConfig.debug.icon}
+                    <Typography>Debug</Typography>
+                  </Stack>
+                </MenuItem>
+                <MenuItem value="warn">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {levelConfig.warn.icon}
+                    <Typography>Warning</Typography>
+                  </Stack>
+                </MenuItem>
+                <MenuItem value="error">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {levelConfig.error.icon}
+                    <Typography>Error</Typography>
+                  </Stack>
+                </MenuItem>
+              </Select>
+            </FormControl>
+            
+            {/* Date range filters */}
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+              <DatePicker
+                label="Depuis"
+                value={filterSince}
+                onChange={(date) => setFilterSince(date || undefined)}
+                slotProps={{
+                  textField: {
+                    variant: 'outlined',
+                    size: 'small',
+                    sx: { width: 150, borderRadius: 1 }
+                  }
+                }}
+              />
+            </LocalizationProvider>
+            
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+              <DatePicker
+                label="Jusqu'à"
+                value={filterUntil}
+                onChange={(date) => setFilterUntil(date || undefined)}
+                slotProps={{
+                  textField: {
+                    variant: 'outlined',
+                    size: 'small',
+                    sx: { width: 150, borderRadius: 1 }
+                  }
+                }}
+              />
+            </LocalizationProvider>
+          </Stack>
+          
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Button 
+              variant="outlined" 
+              size="small"
+              onClick={handleResetFilters}
+              sx={{ borderRadius: 1 }}
+            >
+              Réinitialiser
+            </Button>
+            <Button 
+              variant="contained" 
+              size="small"
+              onClick={handleApplyFilters}
+              sx={{ borderRadius: 1 }}
+            >
+              Appliquer
+            </Button>
+          </Stack>
+        </Box>
+      </Collapse>
+      
+      {/* Logs content */}
+      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {loading ? (
           renderSkeleton()
         ) : error ? (
-          <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
-        ) : logs.length === 0 ? (
+          <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+        ) : filteredLogs.length === 0 ? (
           renderEmptyState()
         ) : (
-          <TableContainer component={Paper} sx={{ height: '100%', boxShadow: 'none' }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell width={180}>Timestamp</TableCell>
-                  <TableCell width={100}>Niveau</TableCell>
-                  <TableCell width={120}>Node ID</TableCell>
-                  <TableCell width={120}>Type</TableCell>
-                  <TableCell>Message</TableCell>
-                  <TableCell width={80} align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                      {formatDate(log.timestamp)}
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={log.level}
-                        size="small"
-                        sx={levelColors[log.level] || { bgcolor: 'grey.500', color: 'white' }}
-                      />
-                    </TableCell>
-                    <TableCell>{log.nodeId || "-"}</TableCell>
-                    <TableCell>{log.nodeType || "-"}</TableCell>
-                    <TableCell sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {log.message}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Voir les détails">
-                        <IconButton 
-                          size="small"
-                          onClick={() => {
-                            setSelectedLog(log);
-                            setOpenDetailDialog(true);
-                          }}
-                        >
-                          <CodeIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      {/* Detail dialog */}
-                      <Dialog
-                        open={openDetailDialog && selectedLog?.id === log.id}
-                        onClose={() => setOpenDetailDialog(false)}
-                        maxWidth="lg"
-                        fullWidth
-                      >
-                        <DialogTitle>Détails du log</DialogTitle>
-                        <DialogContent>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            {formatDate(log.timestamp)} - {log.nodeType} ({log.nodeId})
-                          </Typography>
-                          
-                          <Box sx={{ mt: 2 }}>
-                            <Typography variant="subtitle1" gutterBottom>Message</Typography>
-                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
-                              {log.message}
-                            </Paper>
-                          </Box>
-                          
-                          {log.payload && (
-                            <Box sx={{ mt: 3 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="subtitle1">Payload</Typography>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  startIcon={<CopyIcon />}
-                                  onClick={() => copyToClipboard(log.payload || "")}
-                                >
-                                  Copier
-                                </Button>
-                              </Box>
-                              <Paper 
-                                variant="outlined" 
-                                sx={{ 
-                                  p: 2, 
-                                  bgcolor: 'grey.50', 
-                                  maxHeight: 400, 
-                                  overflow: 'auto',
-                                  fontFamily: 'monospace',
-                                  fontSize: '0.75rem'
-                                }}
-                              >
-                                <pre style={{ margin: 0 }}>
-                                  {formatPayload(log.payload)}
-                                </pre>
-                              </Paper>
-                            </Box>
-                          )}
-                        </DialogContent>
-                        <DialogActions>
-                          <Button onClick={() => setOpenDetailDialog(false)}>Fermer</Button>
-                        </DialogActions>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Box>
+            {filteredLogs.map(renderLogItem)}
+          </Box>
         )}
       </Box>
       
@@ -459,7 +645,7 @@ const FlowLogsPanel = ({ flowId }) => {
           justifyContent: 'space-between'
         }}>
           <Typography variant="body2" color="text.secondary">
-            {pageState.total} résultats
+            {filterText ? `${filteredLogs.length} sur ${pageState.total} résultats` : `${pageState.total} résultats`}
           </Typography>
           <Stack direction="row" spacing={2} alignItems="center">
             <Pagination
@@ -469,10 +655,45 @@ const FlowLogsPanel = ({ flowId }) => {
               showFirstButton
               showLastButton
               size="small"
+              shape="rounded"
             />
           </Stack>
         </Box>
       )}
+      
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
+        <DialogTitle>Êtes-vous sûr ?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Cette action va supprimer définitivement tous les logs de ce flow.
+            Cette action est irréversible.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setOpenDeleteDialog(false)}
+            sx={{ borderRadius: 1 }}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={() => {
+              handleClearLogs();
+              setOpenDeleteDialog(false);
+            }} 
+            color="error" 
+            variant="contained"
+            autoFocus
+            sx={{ borderRadius: 1 }}
+          >
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

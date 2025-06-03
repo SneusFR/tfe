@@ -12,23 +12,23 @@ export const mockEmails = [
   },
   {
     id: "email-2",
-    subject: "Réunion demain à 14h",
+    subject: "Dossier Valentin",
     from: {
-      name: "Sophie Martin",
-      address: "sophie.martin@example.com"
+      name: "Valentin Vanrumbeke",
+      address: "ValentinVanrumbeke@gmail.com"
     },
     date: new Date(2025, 3, 12, 15, 45).toISOString(),
-    snippet: "Bonjour, je vous confirme notre réunion de demain à 14h dans la salle de conférence principale. L'ordre du jour sera..."
+    snippet: "Bonjour, j'aimerais bien savoir où en est mon dossier. Cdt"
   },
   {
     id: "email-3",
-    subject: "Documentation technique - v2.0",
+    subject: "Demandez de rendez-vous Valentin",
     from: {
-      name: "Thomas Bernard",
-      address: "thomas.bernard@example.com"
+      name: "Valentin Vanrumbeke",
+      address: "ValentinVanrumbeke@gmail.com"
     },
     date: new Date(2025, 3, 11, 11, 20).toISOString(),
-    snippet: "Veuillez trouver ci-joint la nouvelle version de la documentation technique pour notre application. Les changements incluent..."
+    snippet: "J'aimerais prendre rdv pour une analyse dans votre cabinet"
   },
   {
     id: "email-4",
