@@ -16,8 +16,11 @@ import { useFlowManager } from '../context/FlowManagerContext';
 import { FlowProvider } from '../context/FlowContext';
 import { useFlowAccess } from '../hooks/useFlowAccess.js';
 import BackendConfigSelector from './settings/BackendConfigSelector';
+import AIFlowBuilder from './AIFlowBuilder';
+import { parseAIFlowData, positionNodes } from '../services/aiFlowService';
 import { motion } from 'framer-motion';
-import { Snackbar, Alert } from '@mui/material';
+import { Snackbar, Alert, Tooltip, IconButton } from '@mui/material';
+import { Psychology as AIIcon } from '@mui/icons-material';
 import ReactFlow, {
   Background,
   Controls,
@@ -126,6 +129,7 @@ const DiagramEditor = ({
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState('success');
   const [open, setOpen] = useState(false);
+  const [aiFlowBuilderOpen, setAiFlowBuilderOpen] = useState(false);
   
   // Handle save function
   const handleSave = async () => {
@@ -1821,6 +1825,25 @@ const DiagramEditor = ({
                     Créer des sous-flux
                   </button>
                 )}
+                {canEdit && currentFlow && (
+                  <Tooltip title="Générer un flux avec l'IA">
+                    <button
+                      className="diagram-button ai-flow-button"
+                      onClick={() => setAiFlowBuilderOpen(true)}
+                      disabled={loading}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px',
+                        backgroundColor: '#673AB7',
+                        color: 'white'
+                      }}
+                    >
+                      <AIIcon fontSize="small" />
+                      IA Flow Builder
+                    </button>
+                  </Tooltip>
+                )}
               </div>
             </div>
           </Panel>
@@ -1851,6 +1874,55 @@ const DiagramEditor = ({
           {message}
         </Alert>
       </Snackbar>
+      
+      {/* AI Flow Builder Dialog */}
+      <AIFlowBuilder 
+        open={aiFlowBuilderOpen}
+        onClose={() => setAiFlowBuilderOpen(false)}
+        nodes={nodes}
+        edges={edges}
+        onFlowGenerated={(flowData) => {
+          if (!canEdit) {
+            setMessage("Vous n'avez pas la permission de modifier ce flow");
+            setSeverity('error');
+            setOpen(true);
+            return;
+          }
+          
+          try {
+            // Parse the AI-generated flow data
+            const { nodes: aiNodes, edges: aiEdges } = parseAIFlowData(flowData);
+            
+            // Position the nodes in a logical layout
+            const positionedNodes = positionNodes(aiNodes, aiEdges);
+            
+            // Add the nodes and edges to the diagram
+            setNodes(prevNodes => [...prevNodes, ...positionedNodes]);
+            setEdges(prevEdges => [...prevEdges, ...aiEdges]);
+            
+            // Notify parent components
+            if (onNodesChange) onNodesChange([...nodes, ...positionedNodes]);
+            if (onEdgesChange) onEdgesChange([...edges, ...aiEdges]);
+            
+            // Show success message
+            setMessage('Flux généré avec succès !');
+            setSeverity('success');
+            setOpen(true);
+            
+            // Fit view to show the new nodes
+            setTimeout(() => {
+              if (reactFlowInstance) {
+                reactFlowInstance.fitView({ padding: 0.2 });
+              }
+            }, 100);
+          } catch (error) {
+            console.error('Error processing AI flow data:', error);
+            setMessage('Erreur lors de la génération du flux');
+            setSeverity('error');
+            setOpen(true);
+          }
+        }}
+      />
     </div>
   );
 };

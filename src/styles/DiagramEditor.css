@@ -101,6 +101,23 @@
   background-color: #1976D2;
 }
 
+.ai-flow-button {
+  background-color: #673AB7;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-flow-button:hover {
+  background-color: #5e35b1;
+}
+
+.ai-flow-button:disabled {
+  background-color: #b39ddb;
+  cursor: not-allowed;
+}
+
 .diagram-button:disabled {
   background-color: #aaa;
   cursor: not-allowed;

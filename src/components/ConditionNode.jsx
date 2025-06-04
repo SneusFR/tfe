@@ -518,7 +518,7 @@ const ConditionNode = ({ data, id }) => {
                   }}
                 ></div>
                 <div style={{ flex: 1 }}>
-                  <strong>Content:</strong> {emailAttributes.content.substring(0, 30)}...
+                  <strong>Content:</strong> {emailAttributes.content ? emailAttributes.content.substring(0, 30) + '...' : 'No content'}
                 </div>
                 {/* Handle for Content attribute */}
                 <Handle

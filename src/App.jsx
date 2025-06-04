@@ -15,6 +15,7 @@ import ModernSidebar from './components/ModernSidebar';
 import FlowModal from './components/FlowModal';
 import FlowVersionSelector from './components/FlowVersionSelector';
 import BackendSettings from './components/settings/BackendSettings';
+import DocumentationPage from './components/DocumentationPage';
 
 // Auth & header
 import { useAuth } from './context/AuthContext';
@@ -286,6 +287,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/documentation" element={<DocumentationPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/editor" element={
         <ProtectedRoute>

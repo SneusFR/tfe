@@ -560,7 +560,7 @@ const SendingMailNode = ({ data, id }) => {
               }}
             ></div>
             <div style={{ flex: 1 }}>
-              <strong>CC:</strong> {emailAttributes.cc.length > 0 
+              <strong>CC:</strong> {emailAttributes.cc && emailAttributes.cc.length > 0 
                 ? `${emailAttributes.cc.length} recipients` 
                 : 'Optional'}
             </div>
@@ -606,7 +606,7 @@ const SendingMailNode = ({ data, id }) => {
               }}
             ></div>
             <div style={{ flex: 1 }}>
-              <strong>BCC:</strong> {emailAttributes.bcc.length > 0 
+              <strong>BCC:</strong> {emailAttributes.bcc && emailAttributes.bcc.length > 0 
                 ? `${emailAttributes.bcc.length} recipients` 
                 : 'Optional'}
             </div>
@@ -652,7 +652,7 @@ const SendingMailNode = ({ data, id }) => {
               }}
             ></div>
             <div style={{ flex: 1 }}>
-              <strong>Custom Headers:</strong> {emailAttributes.custom_headers.length > 0 
+              <strong>Custom Headers:</strong> {emailAttributes.custom_headers && emailAttributes.custom_headers.length > 0 
                 ? `${emailAttributes.custom_headers.length} headers` 
                 : 'Optional'}
             </div>

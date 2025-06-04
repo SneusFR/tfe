@@ -242,6 +242,7 @@ const HomePage = () => {
             <li><a href="#features">Features</a></li>
             <li><a href="#how-it-works">How It Works</a></li>
             <li><a href="#about">About</a></li>
+            <li><Link to="/documentation">Documentation</Link></li>
           </ul>
         </nav>
         <div className="header-actions">
@@ -392,14 +393,14 @@ const HomePage = () => {
                 <li><Link to="/editor">Editor</Link></li>
               </ul>
             </div>
-            <div className="footer-column">
-              <h4>Resources</h4>
-              <ul>
-                <li><a href="#">Documentation</a></li>
-                <li><a href="#">Tutorials</a></li>
-                <li><a href="#">API Reference</a></li>
-              </ul>
-            </div>
+          <div className="footer-column">
+            <h4>Resources</h4>
+            <ul>
+              <li><Link to="/documentation">Documentation</Link></li>
+              <li><a href="#">Tutorials</a></li>
+              <li><a href="#">API Reference</a></li>
+            </ul>
+          </div>
             <div className="footer-column">
               <h4>Company</h4>
               <ul>

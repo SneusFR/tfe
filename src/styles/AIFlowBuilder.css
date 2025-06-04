@@ -1,0 +1,89 @@
+/* AIFlowBuilder.css */
+
+.ai-flow-builder-dialog {
+  max-width: 800px;
+  width: 100%;
+  margin-left: 400px; /* pousse de 40 px vers la droite */
+}
+
+.ai-flow-builder-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #673AB7;
+  font-weight: 600;
+}
+
+.ai-flow-builder-content {
+  padding: 16px;
+}
+
+.ai-flow-builder-description {
+  margin-bottom: 20px;
+}
+
+.ai-flow-builder-example {
+  color: #666;
+  font-style: italic;
+  margin-bottom: 16px;
+}
+
+.ai-flow-builder-input {
+  margin-bottom: 20px;
+}
+
+.ai-flow-builder-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px;
+}
+
+.ai-flow-builder-generate-button {
+  background-color: #673AB7;
+  color: white;
+}
+
+.ai-flow-builder-cancel-button {
+  color: #666;
+}
+
+.ai-flow-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #673AB7;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.ai-flow-button:hover {
+  background-color: #5e35b1;
+}
+
+.ai-flow-button:disabled {
+  background-color: #b39ddb;
+  cursor: not-allowed;
+}
+
+/* Animation for the loading state */
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.ai-flow-builder-loading {
+  animation: pulse 1.5s infinite;
+}
