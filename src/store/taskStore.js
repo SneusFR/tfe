@@ -51,6 +51,8 @@ const taskStore = {
       description:    taskData.description,
       source:         taskData.source  || 'email',
       sourceId:       taskData.sourceId,
+      unipileEmailId: taskData.unipileEmailId, // Ajout de l'ID Unipile pour la persistance
+      flow:           taskData.flow || (currentFlow?.id ? currentFlow.id : null), // Utiliser le flow fourni ou le flow courant
       senderEmail:    taskData.senderEmail,
       recipientEmail: taskData.recipientEmail,
       status:         taskData.status,
@@ -152,6 +154,8 @@ const taskStore = {
       type:           updateData.type,
       source:         updateData.source,
       sourceId:       updateData.sourceId,
+      unipileEmailId: updateData.unipileEmailId, // Ajout de l'ID Unipile pour la persistance
+      flow:           updateData.flow || (currentFlow?.id ? currentFlow.id : null), // Utiliser le flow fourni ou le flow courant
       senderEmail:    updateData.senderEmail,
       recipientEmail: updateData.recipientEmail,
       status:         updateData.status,

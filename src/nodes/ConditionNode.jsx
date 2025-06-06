@@ -1,6 +1,6 @@
 import { memo, useMemo, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import NodeFieldSelector from './NodeFieldSelector';
+import NodeFieldSelector from '../components/NodeFieldSelector';
 import { useNodeFields } from '../context/NodeFieldsContext';
 
 // Connection colors

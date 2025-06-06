@@ -5,7 +5,7 @@ import './App.css';
 // ──────────────────────────────────────────────────────────────
 // UI & pages
 // ──────────────────────────────────────────────────────────────
-import HomePage from './components/HomePage';
+import HomePage from './pages/HomePage';
 import DiagramEditor from './components/DiagramEditor';
 import EmailBrowser from './components/EmailBrowser';
 import FlowLogsPanel from './components/FlowLogsPanel.jsx';
@@ -15,7 +15,7 @@ import ModernSidebar from './components/ModernSidebar';
 import FlowModal from './components/FlowModal';
 import FlowVersionSelector from './components/FlowVersionSelector';
 import BackendSettings from './components/settings/BackendSettings';
-import DocumentationPage from './components/DocumentationPage';
+import DocumentationPage from './pages/DocumentationPage';
 
 // Auth & header
 import { useAuth } from './context/AuthContext';

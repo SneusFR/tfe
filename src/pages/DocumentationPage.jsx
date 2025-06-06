@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import AIFlowBuilderDocumentation from './AIFlowBuilderDocumentation';
+import AIFlowBuilderDocumentation from '../components/AIFlowBuilderDocumentation';
 import ReactFlow, {
   Background,
   Controls,

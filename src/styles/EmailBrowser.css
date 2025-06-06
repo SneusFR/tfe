@@ -6,19 +6,84 @@
   width: 100%;
   overflow: hidden;
   background-color: white;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 .email-browser-header {
-  padding: 15px;
+  padding: 16px 24px;
   border-bottom: 1px solid #e0e0e0;
-  background-color: #2a2a2a;
-  color: white;
+  background-color: white;
+  color: #1a1a1a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 10;
 }
 
 .email-browser-header h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.email-tabs {
+  display: flex;
+  margin-top: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f9f9f9;
+  padding: 0 24px;
+}
+
+.email-tab {
+  padding: 12px 20px;
+  font-size: 14px;
   font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-tab:hover {
+  color: #333;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.email-tab.active {
+  color: #6366f1;
+  border-bottom: 2px solid #6366f1;
+  background-color: white;
+}
+
+.email-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background-color: #e0e0e0;
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.email-tab.active .email-tab-count {
+  background-color: #6366f1;
+  color: white;
+}
+
+.email-list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .email-list {
@@ -27,28 +92,51 @@
   padding: 0;
 }
 
+.email-list-header {
+  padding: 12px 24px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+}
+
 .email-item {
   display: flex;
-  padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
-  transition: background-color 0.2s;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
   align-items: center;
+  cursor: pointer;
 }
 
 .email-item:hover {
-  background-color: #f8f8f8;
+  background-color: #f8f9fa;
+  transform: translateX(3px);
+}
+
+.email-item.in-database {
+  background-color: rgba(99, 102, 241, 0.05);
+  border-left: 4px solid #6366f1;
+}
+
+.email-item.in-database:hover {
+  background-color: rgba(99, 102, 241, 0.1);
 }
 
 .email-content {
   flex: 1;
   min-width: 0; /* Ensures proper text truncation */
+  padding-right: 16px;
 }
 
 .email-subject {
   font-weight: 600;
   font-size: 0.95rem;
-  margin-bottom: 5px;
-  color: #333;
+  margin-bottom: 6px;
+  color: #1a1a1a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -57,16 +145,49 @@
 .email-details {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   font-size: 0.85rem;
   color: #666;
 }
 
 .email-sender {
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.email-sender-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
 }
 
 .email-date {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.email-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.email-status.analyzed {
+  color: #6366f1;
+}
+
+.email-status.not-analyzed {
   color: #888;
 }
 
@@ -75,6 +196,7 @@
   color: #666;
   position: relative;
   transition: max-height 0.3s ease;
+  line-height: 1.4;
 }
 
 .email-preview:not(.expanded) {
@@ -91,6 +213,10 @@
   overflow-y: auto;
   white-space: pre-wrap;
   padding-bottom: 30px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
 }
 
 .expand-toggle {
@@ -99,7 +225,7 @@
   right: 0;
   background: none;
   border: none;
-  color: #8e44ad;
+  color: #6366f1;
   font-size: 0.8rem;
   cursor: pointer;
   padding: 3px 5px;
@@ -111,11 +237,11 @@
 }
 
 .analyze-button {
-  background-color: #8e44ad;
+  background-color: #6366f1;
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 8px 16px;
   font-size: 0.85rem;
   cursor: pointer;
   display: flex;
@@ -123,56 +249,108 @@
   transition: all 0.2s ease;
   margin-left: 15px;
   white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(142, 68, 173, 0.3);
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+  font-weight: 500;
 }
 
 .analyze-button:hover {
-  background-color: #7d3c98;
+  background-color: #4f46e5;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(142, 68, 173, 0.4);
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4);
 }
 
 .analyze-button:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(142, 68, 173, 0.4);
+  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.4);
 }
 
 .analyze-icon {
-  margin-right: 5px;
+  margin-right: 6px;
   font-size: 1rem;
+}
+
+.analyzed-badge {
+  background-color: #6366f1;
+  color: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  font-weight: 500;
 }
 
 .pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
+  padding: 16px 24px;
   border-top: 1px solid #e0e0e0;
-  background-color: #f5f5f5;
+  background-color: white;
 }
 
 .pagination-button {
-  background-color: #2a2a2a;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .pagination-button:hover:not(:disabled) {
-  background-color: #444;
+  background-color: #e8e8e8;
+  transform: translateY(-1px);
 }
 
 .pagination-button:disabled {
-  background-color: #ccc;
+  background-color: #f5f5f5;
+  color: #bbb;
+  border-color: #e0e0e0;
   cursor: not-allowed;
 }
 
 .page-info {
   font-size: 0.9rem;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-selector button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.page-selector button.active {
+  background-color: #6366f1;
+  color: white;
+}
+
+.page-selector button:hover:not(.active) {
+  background-color: #f0f0f0;
 }
 
 .loading-container, .error-container, .no-emails-message {
@@ -180,13 +358,30 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
-  height: 200px;
+  padding: 3rem;
+  height: 300px;
 }
 
 .loading-message {
   color: #666;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error-message {
@@ -200,15 +395,54 @@
   font-size: 0.9rem;
   margin-bottom: 1rem;
   font-style: italic;
+  text-align: center;
+  max-width: 500px;
 }
 
 .retry-button {
-  background-color: #2a2a2a;
+  background-color: #6366f1;
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
+  border-radius: 8px;
+  padding: 10px 20px;
   cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-button:hover {
+  background-color: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #666;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.empty-state-text {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.empty-state-subtext {
+  font-size: 0.9rem;
+  color: #888;
+  max-width: 400px;
 }
 
 /* Styles for the analysis overlay and progress bar */
@@ -223,23 +457,37 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(3px);
 }
 
 .analysis-container {
   background-color: white;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 24px;
   max-width: 600px;
   width: 90%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .analysis-container h3 {
   margin-top: 0;
-  color: #333;
-  font-size: 1.2rem;
+  color: #1a1a1a;
+  font-size: 1.3rem;
+  font-weight: 600;
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .progress-bar-container {
@@ -248,51 +496,166 @@
   background-color: #e0e0e0;
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .progress-bar {
   height: 100%;
-  background-color: #8e44ad;
+  background-color: #6366f1;
   transition: width 0.3s ease;
 }
 
 .analysis-result {
-  margin-top: 20px;
+  margin-top: 24px;
   border-top: 1px solid #e0e0e0;
-  padding-top: 15px;
+  padding-top: 20px;
 }
 
 .analysis-result h4 {
   margin-top: 0;
-  color: #333;
-  font-size: 1rem;
-  margin-bottom: 10px;
+  color: #1a1a1a;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
 .result-content {
   background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 4px;
+  padding: 16px;
+  border-radius: 8px;
   font-size: 0.9rem;
   color: #333;
   max-height: 300px;
   overflow-y: auto;
   white-space: pre-wrap;
+  line-height: 1.5;
+  border: 1px solid #e0e0e0;
 }
 
 .analyze-button:disabled {
-  background-color: #ccb3d6;
+  background-color: #c7c8f5;
   cursor: not-allowed;
   box-shadow: none;
 }
 
 .analyze-button:disabled:hover {
   transform: none;
-  background-color: #ccb3d6;
+  background-color: #c7c8f5;
 }
 
 .no-emails-message p {
   color: #666;
   font-style: italic;
+}
+
+/* Email filter and search */
+.email-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.email-search {
+  flex: 1;
+  position: relative;
+}
+
+.email-search input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.email-search input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.email-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 16px;
+}
+
+.email-filter-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.email-filter-button:hover {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.email-filter-button.active {
+  background-color: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+/* Scrollbar styling */
+.email-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.email-list::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.email-list::-webkit-scrollbar-thumb {
+  background-color: #d0d0d0;
+  border-radius: 3px;
+}
+
+.email-list::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .email-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .email-tabs {
+    overflow-x: auto;
+    padding: 0 16px;
+  }
+  
+  .email-tab {
+    padding: 12px 16px;
+    white-space: nowrap;
+  }
+  
+  .email-item {
+    padding: 12px 16px;
+  }
+  
+  .analyze-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
 }

@@ -37,24 +37,24 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import '../styles/DiagramEditor.css';
 
-import ApiNode from './ApiNode';
-import ConditionNode from './ConditionNode';
-import ConditionalFlowNode from './ConditionalFlowNode';
-import SwitchNode from './SwitchNode';
-import LogicalOperatorNode from './LogicalOperatorNode';
-import SendingMailNode from './SendingMailNode';
-import EmailAttachmentNode from './EmailAttachmentNode';
-import TextNode from './TextNode';
-import IntNode from './IntNode';
-import BooleanNode from './BooleanNode';
-import TokenNode from './TokenNode';
-import Base64Node from './Base64Node';
-import OcrNode from './OcrNode';
-import ConsoleLogNode from './ConsoleLogNode';
-import AINode from './AINode';
-import MailBodyNode from './MailBodyNode';
-import EndNode from './EndNode';
-import SubFlowNode from './SubFlowNode';
+import ApiNode from '../nodes/ApiNode';
+import ConditionNode from '../nodes/ConditionNode';
+import ConditionalFlowNode from '../nodes/ConditionalFlowNode';
+import SwitchNode from '../nodes/SwitchNode';
+import LogicalOperatorNode from '../nodes/LogicalOperatorNode';
+import SendingMailNode from '../nodes/SendingMailNode';
+import EmailAttachmentNode from '../nodes/EmailAttachmentNode';
+import TextNode from '../nodes/TextNode';
+import IntNode from '../nodes/IntNode';
+import BooleanNode from '../nodes/BooleanNode';
+import TokenNode from '../nodes/TokenNode';
+import Base64Node from '../nodes/Base64Node';
+import OcrNode from '../nodes/OcrNode';
+import ConsoleLogNode from '../nodes/ConsoleLogNode';
+import AINode from '../nodes/AINode';
+import MailBodyNode from '../nodes/MailBodyNode';
+import EndNode from '../nodes/EndNode';
+import SubFlowNode from '../nodes/SubFlowNode';
 import conditionStore from '../store/conditionStore';
 import { 
   detectSubFlows, 
