@@ -360,3 +360,42 @@
     box-shadow: 0 0 5px rgba(76, 175, 80, 0.8);
   }
 }
+
+/* Fix for the numbered buttons (1, 2, 3) appearing on all tabs */
+/* These buttons should only be visible in the Diagram Editor tab */
+body:not(.diagram-editor-active) button[class*="MuiButtonBase"][aria-label="1"],
+body:not(.diagram-editor-active) button[class*="MuiButtonBase"][aria-label="2"],
+body:not(.diagram-editor-active) button[class*="MuiButtonBase"][aria-label="3"],
+body:not(.diagram-editor-active) div[class*="MuiButtonBase"][aria-label="1"],
+body:not(.diagram-editor-active) div[class*="MuiButtonBase"][aria-label="2"],
+body:not(.diagram-editor-active) div[class*="MuiButtonBase"][aria-label="3"],
+body:not(.diagram-editor-active) .MuiButtonBase-root[aria-label="1"],
+body:not(.diagram-editor-active) .MuiButtonBase-root[aria-label="2"],
+body:not(.diagram-editor-active) .MuiButtonBase-root[aria-label="3"],
+body:not(.diagram-editor-active) [aria-label="1"],
+body:not(.diagram-editor-active) [aria-label="2"],
+body:not(.diagram-editor-active) [aria-label="3"],
+body:not(.diagram-editor-active) .selection-control {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+}
+
+/* Ensure the buttons have a lower z-index when they are visible */
+.MuiButtonBase-root[aria-label="1"],
+.MuiButtonBase-root[aria-label="2"],
+.MuiButtonBase-root[aria-label="3"],
+button[class*="MuiButtonBase"][aria-label="1"],
+button[class*="MuiButtonBase"][aria-label="2"],
+button[class*="MuiButtonBase"][aria-label="3"],
+div[class*="MuiButtonBase"][aria-label="1"],
+div[class*="MuiButtonBase"][aria-label="2"],
+div[class*="MuiButtonBase"][aria-label="3"],
+[aria-label="1"],
+[aria-label="2"],
+[aria-label="3"] {
+  z-index: 5 !important;
+}

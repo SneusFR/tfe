@@ -50,6 +50,19 @@ const EditorApp = () => {
     setEdges([]);
     setApiInventoryNodes([]);
   }, []);
+  
+  // Toggle diagram-editor-active class based on active tab
+  useEffect(() => {
+    if (activeTab === 'diagram') {
+      document.body.classList.add('diagram-editor-active');
+    } else {
+      document.body.classList.remove('diagram-editor-active');
+    }
+    
+    return () => {
+      document.body.classList.remove('diagram-editor-active');
+    };
+  }, [activeTab]);
 
   // ────────────────────────────────────────────────────────────
   // API import → generate inventory nodes
@@ -254,7 +267,7 @@ const EditorApp = () => {
 
           {/* Global modals / selectors */}
           <FlowModal />
-          <FlowVersionSelector />
+          {activeTab === 'diagram' && <FlowVersionSelector />}
         </div>
       </FlowProvider>
     </NodeFieldsProvider>

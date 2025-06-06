@@ -131,6 +131,14 @@ const DiagramEditor = ({
   const [open, setOpen] = useState(false);
   const [aiFlowBuilderOpen, setAiFlowBuilderOpen] = useState(false);
   
+  // Add class to body when diagram editor is active
+  useEffect(() => {
+    document.body.classList.add('diagram-editor-active');
+    return () => {
+      document.body.classList.remove('diagram-editor-active');
+    };
+  }, []);
+  
   // Handle save function
   const handleSave = async () => {
     if (!currentFlow) {
@@ -1808,7 +1816,7 @@ const DiagramEditor = ({
                     <i className="fas fa-save"></i> Save
                   </button>
                 )}
-                {canEdit && nodes.length > 0 && (
+                {canEdit && currentFlow && (
                   <button
                     className="diagram-button flow-menu-button"
                     onClick={toggleFlowModal}
@@ -1856,12 +1864,14 @@ const DiagramEditor = ({
           {/* FlowMenuButton is now the only UI element for flow management */}
           <FlowMenuButton />
           
-          {/* Selection Control */}
-          <SelectionControl 
-            selectionMode={selectionMode}
-            setSelectionMode={setSelectionMode}
-            selectedNodes={selectedNodesForSelection}
-          />
+          {/* Selection Control - Only render when diagram tab is active */}
+          {document.body.classList.contains('diagram-editor-active') && (
+            <SelectionControl 
+              selectionMode={selectionMode}
+              setSelectionMode={setSelectionMode}
+              selectedNodes={selectedNodesForSelection}
+            />
+          )}
         </FlowProvider>
       </ReactFlowProvider>
       <Snackbar

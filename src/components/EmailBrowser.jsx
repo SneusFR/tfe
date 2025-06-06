@@ -260,7 +260,8 @@ const EmailBrowser = () => {
         name: attachment.name || 'attachment',
         mime: attachment.mime || 'application/octet-stream',
         size: attachment.size || 0,
-        storageKey: attachment.id || attachment.storageKey || null
+        storageKey: attachment.id || attachment.storageKey || null,
+        skipTaskCreation: true // Ajouter ce paramètre pour éviter la création automatique de tâche pour les pièces jointes
       }));
       
       // Préparer les données pour l'API
@@ -279,7 +280,8 @@ const EmailBrowser = () => {
         }],
         date: email.date || new Date().toISOString(),
         body,
-        attachments
+        attachments,
+        skipTaskCreation: true // Ajouter ce paramètre pour éviter la création automatique de tâche email_processing
       };
       
       // Appel à l'API pour sauvegarder l'email
@@ -426,72 +428,78 @@ const EmailBrowser = () => {
     // Récupérer toutes les conditions existantes
     const conditions = conditionStore.getAllConditions();
     
+    // Si aucune condition ne correspond, ne pas créer de tâche "email_processing"
+    const matchingConditions = conditions.filter(condition => analysisResult.includes(condition.returnText));
+    
+    if (matchingConditions.length === 0) {
+      console.log("⚠️ [CONDITION MATCHING] No matching conditions found, no tasks will be created");
+      return;
+    }
+    
     // Utiliser Promise.all pour gérer plusieurs tâches en parallèle
-    const taskPromises = conditions
-      .filter(condition => analysisResult.includes(condition.returnText))
-      .map(async (condition) => {
-        console.log(`✅ [CONDITION MATCHED] Found matching condition: "${condition.returnText}"`);
-        
-        // Extraire l'email de l'expéditeur à partir de from_attendee.identifier
-        const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';
-        const senderName = email.from_attendee?.display_name || senderEmail;
-        const recipientEmail = email.to_attendees?.[0]?.identifier || 'unknown@example.com';
-        
-        // Extraire les informations des pièces jointes si elles existent
-        const attachments = email.attachments || [];
-        console.log(`📎 [EMAIL ATTACHMENTS] Found ${attachments.length} attachments in email:`, 
-          attachments.map(a => ({ id: a.id, name: a.name })));
-        
-        // --- Récupérer le sujet ---
-        const subject =
-              email.subject                                       ||
-              email.headers?.Subject                              ||
-              email.headers?.find(h => h.name?.toLowerCase()==='subject')?.value ||
-              email.title                                         || null;
+    const taskPromises = matchingConditions.map(async (condition) => {
+      console.log(`✅ [CONDITION MATCHED] Found matching condition: "${condition.returnText}"`);
+      
+      // Extraire l'email de l'expéditeur à partir de from_attendee.identifier
+      const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';
+      const senderName = email.from_attendee?.display_name || senderEmail;
+      const recipientEmail = email.to_attendees?.[0]?.identifier || 'unknown@example.com';
+      
+      // Extraire les informations des pièces jointes si elles existent
+      const attachments = email.attachments || [];
+      console.log(`📎 [EMAIL ATTACHMENTS] Found ${attachments.length} attachments in email:`, 
+        attachments.map(a => ({ id: a.id, name: a.name })));
+      
+      // --- Récupérer le sujet ---
+      const subject =
+            email.subject                                       ||
+            email.headers?.Subject                              ||
+            email.headers?.find(h => h.name?.toLowerCase()==='subject')?.value ||
+            email.title                                         || null;
 
-        // --- Récupérer le body/plain ---
-        const bodyPlain =
-              email.body_plain || email.snippet || email.preview || null;
+      // --- Récupérer le body/plain ---
+      const bodyPlain =
+            email.body_plain || email.snippet || email.preview || null;
 
-        // Créer la tâche en utilisant les données de l'email
-        const taskData = {
-          type: condition.returnText,
-          description: `Email de ${senderName}: ${subject || "(Sans objet)"}`,
-          source: 'email',
-          sourceId: email.id, // ID de l'email pour récupérer les pièces jointes
-          unipileEmailId: email.id, // Stocker explicitement l'ID Unipile pour la persistance
-          flow: flowId, // Utiliser le flowId passé en paramètre
-          senderEmail: senderEmail,
-          recipientEmail: recipientEmail,
-          attachments: attachments, // Ajouter les pièces jointes à la tâche
-          subject,           // ne sera plus undefined
-          senderName: senderName, // Ajouter le nom de l'expéditeur
-          recipientName: email.to_attendees?.[0]?.display_name || recipientEmail, // Ajouter le nom du destinataire
-          body: bodyPlain,   // ne sera plus undefined
-          date: email.date || null, // Ajouter la date de l'email (ou null)
-          attachmentId: attachments && attachments.length > 0 ? attachments[0].id : null // Ajouter l'ID de la première pièce jointe
-        };
+      // Créer la tâche en utilisant les données de l'email
+      const taskData = {
+        type: condition.returnText,
+        description: `Email de ${senderName}: ${subject || "(Sans objet)"}`,
+        source: 'email',
+        sourceId: email.id, // ID de l'email pour récupérer les pièces jointes
+        unipileEmailId: email.id, // Stocker explicitement l'ID Unipile pour la persistance
+        flow: flowId, // Utiliser le flowId passé en paramètre
+        senderEmail: senderEmail,
+        recipientEmail: recipientEmail,
+        attachments: attachments, // Ajouter les pièces jointes à la tâche
+        subject,           // ne sera plus undefined
+        senderName: senderName, // Ajouter le nom de l'expéditeur
+        recipientName: email.to_attendees?.[0]?.display_name || recipientEmail, // Ajouter le nom du destinataire
+        body: bodyPlain,   // ne sera plus undefined
+        date: email.date || null, // Ajouter la date de l'email (ou null)
+        attachmentId: attachments && attachments.length > 0 ? attachments[0].id : null // Ajouter l'ID de la première pièce jointe
+      };
+      
+      console.log(`📧 [EMAIL DATA] Using email ID: ${email.id} for task creation`);
+      
+      try {
+        // Ajouter la tâche (maintenant asynchrone)
+        const newTask = await taskStore.addTask(taskData);
+        console.log("📋 [TASK CREATION] Created new task:", JSON.stringify(newTask, null, 2));
         
-        console.log(`📧 [EMAIL DATA] Using email ID: ${email.id} for task creation`);
+        // Déclencher un événement personnalisé pour notifier la création de tâche
+        // Cela permettra à d'autres composants (comme ModernSidebar) de rafraîchir leur liste de tâches
+        const taskCreatedEvent = new CustomEvent('taskCreated', { 
+          detail: { task: newTask, flowId: taskStore.getCurrentFlowId() } 
+        });
+        window.dispatchEvent(taskCreatedEvent);
         
-        try {
-          // Ajouter la tâche (maintenant asynchrone)
-          const newTask = await taskStore.addTask(taskData);
-          console.log("📋 [TASK CREATION] Created new task:", JSON.stringify(newTask, null, 2));
-          
-          // Déclencher un événement personnalisé pour notifier la création de tâche
-          // Cela permettra à d'autres composants (comme ModernSidebar) de rafraîchir leur liste de tâches
-          const taskCreatedEvent = new CustomEvent('taskCreated', { 
-            detail: { task: newTask, flowId: taskStore.getCurrentFlowId() } 
-          });
-          window.dispatchEvent(taskCreatedEvent);
-          
-          return newTask;
-        } catch (error) {
-          console.error("❌ [TASK CREATION] Failed to create task:", error);
-          return null;
-        }
-      });
+        return newTask;
+      } catch (error) {
+        console.error("❌ [TASK CREATION] Failed to create task:", error);
+        return null;
+      }
+    });
     
     // Attendre que toutes les tâches soient créées
     await Promise.all(taskPromises);

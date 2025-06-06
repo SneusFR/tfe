@@ -97,9 +97,9 @@ const ModernMetricsPanel = ({ flowId, filter, onFilterChange, onDateRangeChange,
 
   // Render loading state
   if (loading) {
-    return (
-      <div className="modern-metrics-wrapper">
-        <div className="modern-metrics-panel">
+  return (
+    <div className="modern-metrics-wrapper" style={{ overflowY: 'auto' }}>
+      <div className="modern-metrics-panel">
           <div className="metrics-content loading">
             <div className="loading-indicator">
               <div className="loading-spinner"></div>
@@ -114,7 +114,7 @@ const ModernMetricsPanel = ({ flowId, filter, onFilterChange, onDateRangeChange,
   // Render error state
   if (error) {
     return (
-      <div className="modern-metrics-wrapper">
+      <div className="modern-metrics-wrapper" style={{ overflowY: 'auto' }}>
         <div className="modern-metrics-panel">
           <div className="metrics-content error">
             <EmptyState
@@ -137,7 +137,7 @@ const ModernMetricsPanel = ({ flowId, filter, onFilterChange, onDateRangeChange,
   // Render empty state if no data
   if (!data) {
     return (
-      <div className="modern-metrics-wrapper">
+      <div className="modern-metrics-wrapper" style={{ overflowY: 'auto' }}>
         <div className="modern-metrics-panel">
           <div className="metrics-content empty">
             <EmptyState
@@ -153,7 +153,7 @@ const ModernMetricsPanel = ({ flowId, filter, onFilterChange, onDateRangeChange,
   }
 
   return (
-    <div className="modern-metrics-wrapper">
+    <div className="modern-metrics-wrapper" style={{ overflowY: 'auto' }}>
       <div className="modern-metrics-panel">
         <motion.div 
           className="metrics-header"
