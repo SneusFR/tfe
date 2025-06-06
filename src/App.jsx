@@ -10,6 +10,7 @@ import DiagramEditor from './components/DiagramEditor';
 import EmailBrowser from './components/EmailBrowser';
 import FlowLogsPanel from './components/FlowLogsPanel.jsx';
 import LogsPanelWrapper from './components/LogsPanelWrapper.jsx';
+import MetricsPanelWrapper from './components/MetricsPanelWrapper.jsx';
 import CollaboratorsManager from './components/CollaboratorsManager';
 import ModernSidebar from './components/ModernSidebar';
 import FlowModal from './components/FlowModal';
@@ -189,6 +190,12 @@ const EditorApp = () => {
                   Logs
                 </button>
                 <button
+                  className={`tab-button ${activeTab === 'metrics' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('metrics')}
+                >
+                  Metrics
+                </button>
+                <button
                   className={`tab-button ${activeTab === 'collaborations' ? 'active' : ''}`}
                   onClick={() => setActiveTab('collaborations')}
                 >
@@ -228,6 +235,10 @@ const EditorApp = () => {
               ) : activeTab === 'logs' ? (
                 <div className="logs-container">
                   <LogsPanelWrapper />
+                </div>
+              ) : activeTab === 'metrics' ? (
+                <div className="metrics-container">
+                  <MetricsPanelWrapper />
                 </div>
               ) : activeTab === 'collaborations' ? (
                 <div className="collaborations-container">
