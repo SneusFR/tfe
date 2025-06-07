@@ -1,6 +1,14 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useFlow } from '../context/FlowContext';
 import { useFlowAccess } from '../hooks/useFlowAccess.js';
+import { Box, Tabs, Tab, Typography, Paper } from '@mui/material';
+import { 
+  ViewList as ListViewIcon,
+  AccountTree as TreeViewIcon
+} from '@mui/icons-material';
+import ExecutionLogsVisualizer from './execution-logs/ExecutionLogsVisualizer';
+
+// Original imports for the list view
 import { useExecutionLogs } from '../hooks/useExecutionLogs.js';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -11,7 +19,6 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
-  Paper,
   Button,
   IconButton,
   Dialog,
@@ -26,8 +33,6 @@ import {
   TextField,
   Chip,
   Skeleton,
-  Box,
-  Typography,
   Stack,
   Pagination,
   Alert,
@@ -99,6 +104,7 @@ const levelConfig = {
 // -- FlowLogsPanel.jsx
 const FlowLogsPanel = ({ flowId }) => {
   const theme = useTheme();
+  const [viewMode, setViewMode] = useState('visual'); // 'visual' or 'list'
   
   useEffect(() => {
     console.log('[FlowLogsPanel] mount, props.flowId =', flowId);
@@ -443,8 +449,89 @@ const FlowLogsPanel = ({ flowId }) => {
     );
   };
   
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
+  // View mode tabs
+  const renderViewModeTabs = () => (
+    <Paper 
+      sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        borderRadius: '12px 12px 0 0',
+        boxShadow: 'none',
+        borderBottom: 1,
+        borderColor: 'divider',
+        overflow: 'hidden',
+        bgcolor: theme.palette.background.paper,
+      }}
+    >
+      <Tabs 
+        value={viewMode} 
+        onChange={(_, newValue) => setViewMode(newValue)}
+        indicatorColor="primary"
+        textColor="primary"
+        variant="fullWidth"
+        sx={{
+          minHeight: '56px',
+          width: '100%',
+          '& .MuiTab-root': {
+            minHeight: '56px',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              bgcolor: alpha(theme.palette.primary.main, 0.04),
+            },
+          },
+          '& .Mui-selected': {
+            bgcolor: alpha(theme.palette.primary.main, 0.08),
+            color: theme.palette.primary.main,
+          },
+          '& .MuiTabs-indicator': {
+            height: 3,
+            borderRadius: '3px 3px 0 0',
+          }
+        }}
+      >
+        <Tab 
+          value="visual" 
+          label="Visualisation" 
+          icon={<TreeViewIcon />} 
+          iconPosition="start"
+          sx={{
+            gap: 1.5,
+            '& .MuiSvgIcon-root': {
+              fontSize: '1.25rem',
+            }
+          }}
+        />
+        <Tab 
+          value="list" 
+          label="Liste" 
+          icon={<ListViewIcon />} 
+          iconPosition="start"
+          sx={{
+            gap: 1.5,
+            '& .MuiSvgIcon-root': {
+              fontSize: '1.25rem',
+            }
+          }}
+        />
+      </Tabs>
+    </Paper>
+  );
+  
+  // Render the visual view (ExecutionLogsVisualizer)
+  const renderVisualView = () => (
+    <Box sx={{ 
+      height: 'calc(100% - 48px)',
+      width: '100%',
+    }}>
+      <ExecutionLogsVisualizer flowId={flowId} />
+    </Box>
+  );
+  
+  // Render the list view (original implementation)
+  const renderListView = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 48px)', bgcolor: 'background.default' }}>
       {/* Header with title and actions */}
       <Box sx={{ 
         bgcolor: 'background.paper', 
@@ -694,6 +781,21 @@ const FlowLogsPanel = ({ flowId }) => {
           </Button>
         </DialogActions>
       </Dialog>
+    </Box>
+  );
+  
+  return (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%', 
+      width: '100%',
+      bgcolor: 'background.default',
+      borderRadius: '12px',
+      overflow: 'hidden',
+    }}>
+      {renderViewModeTabs()}
+      {viewMode === 'visual' ? renderVisualView() : renderListView()}
     </Box>
   );
 };
