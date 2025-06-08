@@ -119,7 +119,12 @@ const ModernSidebar = ({
 
   // Charger les tâches au chargement initial et à intervalles réguliers
   useEffect(() => {
-    loadTasks();
+    // Force a fresh load when the flow changes
+    if (currentFlowId) {
+      taskStore.clearCache();
+      taskStore.setCurrentFlowId(currentFlowId);
+      loadTasks();
+    }
     const intervalId = setInterval(loadTasks, 30000);
     return () => clearInterval(intervalId);
   }, [isAuthenticated, currentFlowId]);

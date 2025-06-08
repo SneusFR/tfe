@@ -37,6 +37,7 @@ const taskStore = {
     currentFlowId        = flowId;
     tasksCache.data      = [];
     tasksCache.lastFetched = null;
+    tasksCache.loading   = false;
   },
   
   getCurrentFlowId() {
