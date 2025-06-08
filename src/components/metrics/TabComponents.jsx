@@ -225,11 +225,16 @@ export const ComparisonTab = ({
         ) : comparisonData ? (
           <FlowComparisonTable data={comparisonData} currentFlowId={flowId} />
         ) : (
-          <div className="no-data">No comparison data available</div>
+          <div className="no-data">
+            <div className="error-message">
+              <span className="error-icon">⚠️</span>
+              Error loading comparison data. Please try refreshing the page.
+            </div>
+          </div>
         )}
       </MetricsCard>
 
-      {comparisonData && (
+      {comparisonData && comparisonData.length > 0 && (
         <div className="metrics-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem' }}>
           <MetricsCard 
             title="Execution Time Comparison" 

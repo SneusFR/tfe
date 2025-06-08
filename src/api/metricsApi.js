@@ -32,7 +32,7 @@ const metricsApi = {
   getExecutionDetails: async (executionId) => {
     try {
       // Make a real API call to the backend
-      const response = await axios.get(`/api/metrics/tasks/${executionId}/execution`);
+      const response = await axios.get(`/api/metrics/executions/${executionId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching execution details:', error);
@@ -65,14 +65,45 @@ const metricsApi = {
   getFlowComparison: async () => {
     try {
       // Make a real API call to the backend
-      const response = await axios.post('/api/metrics/flows/compare', {
-        flowIds: [], // Empty array to get all flows
-        timeRange: {
-          startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 30 days
-          endDate: new Date().toISOString().split('T')[0]
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Last 30 days
+      const endDate = new Date().toISOString().split('T')[0];
+      
+      const response = await axios.get('/api/metrics/flows/comparison', {
+        params: {
+          startDate,
+          endDate
         }
       });
-      return response.data;
+      
+      // Check if the response data is in the expected format
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } 
+      
+      // If the response contains flowComparison property, use that
+      if (response.data && Array.isArray(response.data.flowComparison)) {
+        return response.data.flowComparison;
+      }
+      
+      // If the backend returns a different format, extract the data we need
+      if (response.data && typeof response.data === 'object') {
+        console.warn('Unexpected response format, attempting to extract flow comparison data');
+        
+        // If we have a summary object, this might be the full metrics data
+        // Let's try to use the mock data structure but with real values if available
+        return [
+          { 
+            flowId: 'current-flow', 
+            name: 'Current Flow', 
+            avgExecutionTime: response.data.summary?.avgExecutionTime || 0, 
+            executionCount: response.data.summary?.totalExecutions || 0, 
+            successRate: response.data.summary?.successRate || 0 
+          }
+        ];
+      }
+      
+      console.error('Invalid response format for flow comparison data:', response.data);
+      throw new Error('Invalid response format');
     } catch (error) {
       console.error('Error fetching flow comparison data:', error);
       console.warn('Falling back to mock comparison data due to API error');

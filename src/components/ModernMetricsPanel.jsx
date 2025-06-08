@@ -54,6 +54,8 @@ const ModernMetricsPanel = ({ flowId, filter, onFilterChange, onDateRangeChange,
       setComparisonData(data);
     } catch (err) {
       console.error('Error fetching flow comparison data:', err);
+      // Set comparison data to null to show error state
+      setComparisonData(null);
     } finally {
       setComparisonLoading(false);
     }
