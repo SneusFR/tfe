@@ -514,6 +514,12 @@
   border-color: #9fa8da;
 }
 
+.node-conditionNode {
+  background-color: #f1f8e9; /* Light apple green, similar lightness to endNode red */
+  border-color: #aed581;
+  color: #33691e; /* Dark green text for better contrast on light background */
+}
+
 .node-endNode {
   background-color: #ffebee;
   border-color: #ef9a9a;

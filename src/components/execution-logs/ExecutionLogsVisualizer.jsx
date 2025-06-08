@@ -224,40 +224,106 @@ const ExecutionLogsVisualizer = ({ flowId, taskId: initialTaskId }) => {
       filteredLogs.push(selectedLog);
     });
     
-    // Sort filtered logs by timestamp and ensure logical order
-    filteredLogs.sort((a, b) => {
-      // First sort by timestamp
-      const timeA = new Date(a.timestamp);
-      const timeB = new Date(b.timestamp);
-      
-      if (timeA.getTime() !== timeB.getTime()) {
-        return timeA - timeB;
+  // Sort filtered logs by timestamp and ensure logical order
+  filteredLogs.sort((a, b) => {
+    // First sort by timestamp
+    const timeA = new Date(a.timestamp);
+    const timeB = new Date(b.timestamp);
+    
+    if (timeA.getTime() !== timeB.getTime()) {
+      return timeA - timeB;
+    }
+    
+    // If timestamps are the same, use logical ordering based on node types
+    
+    // End nodes should always be last
+    if (a.nodeType === 'endNode') return 1;
+    if (b.nodeType === 'endNode') return -1;
+    
+    // Condition nodes should always be first (new rule)
+    if (a.nodeType === 'conditionNode') return -1;
+    if (b.nodeType === 'conditionNode') return 1;
+    
+    // Start nodes should always be first
+    if (a.nodeType && a.nodeType.includes('start')) return -1;
+    if (b.nodeType && b.nodeType.includes('start')) return 1;
+    
+    // Email sending nodes should be near the end
+    if (a.nodeType === 'sendingMailNode') return 1;
+    if (b.nodeType === 'sendingMailNode') return -1;
+    
+    // Default to timestamp order
+    return 0;
+  });
+    
+    // Track inputs and outputs to link them together
+    const nodeInputs = new Map();
+    
+    // First pass: collect all outputs
+    const nodeOutputs = new Map();
+    filteredLogs.forEach((log) => {
+      if (log.payload && typeof log.payload === 'string') {
+        try {
+          const parsedPayload = JSON.parse(log.payload);
+          if (parsedPayload.output) {
+            nodeOutputs.set(log.nodeId, parsedPayload.output);
+          }
+        } catch (e) {
+          // Skip if payload can't be parsed
+        }
+      } else if (log.payload && log.payload.output) {
+        nodeOutputs.set(log.nodeId, log.payload.output);
       }
-      
-      // If timestamps are the same, use logical ordering based on node types
-      
-      // End nodes should always be last
-      if (a.nodeType === 'endNode') return 1;
-      if (b.nodeType === 'endNode') return -1;
-      
-      // Start nodes should always be first
-      if (a.nodeType && a.nodeType.includes('start')) return -1;
-      if (b.nodeType && b.nodeType.includes('start')) return 1;
-      
-      // Email sending nodes should be near the end
-      if (a.nodeType === 'sendingMailNode') return 1;
-      if (b.nodeType === 'sendingMailNode') return -1;
-      
-      // Default to timestamp order
-      return 0;
     });
     
-    // Create nodes
-    const newNodes = filteredLogs.map((log, index) => {
+    // Second pass: create nodes with inputs derived from previous node outputs
+    const newNodes = filteredLogs.map((log, index, array) => {
       // Determine label based on node type and message
       let label = log.message;
       if (label.length > 30) {
         label = label.substring(0, 27) + '...';
+      }
+      
+      // Get the previous node's output as this node's input
+      let input = null;
+      if (index > 0) {
+        const prevNodeId = array[index - 1].nodeId;
+        input = nodeOutputs.get(prevNodeId);
+      }
+      
+      // Create a new payload object that includes both input and output
+      let enhancedPayload = log.payload;
+      if (typeof enhancedPayload === 'string') {
+        try {
+          enhancedPayload = JSON.parse(enhancedPayload);
+        } catch (e) {
+          enhancedPayload = { output: enhancedPayload };
+        }
+      } else if (!enhancedPayload) {
+        enhancedPayload = {};
+      }
+      
+      // Add input to the payload if it doesn't already exist
+      if (input && !enhancedPayload.input) {
+        enhancedPayload = {
+          ...enhancedPayload,
+          input: input
+        };
+      }
+      
+      // For AI nodes, ensure the prompt is preserved and displayed prominently
+      if (log.nodeType === 'aiNode' && enhancedPayload.prompt) {
+        // The prompt is already in the payload, no need to modify
+      } else if (log.nodeType === 'aiNode' && typeof log.payload === 'string') {
+        // Try to extract prompt from string payload
+        try {
+          const parsedPayload = JSON.parse(log.payload);
+          if (parsedPayload.prompt) {
+            enhancedPayload.prompt = parsedPayload.prompt;
+          }
+        } catch (e) {
+          // Skip if payload can't be parsed
+        }
       }
       
       return {
@@ -270,7 +336,7 @@ const ExecutionLogsVisualizer = ({ flowId, taskId: initialTaskId }) => {
           level: log.level,
           timestamp: log.timestamp,
           message: log.message,
-          payload: log.payload
+          payload: enhancedPayload
         }
       };
     });
