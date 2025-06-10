@@ -1,7 +1,7 @@
 import { memo, useMemo, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-import NodeFieldSelector from '../components/NodeFieldSelector';
-import { useNodeFields } from '../context/NodeFieldsContext';
+import NodeFieldSelector from '../../components/NodeFieldSelector';
+import { useNodeFields } from '../../context/NodeFieldsContext';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links

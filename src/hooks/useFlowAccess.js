@@ -18,7 +18,7 @@ ROLE_HIERARCHY.forEach((role, index) => {
  * @returns {Object} - { hasAccess, userRole, loading, error }
  */
 export const useFlowAccess = (requiredRole = 'viewer') => {
-  const { currentFlow, setCurrentFlow } = useFlowManager();   // ← ①
+  const { currentFlow } = useFlowManager();   // ← on ne récupère plus setCurrentFlow
   const { user } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,9 +54,11 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
         return;
       }
 
-      /* 0. S'il y a déjà l'info dans le flow, on l'utilise tout de suite */
+      /* 0. S'il y a déjà l'info dans le flow, on l'utilise tout de suite et on s'arrête là */
       if (currentFlow.userRole) {
         setUserRole(currentFlow.userRole);
+        setLoading(false);
+        return;
       }
 
       try {
@@ -84,16 +86,7 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
         // Définir le rôle de l'utilisateur
         console.log('[useFlowAccess] setting userRole', myCollaboration?.role);
         if (myCollaboration) {
-          const role = myCollaboration.role;
-          setUserRole(role);
-
-          /* Injecte le rôle UNE SEULE FOIS
-             – même objet => pas de re‑rendu / pas de boucle */
-          setCurrentFlow(prev => {
-            if (!prev || prev.id !== currentFlow.id) return prev;   // autre flow ?
-            if (prev.userRole === role)          return prev;       // déjà bon
-            return { ...prev, userRole: role };                     // ↵ mise à jour
-          });
+          setUserRole(myCollaboration.role);
         } else {
           setUserRole(null);
         }
@@ -108,7 +101,7 @@ export const useFlowAccess = (requiredRole = 'viewer') => {
     };
 
     fetchUserRole();
-  }, [currentFlow?.id, user, setCurrentFlow]);
+  }, [currentFlow?.id, user]);
 
   return {
     hasAccess: hasAccess(),

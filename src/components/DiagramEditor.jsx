@@ -37,24 +37,24 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import '../styles/DiagramEditor.css';
 
-import ApiNode from '../nodes/ApiNode';
-import ConditionNode from '../nodes/ConditionNode';
-import ConditionalFlowNode from '../nodes/ConditionalFlowNode';
-import SwitchNode from '../nodes/SwitchNode';
-import LogicalOperatorNode from '../nodes/LogicalOperatorNode';
-import SendingMailNode from '../nodes/SendingMailNode';
-import EmailAttachmentNode from '../nodes/EmailAttachmentNode';
-import TextNode from '../nodes/TextNode';
-import IntNode from '../nodes/IntNode';
-import BooleanNode from '../nodes/BooleanNode';
-import TokenNode from '../nodes/TokenNode';
-import Base64Node from '../nodes/Base64Node';
-import OcrNode from '../nodes/OcrNode';
-import ConsoleLogNode from '../nodes/ConsoleLogNode';
-import AINode from '../nodes/AINode';
-import MailBodyNode from '../nodes/MailBodyNode';
-import EndNode from '../nodes/EndNode';
-import SubFlowNode from '../nodes/SubFlowNode';
+import ApiNode from '../nodes/miscnodes/ApiNode.jsx';
+import ConditionNode from '../nodes/conditionnalnodes/ConditionNode.jsx';
+import ConditionalFlowNode from '../nodes/conditionnalnodes/ConditionalFlowNode.jsx';
+import SwitchNode from '../nodes/conditionnalnodes/SwitchNode.jsx';
+import LogicalOperatorNode from '../nodes/conditionnalnodes/LogicalOperatorNode.jsx';
+import SendingMailNode from '../nodes/mailnodes/SendingMailNode.jsx';
+import EmailAttachmentNode from '../nodes/mailnodes/EmailAttachmentNode.jsx';
+import TextNode from '../nodes/inputnodes/TextNode.jsx';
+import IntNode from '../nodes/inputnodes/IntNode.jsx';
+import BooleanNode from '../nodes/inputnodes/BooleanNode.jsx';
+import TokenNode from '../nodes/inputnodes/TokenNode.jsx';
+import Base64Node from '../nodes/inputnodes/Base64Node.jsx';
+import OcrNode from '../nodes/mailnodes/OcrNode.jsx';
+import ConsoleLogNode from '../nodes/miscnodes/ConsoleLogNode.jsx';
+import AINode from '../nodes/ainodes/AINode.jsx';
+import MailBodyNode from '../nodes/mailnodes/MailBodyNode.jsx';
+import EndNode from '../nodes/miscnodes/EndNode.jsx';
+import SubFlowNode from '../nodes/miscnodes/SubFlowNode.jsx';
 import conditionStore from '../store/conditionStore';
 import { 
   detectSubFlows, 
