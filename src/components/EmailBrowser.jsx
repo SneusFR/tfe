@@ -423,13 +423,16 @@ const EmailBrowser = () => {
   
   // Extraire les conditions de la réponse et créer des tâches
   const extractConditionsAndCreateTasks = async (analysisResult, email, flowId) => {
-    console.log("🔍 [CONDITION MATCHING] Checking for matching conditions in analysis result");
+    console.log("🔍 [CONDITION MATCHING] Checking for matching conditions in analysis result (case-insensitive)");
     
     // Récupérer toutes les conditions existantes
     const conditions = conditionStore.getAllConditions();
     
     // Si aucune condition ne correspond, ne pas créer de tâche "email_processing"
-    const matchingConditions = conditions.filter(condition => analysisResult.includes(condition.returnText));
+    // Utiliser toLowerCase() pour rendre la comparaison insensible à la casse
+    const matchingConditions = conditions.filter(condition => 
+      analysisResult.toLowerCase().includes(condition.returnText.toLowerCase())
+    );
     
     if (matchingConditions.length === 0) {
       console.log("⚠️ [CONDITION MATCHING] No matching conditions found, no tasks will be created");
@@ -438,7 +441,7 @@ const EmailBrowser = () => {
     
     // Utiliser Promise.all pour gérer plusieurs tâches en parallèle
     const taskPromises = matchingConditions.map(async (condition) => {
-      console.log(`✅ [CONDITION MATCHED] Found matching condition: "${condition.returnText}"`);
+      console.log(`✅ [CONDITION MATCHED] Found matching condition: "${condition.returnText}" in analysis result (case-insensitive match)`);
       
       // Extraire l'email de l'expéditeur à partir de from_attendee.identifier
       const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';

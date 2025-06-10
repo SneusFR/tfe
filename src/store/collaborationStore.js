@@ -12,7 +12,8 @@ let currentFlowId = null;
 let collaborationsCache = {
   data:        [],   // liste des collaborations déjà récupérées
   lastFetched: null, // timestamp du dernier fetch
-  loading:     false // évite les appels concurrents
+  loading:     false, // évite les appels concurrents
+  promise:     null  // stocke la promesse de la requête en cours
 };
 
 /* ------------------------------------------------------------------ */
@@ -37,6 +38,7 @@ const collaborationStore = {
     currentFlowId = flowId;
     collaborationsCache.data = [];
     collaborationsCache.lastFetched = null;
+    collaborationsCache.promise = null;
   },
 
   /* -------------------- Création ---------------------------------- */
@@ -85,18 +87,34 @@ const collaborationStore = {
     ) {
       return [...collaborationsCache.data];
     }
-    if (collaborationsCache.loading) return [...collaborationsCache.data];
+    
+    // 1. si une requête est déjà en cours, ATTENDEZ-LÀ plutôt que
+    // de renvoyer [] tout de suite
+    if (collaborationsCache.loading) {
+      return collaborationsCache.promise;
+    }
 
     try {
       collaborationsCache.loading = true;
+      
+      // Stocke la promesse pour pouvoir la renvoyer si getByFlow est appelé à nouveau
+      // pendant que la requête est en cours
+      collaborationsCache.promise = api.get(`/api/collaborations/flow/${flowId}`)
+        .then(({ data }) => {
+          collaborationsCache.data = data || [];
+          collaborationsCache.lastFetched = now;
+          return [...collaborationsCache.data];
+        })
+        .finally(() => {
+          collaborationsCache.loading = false;
+          collaborationsCache.promise = null;
+        });
 
-      const { data } = await api.get(`/api/collaborations/flow/${flowId}`);
-
-      collaborationsCache.data = data || [];
-      collaborationsCache.lastFetched = now;
-      return [...collaborationsCache.data];
-    } finally {
+      return collaborationsCache.promise;
+    } catch (error) {
       collaborationsCache.loading = false;
+      collaborationsCache.promise = null;
+      throw error;
     }
   },
 
@@ -124,7 +142,7 @@ const collaborationStore = {
 
   /* ------------------------ Divers -------------------------------- */
   clearCache() {
-    collaborationsCache = { data: [], lastFetched: null, loading: false };
+    collaborationsCache = { data: [], lastFetched: null, loading: false, promise: null };
   }
 };
 

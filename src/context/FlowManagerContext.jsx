@@ -156,9 +156,7 @@ export const FlowManagerProvider = ({ children }) => {
       // Normalize flow to ensure it has an id property
       const flow = { ...apiFlow, id: apiFlow._id || apiFlow.id };
       
-      // Clear task cache and set current flow ID in all stores
-      taskStore.clearCache();
-      taskStore.setCurrentFlowId(flow.id);
+      // on vide / positionne le flow courant dans le store
       collaborationStore.setCurrentFlowId(flow.id);
 
       // 1️⃣ on force un fetch des collaborations (cookie déjà OK)
