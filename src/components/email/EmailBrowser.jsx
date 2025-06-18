@@ -1,29 +1,15 @@
 // EmailBrowser.jsx
 import { useState, useEffect, useContext, useMemo } from 'react';
 import '../../styles/EmailBrowser.css';
-import { mockEmails } from '../../data/mockEmails';
 import conditionStore from '../../store/conditionStore';
 import taskStore from '../../store/taskStore';
-import { getApi } from '../../utils/flowApiHelper';
+import emailStore from '../../store/emailStore';
 import { FlowContext } from '../../context/FlowContext';
 import { useFlowManager } from '../../context/FlowManagerContext';
 import AttachmentViewer from './AttachmentViewer';
 
 // Constantes de configuration de l'API OpenAI
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-
-// Constantes de configuration de l'API Unipile
-const UNIPILE_EMAIL_HEADERS = {
-  'X-API-KEY': import.meta.env.VITE_UNIPILE_EMAIL_API_KEY,
-  accept: 'application/json',
-};
-
-const accountId = import.meta.env.VITE_UNIPILE_EMAIL_ACCOUNT_ID;
-const baseUrl = import.meta.env.VITE_UNIPILE_BASE_URL?.endsWith('/')
-  ? import.meta.env.VITE_UNIPILE_BASE_URL.slice(0, -1)
-  : import.meta.env.VITE_UNIPILE_BASE_URL;
-
-const emailsPerPage = 15;
 
 const EmailBrowser = () => {
   // Récupérer le flow courant depuis les contextes disponibles
@@ -41,278 +27,75 @@ const EmailBrowser = () => {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [expandedEmailId, setExpandedEmailId] = useState(null);
-  const [databaseEmails, setDatabaseEmails] = useState([]);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'analyzed', 'unanalyzed', 'attachments'
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Pour la pagination par curseur
-  // pageCursors[0] correspond à la première page (curseur null)
-  const [pageCursors, setPageCursors] = useState([null]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(true);
-
-  // Formatage de la date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    
-    // Format relative time if less than 24 hours ago
-    const now = new Date();
-    const diffMs = now - date;
-    const diffHours = diffMs / (1000 * 60 * 60);
-    
-    if (diffHours < 24) {
-      if (diffHours < 1) {
-        const diffMinutes = Math.floor(diffMs / (1000 * 60));
-        return `${diffMinutes} min${diffMinutes !== 1 ? 's' : ''} ago`;
-      } else {
-        const hours = Math.floor(diffHours);
-        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-      }
-    } else if (diffHours < 48) {
-      return 'Yesterday';
-    } else {
-      // Format as date
-      return date.toLocaleDateString(undefined, { 
-        day: 'numeric', 
-        month: 'short',
-        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-      });
-    }
-  };
-  
-  // Get sender initials for avatar
-  const getSenderInitials = (sender) => {
-    if (!sender) return '?';
-    
-    const parts = sender.split(' ');
-    if (parts.length === 1) {
-      return parts[0].charAt(0).toUpperCase();
-    } else {
-      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-    }
-  };
-
-  // Fonction pour vérifier quels emails sont déjà dans la base de données
-  const checkEmailsInDatabase = async (emailsList) => {
-    try {
-      const api = getApi();
-      // Récupérer tous les emails de la base de données
-      const response = await api.get('/api/emails');
-      const dbEmails = response.data;
-      
-      // Extraire les IDs des emails de la base de données
-      const dbEmailIds = dbEmails.map(email => email.unipileEmailId || email.emailId);
-      
-      console.log("📋 [DATABASE CHECK] Found emails in database:", dbEmailIds);
-      
-      // Mettre à jour l'état avec les IDs des emails de la base de données
-      setDatabaseEmails(dbEmailIds);
-    } catch (error) {
-      console.error("❌ [DATABASE CHECK] Failed to check emails in database:", error);
-      // En cas d'erreur, on continue avec une liste vide
-      setDatabaseEmails([]);
-    }
-  };
-  
   // Filtrer les emails en fonction de l'onglet actif et de la recherche
   const filteredEmails = useMemo(() => {
-    // D'abord filtrer par recherche si une requête est présente
-    let filtered = emails;
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = emails.filter(email => 
-        (email.subject && email.subject.toLowerCase().includes(query)) ||
-        (email.from_attendee?.display_name && email.from_attendee.display_name.toLowerCase().includes(query)) ||
-        (email.from_attendee?.identifier && email.from_attendee.identifier.toLowerCase().includes(query)) ||
-        (email.body_plain && email.body_plain.toLowerCase().includes(query))
-      );
-    }
-    
-    // Ensuite filtrer par onglet
-    if (activeTab === 'analyzed') {
-      return filtered.filter(email => databaseEmails.includes(email.id));
-    } else if (activeTab === 'unanalyzed') {
-      return filtered.filter(email => !databaseEmails.includes(email.id));
-    }
-    
-    return filtered;
-  }, [emails, activeTab, databaseEmails, searchQuery]);
+    // Utiliser les méthodes du store pour filtrer et rechercher
+    const searchResults = emailStore.searchEmails(searchQuery, emails);
+    return emailStore.filterEmails(activeTab, searchResults);
+  }, [emails, activeTab, searchQuery]);
   
   // Compter les emails par catégorie
   const emailCounts = useMemo(() => {
+    const databaseEmails = emailStore.getDatabaseEmails();
     return {
       all: emails.length,
       analyzed: emails.filter(email => databaseEmails.includes(email.id)).length,
       unanalyzed: emails.filter(email => !databaseEmails.includes(email.id)).length
     };
-  }, [emails, databaseEmails]);
+  }, [emails]);
 
-  // Fonction de récupération des e-mails en utilisant fetch et la pagination par curseur
+  // Fonction de récupération des e-mails en utilisant le store
   const fetchEmails = async () => {
     setLoading(true);
     setError(null);
+    
     try {
-      // Récupère le curseur correspondant à la page actuelle (le premier est null)
-      const currentCursor = pageCursors[currentPage - 1];
-      // Fetching emails for the current page
-
-      // Construction de l'URL avec les paramètres
-      let queryParams = new URLSearchParams({
-        account_id: accountId,
-        limit: emailsPerPage,
-      });
-      if (currentCursor) {
-        queryParams.append("cursor", currentCursor);
+      // Définir le flow courant dans le store si nécessaire
+      if (currentFlow?.id && emailStore.getCurrentFlowId() !== currentFlow.id) {
+        emailStore.setCurrentFlowId(currentFlow.id);
       }
-      const url = `${baseUrl}/emails?${queryParams.toString()}`;
-      // Request URL constructed
-
-      // Appel fetch
-      const response = await fetch(url, {
-        headers: UNIPILE_EMAIL_HEADERS,
-      });
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      // API response received
-
-      // Filtrer les e-mails de type inbox et limiter au nombre par page
-      const items = data.items;
-      const inboxEmails = items.filter((e) => e.role === 'inbox').slice(0, emailsPerPage);
-      setEmails(inboxEmails);
-
-      // Vérifier quels emails sont déjà dans la base de données
-      await checkEmailsInDatabase(inboxEmails);
-
-      // Récupération du curseur pour la page suivante
-      const newCursor = data.cursor;
-      setHasNextPage(!!newCursor);
-
-      // Ajout du nouveau curseur à la liste s'il est présent et s'il n'existe pas déjà
-      if (currentPage === pageCursors.length && newCursor) {
-        setPageCursors([...pageCursors, newCursor]);
-      }
-
+      
+      // Récupérer les emails via le store
+      const fetchedEmails = await emailStore.fetchEmails({ forceRefresh: true });
+      setEmails(fetchedEmails);
       setLoading(false);
-    } catch (apiError) {
-      console.warn("API fetch failed, falling back to mock data:", apiError);
-      // Utiliser les données mock en cas d'erreur
-      const startIndex = (currentPage - 1) * emailsPerPage;
-      const endIndex = startIndex + emailsPerPage;
-      const paginatedEmails = mockEmails.slice(startIndex, endIndex);
-      setEmails(paginatedEmails);
-      
-      // Même avec les données mock, on essaie de vérifier si certains emails sont en base
-      await checkEmailsInDatabase(paginatedEmails);
-      
-      setHasNextPage(false);
+    } catch (error) {
+      console.error("Error fetching emails:", error);
+      setError(error.message);
       setLoading(false);
     }
   };
 
-  // Lancer la récupération à chaque changement de page
+  // Lancer la récupération au chargement du composant et quand le flow change
   useEffect(() => {
+    if (currentFlow?.id) {
+      emailStore.setCurrentFlowId(currentFlow.id);
+    }
     fetchEmails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]);
+  }, [currentFlow]);
 
   // Gestion du bouton "Précédent"
   const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+    if (emailStore.prevPage()) {
+      fetchEmails();
     }
   };
 
   // Gestion du bouton "Suivant"
   const handleNextPage = () => {
-    if (hasNextPage) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  // Fonction pour sauvegarder l'email dans la base de données
-  const saveEmailToDatabase = async (email, flowId) => {
-    try {
-      console.log("💾 [EMAIL SAVE] Saving email to database:", email.id);
-      const api = getApi();
-      
-      // Extraire les informations nécessaires de l'email
-      const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';
-      const senderName = email.from_attendee?.display_name || senderEmail;
-      const recipientEmail = email.to_attendees?.[0]?.identifier || 'unknown@example.com';
-      const recipientName = email.to_attendees?.[0]?.display_name || recipientEmail;
-      
-      // Extraire le sujet
-      const subject = email.subject || 
-                     email.headers?.Subject || 
-                     email.headers?.find(h => h.name?.toLowerCase()==='subject')?.value || 
-                     email.title || 
-                     "(Sans objet)";
-      
-      // Extraire le corps
-      const body = email.body_plain || email.snippet || email.preview || "";
-      
-      // Extraire les pièces jointes
-      const attachments = (email.attachments || []).map(attachment => ({
-        name: attachment.name || 'attachment',
-        mime: attachment.mime || 'application/octet-stream',
-        size: attachment.size || 0,
-        storageKey: attachment.id || attachment.storageKey || null,
-        skipTaskCreation: true // Ajouter ce paramètre pour éviter la création automatique de tâche pour les pièces jointes
-      }));
-      
-      // Préparer les données pour l'API
-      const emailData = {
-        emailId: email.id, // ID Unipile
-        unipileEmailId: email.id, // Doublon pour assurer la compatibilité
-        flow: flowId, // Utiliser le flowId passé en paramètre
-        subject,
-        from: {
-          name: senderName,
-          address: senderEmail
-        },
-        to: [{
-          name: recipientName,
-          address: recipientEmail
-        }],
-        date: email.date || new Date().toISOString(),
-        body,
-        attachments,
-        skipTaskCreation: true // Ajouter ce paramètre pour éviter la création automatique de tâche email_processing
-      };
-      
-      // Appel à l'API pour sauvegarder l'email
-      const response = await api.post('/api/emails', emailData);
-      console.log("✅ [EMAIL SAVE] Email saved successfully:", response.data);
-      
-      // Ajouter l'ID de l'email à la liste des emails en base de données
-      setDatabaseEmails(prev => [...prev, email.id]);
-      
-      return response.data;
-    } catch (error) {
-      console.error("❌ [EMAIL SAVE] Failed to save email:", error);
-      // Si l'erreur est due au fait que l'email existe déjà, on ne considère pas ça comme une erreur
-      if (error.response && error.response.status === 400 && error.response.data.message.includes('existe déjà')) {
-        console.log("ℹ️ [EMAIL SAVE] Email already exists in database");
-        
-        // S'assurer que l'email est marqué comme étant en base de données
-        if (!databaseEmails.includes(email.id)) {
-          setDatabaseEmails(prev => [...prev, email.id]);
-        }
-        
-        return { id: email.id, alreadyExists: true };
-      }
-      throw error;
+    if (emailStore.nextPage()) {
+      fetchEmails();
     }
   };
 
   // Action sur le bouton "Analyze"
   const handleAnalyzeEmail = async (email) => {
     // Vérifier si l'email est déjà en base de données
-    if (databaseEmails.includes(email.id)) {
+    if (emailStore.isEmailInDatabase(email.id)) {
       console.log("⚠️ [EMAIL ANALYSIS] Email already in database, skipping analysis:", email.id);
       return;
     }
@@ -331,9 +114,9 @@ const EmailBrowser = () => {
     setAnalysisProgress(0);
     setAnalysisResult(null);
     
-    // Sauvegarder l'email dans la base de données
+    // Sauvegarder l'email dans la base de données via le store
     try {
-      await saveEmailToDatabase(email, flowId);
+      await emailStore.saveEmailToDatabase(email, flowId);
     } catch (error) {
       console.error("Error saving email to database:", error);
       // On continue l'analyse même si la sauvegarde a échoué
@@ -634,24 +417,24 @@ const EmailBrowser = () => {
               {filteredEmails.map((email) => (
                 <div 
                   key={email.id} 
-                  className={`email-item ${databaseEmails.includes(email.id) ? 'in-database' : ''}`}
+                  className={`email-item ${emailStore.isEmailInDatabase(email.id) ? 'in-database' : ''}`}
                   onClick={() => toggleEmailExpansion(email.id)}
                 >
                   <div className="email-content">
                     <div className="email-subject">
                       {email.subject || "(No subject)"}
                     </div>
-                    <div className="email-details">
+                  <div className="email-details">
                       <span className="email-sender">
                         <span className="email-sender-icon">
-                          {getSenderInitials(email.from_attendee?.display_name)}
+                          {emailStore.getSenderInitials(email.from_attendee?.display_name)}
                         </span>
                         {email.from_attendee?.display_name ||
                           email.from_attendee?.identifier ||
                           "Unknown"}
                       </span>
                       <span className="email-date">
-                        {formatDate(email.date)}
+                        {emailStore.formatDate(email.date)}
                       </span>
                     </div>
                     <div className={`email-preview ${expandedEmailId === email.id ? 'expanded' : ''}`}>
@@ -669,7 +452,7 @@ const EmailBrowser = () => {
                       )}
                     </div>
                   </div>
-                  {databaseEmails.includes(email.id) ? (
+                  {emailStore.isEmailInDatabase(email.id) ? (
                     <div className="analyzed-badge">
                       <span className="analyze-icon">✓</span> Analyzed
                     </div>
@@ -718,17 +501,17 @@ const EmailBrowser = () => {
         <button
           className="pagination-button"
           onClick={handlePrevPage}
-          disabled={currentPage === 1}
+          disabled={emailStore.getCurrentPage() === 1}
         >
           <span>←</span> Previous
         </button>
         <span className="page-info">
-          Page {currentPage} {hasNextPage ? "" : " (End)"}
+          Page {emailStore.getCurrentPage()} {emailStore.hasNextPage() ? "" : " (End)"}
         </span>
         <button
           className="pagination-button"
           onClick={handleNextPage}
-          disabled={!hasNextPage}
+          disabled={!emailStore.hasNextPage()}
         >
           Next <span>→</span>
         </button>
