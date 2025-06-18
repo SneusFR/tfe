@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useMetricsData } from '../hooks/useMetricsData';
-import metricsApi from '../api/metricsApi';
+import metricsApi from '../services/metricsApi';
 import '../styles/MetricsPanel.css';
 
 // Import chart libraries

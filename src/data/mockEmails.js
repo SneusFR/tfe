@@ -2,13 +2,13 @@
 export const mockEmails = [
   {
     id: "email-1",
-    subject: "Project Update - API Diagram Tool",
+    subject: "Demande de rendez-vous",
     from: {
       name: "Jean Dupont",
       address: "jean.dupont@example.com"
     },
     date: new Date(2025, 3, 13, 9, 30).toISOString(),
-    snippet: "Je vous envoie une mise à jour concernant le projet d'outil de diagramme API. Nous avons terminé la phase initiale et..."
+    snippet: "Je me permets de vous contacter afin de solliciter un rendez-vous au sein de votre cabinet, Lexlau, pour discuter d’une situation juridique qui requiert votre expertise. Permettez-moi de me présenter : je suis Monsieur Julien Martin, dirigeant de la société ÉcoFutur SARL, et je traverse actuellement une phase délicate liée à la rédaction d’un contrat de cession de parts sociales.  En effet, après plusieurs mois de négociations avec mon associé, Monsieur Laurent Bernard, nous avons convenu d’un projet de rachat de ses parts. Toutefois, certains points restent en suspens, notamment la clause de non-concurrence, les modalités de paiement échelonné, ainsi que la levée d’option de rachat. Soucieux de sécuriser juridiquement cette opération et d’anticiper d’éventuels contentieux, je souhaiterais bénéficier de votre conseil éclairé pour : Conscient de la complexité de ces questions, je suis prêt à vous transmettre au préalable l’ensemble des documents nécessaires (statuts de la société, projet de contrat, procès-verbaux d’assemblée, etc.) afin que vous puissiez préparer au mieux notre entretien. À cet égard, pourriez-vous, s’il vous plaît, m’indiquer vos disponibilités pour un rendez-vous d’une durée d’environ une heure, idéalement dans la semaine du 30 juin au 4 juillet 2025 ? Je reste naturellement flexible et m’adapterai à vos créneaux horaires."
   },
   {
     id: "email-2",

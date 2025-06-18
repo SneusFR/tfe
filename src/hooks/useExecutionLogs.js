@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   fetchExecutionLogs,
   deleteExecutionLogs
-} from '../api/executionLogs.js';
+} from '../services/executionLogs.js';
 
 /**
  * Custom hook to manage execution logs with filtering and pagination

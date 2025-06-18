@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { fadeIn, staggerContainer } from './animations';
 import { TabButton, ModernDateRangePicker, EmptyState } from './UIComponents';
 import { OverviewTab, ExecutionsTab, NodesTab, ComparisonTab } from './TabComponents';
-import metricsApi from '../../api/metricsApi';
+import metricsApi from '../../services/metricsApi';
 import '../../styles/ModernMetricsPanel.css';
 
 // Material UI Icons

@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import SelectionControl from './diagram-editor/components/SelectionControl';
 import { isEqual } from 'lodash';
-import DeleteButton from './DeleteButton';
+import DeleteButton from './common/DeleteButton';
 import { throttle } from 'lodash';
 import { buildAdjacency, markReachable } from '../utils/graph';
 import { updateApiNodeBindings } from '../utils/apiNodeUtils';

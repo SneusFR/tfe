@@ -6,7 +6,7 @@ import {
   Badge,
   TextField
 } from '@mui/material';
-import ConditionCreator from '../ConditionCreator';
+import ConditionCreator from '../condition/ConditionCreator';
 import ConditionItem from './ConditionItem';
 import { filterConditions } from './utils';
 

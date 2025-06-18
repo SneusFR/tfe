@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import metricsApi from '../api/metricsApi';
+import metricsApi from '../services/metricsApi';
 
 /**
  * Custom hook to fetch and manage metrics data for a flow
