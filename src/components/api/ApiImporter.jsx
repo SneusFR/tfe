@@ -12,7 +12,7 @@ import SendIcon from '@mui/icons-material/Send';
 import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import '../styles/ApiImporter.css';
+import '../../styles/ApiImporter.css';
 
 const ApiImporter = ({ onApiImport }) => {
   const [isLoading, setIsLoading] = useState(false);

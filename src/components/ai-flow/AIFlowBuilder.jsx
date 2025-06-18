@@ -24,9 +24,9 @@ import {
   Lightbulb as TipIcon,
   AutoAwesome as MagicIcon
 } from '@mui/icons-material';
-import { generateFlow } from '../services/aiFlowService';
-import * as aiDiagramInteraction from '../services/aiDiagramInteractionService';
-import '../styles/AIFlowBuilder.css';
+import { generateFlow } from '../../services/aiFlowService';
+import * as aiDiagramInteraction from '../../services/aiDiagramInteractionService';
+import '../../styles/AIFlowBuilder.css';
 
 /**
  * AIFlowBuilder component - Allows users to generate flows using AI

@@ -1,4 +1,4 @@
-import ApiImporter from '../ApiImporter';
+import ApiImporter from '../api/ApiImporter';
 
 const InventoryTab = ({ 
   apiSpec, 

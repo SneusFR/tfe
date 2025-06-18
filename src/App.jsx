@@ -6,15 +6,15 @@ import './App.css';
 // UI & pages
 // ──────────────────────────────────────────────────────────────
 import HomePage from './pages/HomePage';
-import DiagramEditor from './components/DiagramEditor';
-import EmailBrowser from './components/EmailBrowser';
-import FlowLogsPanel from './components/FlowLogsPanel.jsx';
-import LogsPanelWrapper from './components/LogsPanelWrapper.jsx';
-import MetricsPanelWrapper from './components/MetricsPanelWrapper.jsx';
-import CollaboratorsManager from './components/CollaboratorsManager';
-import ModernSidebar from './components/ModernSidebar';
-import FlowModal from './components/FlowModal';
-import FlowVersionSelector from './components/FlowVersionSelector';
+import DiagramEditor from './components/diagram-editor/DiagramEditor';
+import EmailBrowser from './components/email/EmailBrowser';
+import FlowLogsPanel from './components/flow/FlowLogsPanel.jsx';
+import LogsPanelWrapper from './components/execution-logs/LogsPanelWrapper.jsx';
+import MetricsPanelWrapper from './components/metrics/MetricsPanelWrapper.jsx';
+import CollaboratorsManager from './components/collaboration/CollaboratorsManager';
+import ModernSidebar from './components/sidebar/ModernSidebar';
+import FlowModal from './components/flow/FlowModal';
+import FlowVersionSelector from './components/flow/FlowVersionSelector';
 import BackendSettings from './components/settings/BackendSettings';
 import DocumentationPage from './pages/DocumentationPage';
 

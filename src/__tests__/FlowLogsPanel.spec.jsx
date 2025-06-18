@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import FlowLogsPanel from '../components/FlowLogsPanel.jsx';
+import FlowLogsPanel from '../components/flow/FlowLogsPanel.jsx';
 import { ToastProvider } from '../context/ToastContext';
 import { FlowProvider } from '../context/FlowContext';
 import { FlowManagerProvider } from '../context/FlowManagerContext';
