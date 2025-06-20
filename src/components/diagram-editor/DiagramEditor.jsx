@@ -7,6 +7,7 @@ import React, {
   memo
 } from 'react';
 import SelectionControl from './components/SelectionControl';
+import DeleteConnectionModal from './components/DeleteConnectionModal';
 import { isEqual } from 'lodash';
 import DeleteButton from '../common/DeleteButton';
 import { throttle, debounce } from 'lodash';
@@ -125,6 +126,8 @@ const DiagramEditor = ({
   const [severity, setSeverity] = useState('success');
   const [open, setOpen] = useState(false);
   const [aiFlowBuilderOpen, setAiFlowBuilderOpen] = useState(false);
+  const [deleteConnectionModalOpen, setDeleteConnectionModalOpen] = useState(false);
+  const [edgeToDelete, setEdgeToDelete] = useState(null);
   
   // Add class to body when diagram editor is active
   useEffect(() => {
@@ -794,25 +797,40 @@ const DiagramEditor = ({
         return;
       }
       
-      if (window.confirm('Do you want to delete this connection?')) {
-        const updatedEdges = edges.filter((e) => e.id !== edge.id);
-        setEdges(updatedEdges);
-        if (onEdgesChange) onEdgesChange(updatedEdges);
-        if (onEdgeDelete) onEdgeDelete(edge, updatedEdges);
-        
-        // Check if the deleted edge was connected to an API node body field
-        if (edge.targetHandle?.startsWith('body-')) {
-          // Update the API node bindings
-          const updatedNodes = updateApiNodeBindings(nodes, updatedEdges, edge.target);
-          setNodes(updatedNodes);
-          if (onNodesChange) onNodesChange(updatedNodes);
-        }
-        
-        // No automatic saving - changes are stored in local state only
-      }
+      // Open the custom confirmation modal instead of using window.confirm
+      setEdgeToDelete(edge);
+      setDeleteConnectionModalOpen(true);
     },
-    [edges, nodes, setEdges, setNodes, onEdgesChange, onEdgeDelete, onNodesChange, canEdit]
+    [canEdit]
   );
+  
+  // Handle the confirmation from the modal
+  const handleDeleteConfirm = useCallback(() => {
+    if (!edgeToDelete) return;
+    
+    const updatedEdges = edges.filter((e) => e.id !== edgeToDelete.id);
+    setEdges(updatedEdges);
+    if (onEdgesChange) onEdgesChange(updatedEdges);
+    if (onEdgeDelete) onEdgeDelete(edgeToDelete, updatedEdges);
+    
+    // Check if the deleted edge was connected to an API node body field
+    if (edgeToDelete.targetHandle?.startsWith('body-')) {
+      // Update the API node bindings
+      const updatedNodes = updateApiNodeBindings(nodes, updatedEdges, edgeToDelete.target);
+      setNodes(updatedNodes);
+      if (onNodesChange) onNodesChange(updatedNodes);
+    }
+    
+    // Close the modal and reset the edge to delete
+    setDeleteConnectionModalOpen(false);
+    setEdgeToDelete(null);
+  }, [edgeToDelete, edges, nodes, setEdges, setNodes, onEdgesChange, onEdgeDelete, onNodesChange]);
+  
+  // Handle the cancellation from the modal
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteConnectionModalOpen(false);
+    setEdgeToDelete(null);
+  }, []);
   
   // Handle node click to show delete button
   const handleNodeClick = useCallback(
@@ -1939,6 +1957,13 @@ const DiagramEditor = ({
             setOpen(true);
           }
         }}
+      />
+      
+      {/* Custom Delete Connection Modal */}
+      <DeleteConnectionModal 
+        isOpen={deleteConnectionModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );
