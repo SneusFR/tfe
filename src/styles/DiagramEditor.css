@@ -190,10 +190,8 @@
   cursor: crosshair !important;
 }
 
-/* Disable animations during selection mode for better performance */
-.react-flow.selection-mode .connected-node::before,
-.react-flow.selection-mode .connected-node::after,
-.react-flow.selection-mode .react-flow__edge.connected-edge path {
+/* Disable animations during selection mode for better performance - updated */
+.react-flow.selection-mode .react-flow__edge path {
   animation: none !important;
 }
 
@@ -220,8 +218,8 @@
   background-color: #f5f5f5;
 }
 
-/* Animation for connected execution links */
-@keyframes flowPulse {
+/* Animation for connected execution links - disabled as per user request */
+/* @keyframes flowPulse {
   0% {
     stroke-opacity: 0.7;
     stroke-width: 2.5;
@@ -234,10 +232,10 @@
     stroke-opacity: 0.7;
     stroke-width: 2.5;
   }
-}
+} */
 
-/* Style for nodes connected to a starting node */
-.connected-node {
+/* Style for nodes connected to a starting node - disabled as per user request */
+/* .connected-node {
   box-shadow: 0 0 0 2px #4CAF50, 0 4px 10px rgba(0, 0, 0, 0.2) !important;
   transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
@@ -245,7 +243,7 @@
 .connected-node:hover {
   box-shadow: 0 0 0 3px #4CAF50, 0 6px 15px rgba(0, 0, 0, 0.25) !important;
   transform: translateY(-2px);
-}
+} */
 
 /* Connection animation effect */
 .react-flow__edge.connecting-edge path {
@@ -294,8 +292,8 @@
   }
 }
 
-/* Glow effect for connected nodes */
-.connected-node::before {
+/* Glow effect and connection indicator dot - disabled as per user request */
+/* .connected-node::before {
   content: '';
   position: absolute;
   top: -3px;
@@ -324,7 +322,6 @@
   }
 }
 
-/* Connection indicator dot */
 .connected-node::after {
   content: '';
   position: absolute;
@@ -340,10 +337,9 @@
   pointer-events: none;
 }
 
-/* Disable animations during dragging for better performance */
 .react-flow__node.dragging .connected-node::before,
 .react-flow__node.dragging .connected-node::after {
-  display: none;          /* no glow during drag */
+  display: none;
 }
 
 @keyframes indicatorPulse {
@@ -359,7 +355,7 @@
     transform: scale(1);
     box-shadow: 0 0 5px rgba(76, 175, 80, 0.8);
   }
-}
+} */
 
 /* Fix for the numbered buttons (1, 2, 3) appearing on all tabs */
 /* These buttons should only be visible in the Diagram Editor tab */

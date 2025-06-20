@@ -3,12 +3,13 @@ import React, {
   useEffect,
   useRef,
   useState,
-  useMemo
+  useMemo,
+  memo
 } from 'react';
 import SelectionControl from './components/SelectionControl';
 import { isEqual } from 'lodash';
 import DeleteButton from '../common/DeleteButton';
-import { throttle } from 'lodash';
+import { throttle, debounce } from 'lodash';
 import { buildAdjacency, markReachable } from '../../utils/graph';
 import { updateApiNodeBindings } from '../../utils/apiNodeUtils';
 import FlowMenuButton from '../flow/FlowMenuButton';
@@ -69,23 +70,17 @@ import {
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
 const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 const EXECUTION_LINK_STYLE = {
-  strokeWidth: 2.5,
-  stroke: EXECUTION_LINK_COLOR,
+  strokeWidth: 3,
+  stroke: '#4CAF50', // Always green for execution links
   strokeDasharray: '0',
-  opacity: 0.9,
+  opacity: 1,
 };
 const DATA_LINK_STYLE = {
   strokeWidth: 2,
   stroke: DATA_LINK_COLOR,
   opacity: 0.8,
 };
-const CONNECTED_EXECUTION_LINK_STYLE = {
-  ...EXECUTION_LINK_STYLE,
-  stroke: '#4CAF50', // Green for connected execution links
-  strokeWidth: 3,
-  opacity: 1,
-  animation: 'flowPulse 2s infinite',
-};
+// No longer need separate style for connected links
 
 // Déclaration des types de nœuds et d'arêtes en dehors du composant
 const nodeTypes = {
@@ -185,13 +180,22 @@ const DiagramEditor = ({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedNodesForSelection, setSelectedNodesForSelection] = useState([]);
   
-  // Optimization: Throttle selection changes to improve performance
+  // Optimization: Debounce selection changes to improve performance
   const throttledSelectionChange = useRef(
-    throttle((params) => {
+    debounce((params) => {
       if (selectionMode) {
-        setSelectedNodesForSelection(params.nodes || []);
+        // Only update if the selection has actually changed
+        setSelectedNodesForSelection(prevSelected => {
+          const newSelection = params.nodes || [];
+          // Skip update if the arrays are the same length and have the same IDs
+          if (prevSelected.length === newSelection.length && 
+              prevSelected.every(node => newSelection.some(n => n.id === node.id))) {
+            return prevSelected;
+          }
+          return newSelection;
+        });
       }
-    }, 100) // Throttle to 100ms
+    }, 200) // Increased debounce time for better performance
   ).current;
   
   // Store node callbacks in a ref to prevent recreation on each render
@@ -707,21 +711,47 @@ const DiagramEditor = ({
     }
   }, [currentFlow, setNodes, setEdges, onNodesChange, onEdgesChange]);
 
-  // Throttled version of node changes to improve performance during dragging
+  // Optimized version of node changes to improve performance during dragging
   const throttledApply = useRef(
     throttle((changes) => {
-      setNodes(prev => {
-        // Only apply changes if they're actually different
-        const next = applyNodeChanges(changes, prev);
-        nodesRef.current = next;            // garde la référence à jour
-        return next;
-      });
-
-      // on ne notifie le parent qu'à la fin du drag
-      if (changes.some(c => c.type === 'position' && c.dragging === false)) {
+      // Skip processing if there are too many changes at once (performance optimization)
+      if (changes.length > 100) {
+        console.log('Skipping large batch of changes for performance');
+        return;
+      }
+      
+      // Batch position changes together
+      const positionChanges = changes.filter(c => c.type === 'position');
+      const otherChanges = changes.filter(c => c.type !== 'position');
+      
+      // Process position changes more aggressively
+      if (positionChanges.length > 0) {
+        // Check if we're still dragging
+        const isDragging = positionChanges.some(c => c.dragging === true);
+        
+        setNodes(prev => {
+          // Apply position changes
+          const next = applyNodeChanges(positionChanges, prev);
+          nodesRef.current = next;
+          return next;
+        });
+        
+        // Only notify parent when dragging ends
+        if (!isDragging) {
+          onNodesChange?.(nodesRef.current);
+        }
+      }
+      
+      // Process other changes normally
+      if (otherChanges.length > 0) {
+        setNodes(prev => {
+          const next = applyNodeChanges(otherChanges, prev);
+          nodesRef.current = next;
+          return next;
+        });
         onNodesChange?.(nodesRef.current);
       }
-    }, 16)                                  // ~60 fps
+    }, 20)                                  // ~50 fps - slightly reduced for better performance
   ).current;
 
   const handleEdgesChange = useCallback(
@@ -872,28 +902,23 @@ const DiagramEditor = ({
       
       const linkColor = isExecutionLink ? EXECUTION_LINK_COLOR : DATA_LINK_COLOR;
       
-      // Check if the source node is connected to a starting node
-      const isSourceConnected = connectedIdsRef.current.has(params.source);
-      
       const newEdge = {
         id: edgeId,
         source: params.source,
         target: params.target,
         sourceHandle,
         targetHandle,
-        style: isExecutionLink && isSourceConnected ? CONNECTED_EXECUTION_LINK_STYLE : 
-               isExecutionLink ? EXECUTION_LINK_STYLE : DATA_LINK_STYLE,
-        animated: isExecutionLink && isSourceConnected, // Only animate connected execution links
+        style: isExecutionLink ? EXECUTION_LINK_STYLE : DATA_LINK_STYLE,
+        animated: false,
         type: isExecutionLink ? 'smoothstep' : 'default', // Smoother curves for execution links
         data: {
           isExecutionLink: isExecutionLink,
-          isConnected: isSourceConnected,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: isExecutionLink ? 15 : 12,
           height: isExecutionLink ? 15 : 12,
-          color: isExecutionLink && isSourceConnected ? '#4CAF50' : linkColor,
+          color: isExecutionLink ? '#4CAF50' : linkColor,
         },
         labelStyle: { fill: '#333', fontWeight: 500, fontSize: 10 },
         labelBgStyle: { fill: '#fff', fillOpacity: 0.8 },
@@ -909,7 +934,7 @@ const DiagramEditor = ({
           // Remove the new-connection class after animation completes
           setEdges(eds => 
             eds.map(e => 
-              e.id === edgeId ? { ...e, className: isSourceConnected ? 'connected-edge' : '' } : e
+              e.id === edgeId ? { ...e, className: '' } : e
             )
           );
           
@@ -928,28 +953,8 @@ const DiagramEditor = ({
         setNodes(updatedNodes);
         if (onNodesChange) onNodesChange(updatedNodes);
       }
-      
-      // No automatic saving - changes are stored in local state only
-      
-      // If this is an execution link and the source is connected to a starting node,
-      // check if the target node is now connected and update it
-      if (isExecutionLink && isSourceConnected) {
-        setTimeout(() => {
-          // Manually update connected nodes after connection without triggering a full re-render
-          const newAdjacency = buildAdjacency(updatedEdges);
-          adjacencyRef.current = newAdjacency;
-          
-          const newConnectedIds = markReachable(startingIds, newAdjacency);
-          connectedIdsRef.current = newConnectedIds;
-          
-          // Only update state if the connected nodes actually changed
-          if (!connectedIdsRef.current.has(params.target) !== !connectedIds.has(params.target)) {
-            setConnectedIds(newConnectedIds);
-          }
-        }, 100);
-      }
     },
-    [edges, nodes, setEdges, setNodes, onConnect, onNodesChange, connectedIds, canEdit]
+    [edges, nodes, setEdges, setNodes, onConnect, onNodesChange, canEdit]
   );
 
   const onInit = useCallback(
@@ -1571,112 +1576,108 @@ const DiagramEditor = ({
   // Cache for previous node data to avoid unnecessary updates
   const prevNodesDataRef = useRef(new Map());
   
-  // Memoize nodes with connection status to avoid unnecessary re-renders
+  // Simplified memoization of nodes - no longer checking for connected nodes
   const memoNodes = useMemo(() => {
-    // Create a stable reference to the connected nodes set
-    const connectedNodesSet = connectedIdsRef.current;
-    const result = nodes.map(n => {
-      const connected = connectedNodesSet.has(n.id);
-      const isSelected = n.id === selectedNodeId;
-      const className = `${connected ? 'connected-node' : ''} ${isSelected ? 'selected-node' : ''}`;
-      
-      // Check if we need to update this node's data
-      const prevNodeData = prevNodesDataRef.current.get(n.id);
-      const prevConnected = prevNodeData?.isConnectedToStartingNode;
-      const prevSelected = prevNodeData?.isSelected;
-      
-      // Only create a new data object if something has changed
-      if (!prevNodeData || 
-          prevConnected !== connected || 
-          prevSelected !== isSelected) {
-        
-        // Create new data object only when needed
-        const newData = {
-          ...n.data,
-          isConnectedToStartingNode: connected,
-          isSelected,
-          // Use a stable reference to the delete button component
-          deleteButton: isSelected ? <DeleteButton id={n.id} onDelete={handleNodeDelete} /> : null
-        };
-        
-        // Store the current state for future comparison
-        prevNodesDataRef.current.set(n.id, {
-          isConnectedToStartingNode: connected,
-          isSelected
-        });
-        
-        return {
-          ...n,
-          className,
-          data: newData
-        };
-      }
-      
-      // If nothing changed, return the node with minimal updates
-      return {
-        ...n,
-        className,
-        data: {
-          ...n.data,
-          deleteButton: isSelected ? <DeleteButton id={n.id} onDelete={handleNodeDelete} /> : null
-        }
-      };
-    });
+    // Process nodes in batches for better performance with large node counts
+    const result = [];
+    const batchSize = 100;
     
-    // Clean up any nodes that no longer exist
-    const currentNodeIds = new Set(nodes.map(n => n.id));
-    for (const nodeId of prevNodesDataRef.current.keys()) {
-      if (!currentNodeIds.has(nodeId)) {
-        prevNodesDataRef.current.delete(nodeId);
+    for (let i = 0; i < nodes.length; i += batchSize) {
+      const batch = nodes.slice(i, i + batchSize);
+      
+      batch.forEach(n => {
+        const isSelected = n.id === selectedNodeId;
+        const className = isSelected ? 'selected-node' : '';
+        
+        // Check if we need to update this node's data
+        const prevNodeData = prevNodesDataRef.current.get(n.id);
+        const prevSelected = prevNodeData?.isSelected;
+        const prevPosition = prevNodeData?.position;
+        const positionChanged = !prevPosition || 
+                               prevPosition.x !== n.position.x || 
+                               prevPosition.y !== n.position.y;
+        
+        // Only create a new data object if something has changed
+        if (!prevNodeData || 
+            prevSelected !== isSelected ||
+            positionChanged) {
+          
+          // Create new data object only when needed
+          const newData = {
+            ...n.data,
+            isSelected,
+            // Use a stable reference to the delete button component
+            deleteButton: isSelected ? <DeleteButton id={n.id} onDelete={handleNodeDelete} /> : null
+          };
+          
+          // Store the current state for future comparison
+          prevNodesDataRef.current.set(n.id, {
+            isSelected,
+            position: { ...n.position }
+          });
+          
+          result.push({
+            ...n,
+            className,
+            data: newData
+          });
+        } else {
+          // If nothing changed, return the node with minimal updates
+          result.push({
+            ...n,
+            className,
+            data: {
+              ...n.data,
+              deleteButton: isSelected ? <DeleteButton id={n.id} onDelete={handleNodeDelete} /> : null
+            }
+          });
+        }
+      });
+    }
+    
+    // Clean up any nodes that no longer exist (only every 10 renders to save performance)
+    if (Math.random() < 0.1) { // 10% chance to run cleanup on each render
+      const currentNodeIds = new Set(nodes.map(n => n.id));
+      for (const nodeId of prevNodesDataRef.current.keys()) {
+        if (!currentNodeIds.has(nodeId)) {
+          prevNodesDataRef.current.delete(nodeId);
+        }
       }
     }
     
     return result;
-  }, [nodes, selectedNodeId, DeleteButton]); // Removed connectedIds from dependencies
+  }, [nodes, selectedNodeId, handleNodeDelete]); // Optimized dependencies
 
   // Cache for previous edge data to avoid unnecessary updates
   const prevEdgesDataRef = useRef(new Map());
   
-  // Memoize edges with connection styling
+  // Simplified memoization of edges - no longer checking for connected nodes
   const computedEdges = useMemo(() => {
-    // Create a stable reference to the connected nodes set
-    const connectedNodesSet = connectedIdsRef.current;
+    // Process edges in batches for better performance with large edge counts
+    const result = [];
+    const batchSize = 200; // Larger batch size for edges since they're simpler objects
     
-    const result = edges.map(e => {
-      if (e.data?.isExecutionLink) {
-        const connected =
-          connectedNodesSet.has(e.source) && connectedNodesSet.has(e.target);
-        
-        // Check if we need to update this edge
-        const prevEdgeData = prevEdgesDataRef.current.get(e.id);
-        const prevConnected = prevEdgeData?.connected;
-        
-        // Only create a new edge object if the connection status has changed
-        if (!prevEdgeData || prevConnected !== connected) {
-          // Store the current state for future comparison
-          prevEdgesDataRef.current.set(e.id, { connected });
-          
-          return {
+    for (let i = 0; i < edges.length; i += batchSize) {
+      const batch = edges.slice(i, i + batchSize);
+      
+      batch.forEach(e => {
+        if (e.data?.isExecutionLink) {
+          // All execution links use the same style now
+          result.push({
             ...e,
-            style: connected ? CONNECTED_EXECUTION_LINK_STYLE : EXECUTION_LINK_STYLE,
-            animated: connected,
-            className: connected ? 'connected-edge' : ''
-          };
+            style: EXECUTION_LINK_STYLE,
+            animated: false,
+            className: ''
+          });
+        } else {
+          // Non-execution links don't need special processing
+          result.push(e);
         }
-      }
-      return e;
-    });
-    
-    // Clean up any edges that no longer exist
-    const currentEdgeIds = new Set(edges.map(e => e.id));
-    for (const edgeId of prevEdgesDataRef.current.keys()) {
-      if (!currentEdgeIds.has(edgeId)) {
-        prevEdgesDataRef.current.delete(edgeId);
-      }
+      });
     }
     
     return result;
-  }, [edges]); // Removed connectedIds from dependencies
+  }, [edges]);
 
   return (
     <div
@@ -1759,6 +1760,10 @@ const DiagramEditor = ({
           maxZoom={4}
           fitView
           fitViewOptions={{ padding: 0.2 }}
+          deleteKeyCode={['Backspace', 'Delete']} // Support both keys for deletion
+          multiSelectionKeyCode={['Control', 'Meta']} // Support both Ctrl and Cmd for multi-selection
+          snapToGrid={nodes.length > 100} // Enable snap to grid for large diagrams to improve performance
+          snapGrid={[15, 15]}
           style={{ background: '#f5f5f5' }}
           edgeUpdaterRadius={10} // Increase the edge updater radius for easier edge manipulation
           edgesFocusable={true} // Make edges focusable
@@ -1782,8 +1787,10 @@ const DiagramEditor = ({
           }}
         >
           <Controls />
-          {nodes.length < 80 && <MiniMap />}
-          <Background variant="dots" gap={12} size={1} />
+          {/* Only show MiniMap for smaller diagrams to improve performance */}
+          {nodes.length < 50 && <MiniMap nodeStrokeWidth={1} nodeColor={n => n.className?.includes('connected-node') ? '#4CAF50' : '#888'} />}
+          {/* Use larger gap for background dots when there are many nodes to improve performance */}
+          <Background variant="dots" gap={nodes.length > 200 ? 20 : 12} size={1} />
           <Panel position="top-right">
             <div className="diagram-info">
               <div className="diagram-header">
@@ -1937,4 +1944,17 @@ const DiagramEditor = ({
   );
 };
 
-export default DiagramEditor;
+// Create a memoized version of the DiagramEditor component with custom equality check
+export default memo(DiagramEditor, (prevProps, nextProps) => {
+  // Only re-render if the nodes or edges arrays have actually changed
+  const nodesEqual = prevProps.nodes === nextProps.nodes || 
+    (prevProps.nodes?.length === nextProps.nodes?.length && 
+     JSON.stringify(prevProps.nodes) === JSON.stringify(nextProps.nodes));
+  
+  const edgesEqual = prevProps.edges === nextProps.edges || 
+    (prevProps.edges?.length === nextProps.edges?.length && 
+     JSON.stringify(prevProps.edges) === JSON.stringify(nextProps.edges));
+  
+  // Return true if both nodes and edges are equal (meaning no re-render needed)
+  return nodesEqual && edgesEqual;
+});

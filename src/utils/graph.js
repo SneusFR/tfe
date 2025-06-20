@@ -1,27 +1,8 @@
-export const buildAdjacency = (edges) => {
-  const adj = new Map();
-  edges.forEach(e => {
-    if (e.data?.isExecutionLink &&
-        e.sourceHandle === 'execution' &&
-        e.targetHandle === 'execution') {
-      (adj.get(e.source) ?? adj.set(e.source, new Set()).get(e.source))
-        .add(e.target);
-    }
-  });
-  return adj;
+// Simplified version that doesn't perform reachability calculations
+export const buildAdjacency = () => {
+  return new Map();
 };
 
-export const markReachable = (starts, adj) => {
-  const seen = new Set(starts);
-  const stack = [...starts];
-  while (stack.length) {
-    const n = stack.pop();
-    adj.get(n)?.forEach(next => {
-      if (!seen.has(next)) {
-        seen.add(next);
-        stack.push(next);
-      }
-    });
-  }
-  return seen;
+export const markReachable = () => {
+  return new Set();
 };
