@@ -1,5 +1,24 @@
 /* Styles for the diagram editor */
 
+/* Hardware acceleration and performance optimizations */
+.hardware-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.react-flow__node {
+  will-change: transform;
+  transform: translateZ(0);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.react-flow__edge {
+  will-change: stroke;
+  transition: stroke 0.3s ease;
+}
+
 /* Diagram info panel styles */
 .diagram-info {
   background-color: white;
@@ -394,4 +413,31 @@ div[class*="MuiButtonBase"][aria-label="3"],
 [aria-label="2"],
 [aria-label="3"] {
   z-index: 5 !important;
+}
+
+/* Performance optimizations for large diagrams */
+.react-flow__renderer {
+  contain: strict;
+}
+
+/* Optimize rendering for large diagrams */
+@media (min-width: 1200px) {
+  .react-flow__renderer {
+    contain: layout style paint;
+  }
+}
+
+/* Reduce animation complexity when many nodes are present */
+@media (max-width: 1200px) {
+  .react-flow__edge.new-connection path {
+    animation: none;
+    stroke: #4CAF50;
+    stroke-width: 3;
+  }
+  
+  .react-flow__handle:hover {
+    width: 12px;
+    height: 12px;
+    transition: none;
+  }
 }
