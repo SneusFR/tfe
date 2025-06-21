@@ -238,9 +238,15 @@ const emailStore = {
   /* -------------------- Vérification en base de données ----------- */
   async checkEmailsInDatabase(emailsList) {
     try {
-      const flowApi = getFlowApiFor();
-      // Récupérer tous les emails de la base de données
-      const response = await flowApi.get('/api/emails');
+      // Utiliser l'API générique au lieu de l'API spécifique au flow
+      const api = getApi();
+      const flowId = currentFlowId;
+      
+      // Récupérer tous les emails de la base de données pour ce flow
+      const response = flowId 
+        ? await api.get(`/api/emails/flow/${flowId}`)
+        : await api.get('/api/emails');
+        
       const dbEmails = response.data;
       
       // Extraire les IDs des emails de la base de données
@@ -273,7 +279,8 @@ const emailStore = {
   async saveEmailToDatabase(email, flowId) {
     try {
       console.log("💾 [EMAIL SAVE] Saving email to database:", email.id);
-      const flowApi = getFlowApiFor();
+      // Utiliser l'API générique au lieu de l'API spécifique au flow
+      const api = getApi();
       
       // Extraire les informations nécessaires de l'email
       const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';
@@ -321,7 +328,7 @@ const emailStore = {
       };
       
       // Appel à l'API pour sauvegarder l'email
-      const response = await flowApi.post('/api/emails', emailData);
+      const response = await api.post('/api/emails', emailData);
       console.log("✅ [EMAIL SAVE] Email saved successfully:", response.data);
       
       // Ajouter l'ID de l'email à la liste des emails en base de données
@@ -353,8 +360,9 @@ const emailStore = {
     
     // Sinon, essayer de récupérer depuis l'API
     try {
-      const flowApi = getFlowApiFor();
-      const response = await flowApi.get(`/api/emails/${id}`);
+      // Utiliser l'API générique au lieu de l'API spécifique au flow
+      const api = getApi();
+      const response = await api.get(`/api/emails/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching email ${id}:`, error);
