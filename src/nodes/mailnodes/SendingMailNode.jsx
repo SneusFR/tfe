@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
+import DeleteButton from '../../components/common/DeleteButton';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
@@ -121,8 +122,8 @@ const SendingMailNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Execution flow handles (triangles) - better integrated with the node */}
       <Handle

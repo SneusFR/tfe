@@ -1,5 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback, useMemo, createRef } from 'react';
 import { Handle, Position } from 'reactflow';
+import DeleteButton from '../../components/common/DeleteButton';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
@@ -208,8 +209,8 @@ const ConditionalFlowNode = ({ data, id }) => {
       className="conditional-flow-node"
       style={nodeStyle}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Connection indicator */}
       {connectionIndicator}

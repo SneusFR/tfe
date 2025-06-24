@@ -1,10 +1,11 @@
 import { memo, useMemo } from 'react';
 import { Handle, Position } from 'reactflow';
+import DeleteButton from '../../components/common/DeleteButton';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
 
-const EndNode = ({ data, id }) => {
+const EndNode = ({ data = {}, id }) => {
   // Extract data with defaults
   const {
     isConnectedToStartingNode,
@@ -57,8 +58,8 @@ const EndNode = ({ data, id }) => {
       className="end-node" 
       style={nodeStyle}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Connection indicator */}
       {connectionIndicator}

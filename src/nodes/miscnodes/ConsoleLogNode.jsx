@@ -1,11 +1,12 @@
 import { memo, useState, useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
+import DeleteButton from '../../components/common/DeleteButton';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
 const DATA_LINK_COLOR = '#3498db';    // Blue for data links
 
-const ConsoleLogNode = ({ data, id }) => {
+const ConsoleLogNode = ({ data = {}, id }) => {
   // Define attribute colors for handles
   const attributeColor = '#FF5722'; // Orange for debug nodes
   
@@ -25,8 +26,8 @@ const ConsoleLogNode = ({ data, id }) => {
         position: 'relative'
       }}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Node header */}
       <div className="console-log-node-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>

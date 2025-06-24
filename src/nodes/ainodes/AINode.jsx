@@ -1,5 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
+import DeleteButton from '../../components/common/DeleteButton';
 
 // Connection colors
 const EXECUTION_LINK_COLOR = '#555'; // Gray for execution links
@@ -103,8 +104,8 @@ const AINode = ({ data, id }) => {
         transition: 'box-shadow 0.3s ease, transform 0.2s ease'
       }}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Connection indicator */}
       {connectionIndicator}

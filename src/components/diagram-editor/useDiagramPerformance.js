@@ -113,72 +113,7 @@ export function useDiagramPerformance(
   // Cache for previous node data to avoid unnecessary updates
   const prevNodesDataRef = useRef(new Map());
   
-  // Function to create memoized nodes (moved to component)
-  const createMemoNodes = useCallback((nodes, selectedNodeId, handleNodeDelete) => {
-    // Skip processing if there are no nodes
-    if (nodes.length === 0) return [];
-    
-    // Use a Map for faster lookups during processing
-    const nodeMap = new Map();
-    const result = new Array(nodes.length);
-    
-    // First pass: collect all node IDs that need updates
-    const nodesToUpdate = new Set();
-    
-    // Process nodes in a single pass for better performance
-    for (let i = 0; i < nodes.length; i++) {
-      const n = nodes[i];
-      nodeMap.set(n.id, i); // Store index for faster lookup
-      
-      const isSelected = n.id === selectedNodeId;
-      
-      // Check if we need to update this node's data
-      const prevNodeData = prevNodesDataRef.current.get(n.id);
-      const prevSelected = prevNodeData?.isSelected;
-      const prevPosition = prevNodeData?.position;
-      
-      // Determine if position changed - only check if we have previous data
-      const positionChanged = !prevPosition || 
-                             prevPosition.x !== n.position.x || 
-                             prevPosition.y !== n.position.y;
-      
-      // Mark for update if needed
-      if (!prevNodeData || prevSelected !== isSelected || positionChanged) {
-        nodesToUpdate.add(n.id);
-        
-        // Update stored state for future comparison
-        prevNodesDataRef.current.set(n.id, {
-          isSelected,
-          position: { x: n.position.x, y: n.position.y }
-        });
-      }
-      
-      // Prepare the basic node structure
-      const className = isSelected ? 'selected-node' : '';
-      
-      // Create the node with minimal changes
-      result[i] = {
-        ...n,
-        className,
-        data: {
-          ...n.data,
-          isSelected,
-          deleteButton: isSelected ? { id: n.id, onDelete: handleNodeDelete } : null
-        }
-      };
-    }
-    
-    // Clean up any nodes that no longer exist (only every 20 renders to save performance)
-    if (Math.random() < 0.05) { // 5% chance to run cleanup on each render
-      for (const nodeId of prevNodesDataRef.current.keys()) {
-        if (!nodeMap.has(nodeId)) {
-          prevNodesDataRef.current.delete(nodeId);
-        }
-      }
-    }
-    
-    return result;
-  }, []);
+  // We no longer need the createMemoNodes function as we're handling node selection in DiagramEditor.jsx
 
   // Cache for previous edge data to avoid unnecessary updates
   const prevEdgesDataRef = useRef(new Map());
@@ -239,7 +174,6 @@ export function useDiagramPerformance(
     nodesRef,
     throttledApply,
     throttledSelectionChange,
-    createMemoNodes,
     computedEdges,
     setAnimatingEdge,
     animatingEdgeId,

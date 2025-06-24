@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { Handle, Position } from 'reactflow';
 import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw } from 'draft-js';
 import 'draft-js/dist/Draft.css';
+import DeleteButton from '../../components/common/DeleteButton';
 
 // Material UI icons for formatting toolbar
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -237,8 +238,8 @@ const MailBodyNode = ({ data, id }) => {
       className="mail-body-node"
       style={nodeStyle}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Connection indicator */}
       {data.connectionIndicator}

@@ -2,9 +2,12 @@ import React, { memo } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
 const DeleteButton = memo(({ id, onDelete }) => {
+  // Don't render if onDelete is not provided
+  if (!onDelete) return null;
+  
   return (
     <div 
-      className="node-delete-button"
+      className="delete-btn"
       onClick={(e) => {
         e.stopPropagation();
         onDelete(id);

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Custom hook to handle node selection and deletion
@@ -10,11 +10,11 @@ export function useNodeSelection({
   setEdges,
   canEdit,
   onNodesChange,
-  onEdgesChange
+  onEdgesChange,
+  selectedNodeId,
+  setSelectedNodeId
 }) {
-  // Track the selected node to show delete button
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
-
+  
   // Handle node click to show delete button
   const handleNodeClick = useCallback(
     (event, node) => {
@@ -58,6 +58,32 @@ export function useNodeSelection({
     },
     [edges, nodes, setEdges, setNodes, onEdgesChange, onNodesChange, canEdit]
   );
+  
+  // Add onDelete function to all nodes
+  useEffect(() => {
+    if (nodes.length === 0) return;
+    
+    let changed = false;
+    const updatedNodes = nodes.map(node => {
+      // Ensure data object exists
+      const data = node.data || {};
+      
+      // Add onDelete only if it doesn't already exist
+      if (!data.onDelete) {
+        changed = true;
+        return {
+          ...node,
+          data: { ...data, onDelete: handleNodeDelete }
+        };
+      }
+      return node;
+    });
+    
+    // Only update if at least one node was changed
+    if (changed) {
+      setNodes(updatedNodes);
+    }
+  }, [nodes, handleNodeDelete, setNodes]); // Include all dependencies
 
   return {
     selectedNodeId,

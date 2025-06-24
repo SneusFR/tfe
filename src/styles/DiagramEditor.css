@@ -167,13 +167,25 @@
 }
 
 /* Delete button hover effect */
-.node-delete-button {
+.node-delete-button, .delete-btn {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.node-delete-button:hover {
+.node-delete-button:hover, .delete-btn:hover {
   transform: scale(1.2);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Delete button visibility based on node selection */
+/* Hidden by default */
+.react-flow__node .delete-btn { 
+  opacity: 0; 
+  transition: opacity .15s;
+}
+
+/* Visible when node is clicked (React-Flow adds the 'selected' class) */
+.react-flow__node.selected .delete-btn { 
+  opacity: 1 !important;     /* !important to override the hidden rule */
 }
 
 /* Selection Control */

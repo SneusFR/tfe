@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
+import DeleteButton from '../../components/common/DeleteButton';
 
 const methodColors = {
   get: '#61affe',    // Blue
@@ -151,8 +152,8 @@ function ApiNodeComponent({ data, id }) {
       className="api-node" 
       style={nodeStyle}
     >
-      {/* Delete button */}
-      {data.deleteButton}
+      {/* Delete button - visibility controlled by CSS */}
+      {data.onDelete && <DeleteButton id={id} onDelete={data.onDelete} />}
       
       {/* Connection indicator */}
       {connectionIndicator}

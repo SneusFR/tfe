@@ -110,7 +110,6 @@ const DiagramEditor = ({
     nodesRef,
     throttledApply,
     throttledSelectionChange,
-    createMemoNodes,
     computedEdges,
     setAnimatingEdge,
     animatingEdgeId
@@ -140,7 +139,9 @@ const DiagramEditor = ({
     setEdges,
     canEdit,
     onNodesChange,
-    onEdgesChange
+    onEdgesChange,
+    selectedNodeId,
+    setSelectedNodeId
   });
   
   // Use the subflows hook
@@ -282,11 +283,7 @@ const DiagramEditor = ({
   }, []);
   
 
-  // Create memoized nodes using the function from the performance hook
-  const memoNodes = useMemo(() => 
-    createMemoNodes(nodes, selectedNodeId, handleNodeDelete),
-    [nodes, selectedNodeId, handleNodeDelete, createMemoNodes]
-  );
+  // We let React-Flow handle the selection and add the .selected class automatically
 
   
 
@@ -322,7 +319,7 @@ const DiagramEditor = ({
   subFlowOriginals={originalNodesAndEdges}   
 >
   <DiagramCanvas
-    nodes={memoNodes}
+    nodes={nodes}
     edges={computedEdges}
     onNodesChange={throttledApply}
     onEdgesChange={handleEdgesChange}
@@ -396,16 +393,6 @@ const DiagramEditor = ({
 };
 
 // Create a memoized version of the DiagramEditor component with custom equality check
-export default memo(DiagramEditor, (prevProps, nextProps) => {
-  // Only re-render if the nodes or edges arrays have actually changed
-  const nodesEqual = prevProps.nodes === nextProps.nodes || 
-    (prevProps.nodes?.length === nextProps.nodes?.length && 
-     JSON.stringify(prevProps.nodes) === JSON.stringify(nextProps.nodes));
-  
-  const edgesEqual = prevProps.edges === nextProps.edges || 
-    (prevProps.edges?.length === nextProps.edges?.length && 
-     JSON.stringify(prevProps.edges) === JSON.stringify(nextProps.edges));
-  
-  // Return true if both nodes and edges are equal (meaning no re-render needed)
-  return nodesEqual && edgesEqual;
-});
+export default memo(DiagramEditor, (prev, next) =>
+  prev.nodes === next.nodes && prev.edges === next.edges
+);
