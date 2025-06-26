@@ -85,9 +85,9 @@ export const FlowProvider = ({
         const cfgs = await backendConfigStore.getAll();
         setBackendConfigs(cfgs);
 
-        if (!backendConfigId) {
-          const active = cfgs.find((c) => c.isActive);
-          if (active) setBackendConfigId(active.id);
+        // If no backend config is selected and there are configs available, select the first one
+        if (!backendConfigId && cfgs.length > 0) {
+          setBackendConfigId(cfgs[0].id);
         }
       } catch (e) {
         console.error('[FlowProvider] backend config error', e);

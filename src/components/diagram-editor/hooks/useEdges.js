@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { applyEdgeChanges, addEdge, MarkerType } from 'reactflow';
 import { updateApiNodeBindings } from '../../../utils/apiNodeUtils';
 import { EXECUTION_LINK_COLOR, DATA_LINK_COLOR, EXECUTION_LINK_STYLE, DATA_LINK_STYLE } from '../diagramConfig';
+import ConnectionErrorModal from '../components/ConnectionErrorModal';
 
 /**
  * Custom hook to handle edge-related operations
@@ -17,6 +18,8 @@ export function useEdges({
   onConnect,
   setAnimatingEdge
 }) {
+  const [connectionErrorModalOpen, setConnectionErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   // Handle edge changes (add, remove, update)
   const handleEdgesChange = useCallback(
     (changes) => {
@@ -59,8 +62,6 @@ export function useEdges({
         return;
       }
       
-      const edgeId = `edge-${Date.now()}`;
-      
       // Add default handles if missing
       const sourceHandle = params.sourceHandle ?? 'default-out';
       const targetHandle = params.targetHandle ?? 'default-in';
@@ -71,6 +72,35 @@ export function useEdges({
       sourceHandle?.startsWith('execution') &&
       targetHandle?.startsWith('execution');
       
+      // For execution links, check if the source or target already has a connection
+      if (isExecutionLink) {
+        // Check if source already has an outgoing execution connection
+        const sourceHasConnection = edges.some(
+          edge => edge.source === params.source && 
+                 edge.sourceHandle === sourceHandle && 
+                 edge.data?.isExecutionLink
+        );
+        
+        // Check if target already has an incoming execution connection
+        const targetHasConnection = edges.some(
+          edge => edge.target === params.target && 
+                 edge.targetHandle === targetHandle && 
+                 edge.data?.isExecutionLink
+        );
+        
+        if (sourceHasConnection || targetHasConnection) {
+          // Show error modal
+          setErrorMessage(
+            sourceHasConnection 
+              ? "Ce nœud source a déjà une connexion d'exécution sortante."
+              : "Ce nœud cible a déjà une connexion d'exécution entrante."
+          );
+          setConnectionErrorModalOpen(true);
+          return;
+        }
+      }
+      
+      const edgeId = `edge-${Date.now()}`;
       const linkColor = isExecutionLink ? EXECUTION_LINK_COLOR : DATA_LINK_COLOR;
       
       const newEdge = {
@@ -113,11 +143,19 @@ export function useEdges({
         if (onNodesChange) onNodesChange(updatedNodes);
       }
     },
-    [edges, nodes, setEdges, setNodes, onConnect, onNodesChange, canEdit, setAnimatingEdge]
+    [edges, nodes, setEdges, setNodes, onConnect, onNodesChange, canEdit, setAnimatingEdge, setConnectionErrorModalOpen, setErrorMessage]
   );
+  
+  // Handle closing the connection error modal
+  const handleCloseErrorModal = useCallback(() => {
+    setConnectionErrorModalOpen(false);
+  }, []);
 
   return {
     handleEdgesChange,
-    handleConnect
+    handleConnect,
+    connectionErrorModalOpen,
+    errorMessage,
+    handleCloseErrorModal
   };
 }

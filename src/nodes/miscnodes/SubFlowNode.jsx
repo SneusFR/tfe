@@ -123,40 +123,7 @@ const SubFlowNode = ({ data, id }) => {
         <span>{isCollapsed ? 'Ouvrir' : 'Fermer'}</span>
       </button>
       
-      {/* Execution flow handles */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="execution"
-        style={{ 
-          background: 'transparent', 
-          width: 0,
-          height: 0,
-          borderTop: '6px solid transparent',
-          borderBottom: '6px solid transparent',
-          borderRight: '10px solid ' + EXECUTION_LINK_COLOR,
-          top: '50%',
-          left: -10,
-          transform: 'translateY(-50%)'
-        }}
-      />
-      
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="execution"
-        style={{ 
-          background: 'transparent', 
-          width: 0,
-          height: 0,
-          borderTop: '6px solid transparent',
-          borderBottom: '6px solid transparent',
-          borderLeft: '10px solid ' + EXECUTION_LINK_COLOR,
-          top: '50%',
-          right: -10,
-          transform: 'translateY(-50%)'
-        }}
-      />
+      {/* Execution flow handles removed */}
       
       {/* Header */}
       <div style={headerStyle}>

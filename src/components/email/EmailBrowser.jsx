@@ -29,6 +29,9 @@ const EmailBrowser = () => {
   const [expandedEmailId, setExpandedEmailId] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'analyzed', 'unanalyzed', 'attachments'
   const [searchQuery, setSearchQuery] = useState('');
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState(null);
+  const [selectedTaskType, setSelectedTaskType] = useState('');
 
   // Filtrer les emails en fonction de l'onglet actif et de la recherche
   const filteredEmails = useMemo(() => {
@@ -305,6 +308,113 @@ const EmailBrowser = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Fonction pour ouvrir le modal de création de tâche manuelle
+  const handleCreateTaskManually = async (email) => {
+    // Vérifier si l'email est déjà en base de données
+    if (!emailStore.isEmailInDatabase(email.id)) {
+      // Utiliser le flow courant ou récupérer celui du taskStore si non disponible
+      const flowId = currentFlow?.id || taskStore.getCurrentFlowId();
+      console.log(`📧 [EMAIL PERSISTENCE] Saving email ${email.id} to database before manual task creation`);
+      
+      try {
+        // Sauvegarder l'email dans la base de données via le store
+        await emailStore.saveEmailToDatabase(email, flowId);
+      } catch (error) {
+        console.error("Error saving email to database:", error);
+        // On continue même si la sauvegarde a échoué
+      }
+    }
+    
+    setSelectedEmail(email);
+    setSelectedTaskType('');
+    setTaskModalOpen(true);
+  };
+
+  // Fonction pour créer une tâche manuellement
+  const createTaskWithType = async (email, taskType) => {
+    // Utiliser le flow courant ou récupérer celui du taskStore si non disponible
+    const flowId = currentFlow?.id || taskStore.getCurrentFlowId();
+    
+    console.log(`📋 [MANUAL TASK CREATION] Creating task of type "${taskType}" for email:`, email.id);
+    
+    // Extraire l'email de l'expéditeur à partir de from_attendee.identifier
+    const senderEmail = email.from_attendee?.identifier || 'unknown@example.com';
+    const senderName = email.from_attendee?.display_name || senderEmail;
+    const recipientEmail = email.to_attendees?.[0]?.identifier || 'unknown@example.com';
+    
+    // Extraire les informations des pièces jointes si elles existent
+    const attachments = email.attachments || [];
+    
+    // --- Récupérer le sujet ---
+    const subject =
+          email.subject                                       ||
+          email.headers?.Subject                              ||
+          email.headers?.find(h => h.name?.toLowerCase()==='subject')?.value ||
+          email.title                                         || null;
+
+    // --- Récupérer le body/plain ---
+    const bodyPlain =
+          email.body_plain || email.snippet || email.preview || null;
+
+    // Créer la tâche en utilisant les données de l'email
+    const taskData = {
+      type: taskType,
+      description: `Email de ${senderName}: ${subject || "(Sans objet)"}`,
+      source: 'email',
+      sourceId: email.id, // ID de l'email pour récupérer les pièces jointes
+      unipileEmailId: email.id, // Stocker explicitement l'ID Unipile pour la persistance
+      flow: flowId, // Utiliser le flowId passé en paramètre
+      senderEmail: senderEmail,
+      recipientEmail: recipientEmail,
+      attachments: attachments, // Ajouter les pièces jointes à la tâche
+      subject,           // ne sera plus undefined
+      senderName: senderName, // Ajouter le nom de l'expéditeur
+      recipientName: email.to_attendees?.[0]?.display_name || recipientEmail, // Ajouter le nom du destinataire
+      body: bodyPlain,   // ne sera plus undefined
+      date: email.date || null, // Ajouter la date de l'email (ou null)
+      attachmentId: attachments && attachments.length > 0 ? attachments[0].id : null // Ajouter l'ID de la première pièce jointe
+    };
+    
+    try {
+      // Ajouter la tâche
+      const newTask = await taskStore.addTask(taskData);
+      console.log("📋 [TASK CREATION] Created new task manually:", JSON.stringify(newTask, null, 2));
+      
+      // Déclencher un événement personnalisé pour notifier la création de tâche
+      const taskCreatedEvent = new CustomEvent('taskCreated', { 
+        detail: { task: newTask, flowId: taskStore.getCurrentFlowId() } 
+      });
+      window.dispatchEvent(taskCreatedEvent);
+      
+      return newTask;
+    } catch (error) {
+      console.error("❌ [TASK CREATION] Failed to create task manually:", error);
+      throw error;
+    }
+  };
+
+  // Fonction pour gérer la soumission du formulaire de création de tâche
+  const handleTaskFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedEmail || !selectedTaskType) {
+      console.error("Missing email or task type for manual task creation");
+      return;
+    }
+    
+    try {
+      await createTaskWithType(selectedEmail, selectedTaskType);
+      setTaskModalOpen(false);
+      
+      // Rafraîchir la liste des emails pour mettre à jour l'UI
+      // (notamment pour afficher le badge "Analyzed" si l'email n'était pas encore analysé)
+      fetchEmails();
+    } catch (error) {
+      console.error("Error creating task:", error);
+      // Afficher un message d'erreur à l'utilisateur si nécessaire
+    }
+  };
+
   // Affichage pendant le chargement
   if (loading && emails.length === 0) {
     return (
@@ -452,23 +562,35 @@ const EmailBrowser = () => {
                       )}
                     </div>
                   </div>
-                  {emailStore.isEmailInDatabase(email.id) ? (
-                    <div className="analyzed-badge">
-                      <span className="analyze-icon">✓</span> Analyzed
-                    </div>
-                  ) : (
+                  <div className="email-actions">
+                    {emailStore.isEmailInDatabase(email.id) ? (
+                      <div className="analyzed-badge">
+                        <span className="analyze-icon">✓</span> Analyzed
+                      </div>
+                    ) : (
+                      <button
+                        className="analyze-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAnalyzeEmail(email);
+                        }}
+                        title="Analyze this email"
+                        disabled={analyzing}
+                      >
+                        <span className="analyze-icon">🤖</span> Analyze
+                      </button>
+                    )}
                     <button
-                      className="analyze-button"
+                      className="create-task-button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAnalyzeEmail(email);
+                        handleCreateTaskManually(email);
                       }}
-                      title="Analyze this email"
-                      disabled={analyzing}
+                      title="Create task manually"
                     >
-                      <span className="analyze-icon">🤖</span> Analyze
+                      <span className="create-task-icon">📋</span> Create Task
                     </button>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -516,6 +638,63 @@ const EmailBrowser = () => {
           Next <span>→</span>
         </button>
       </div>
+      
+      {/* Modal pour la création manuelle de tâche */}
+      {taskModalOpen && (
+        <div className="task-modal-overlay">
+          <div className="task-modal">
+            <div className="task-modal-header">
+              <h3>Créer une tâche manuellement</h3>
+              <button 
+                className="close-modal-button"
+                onClick={() => setTaskModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleTaskFormSubmit}>
+              <div className="task-modal-content">
+                <div className="email-info">
+                  <p><strong>Email:</strong> {selectedEmail?.subject || "(Sans objet)"}</p>
+                  <p><strong>De:</strong> {selectedEmail?.from_attendee?.display_name || selectedEmail?.from_attendee?.identifier || "Inconnu"}</p>
+                </div>
+                <div className="task-type-selector">
+                  <label htmlFor="task-type">Type de tâche:</label>
+                  <select 
+                    id="task-type" 
+                    value={selectedTaskType}
+                    onChange={(e) => setSelectedTaskType(e.target.value)}
+                    required
+                  >
+                    <option value="">Sélectionner un type...</option>
+                    {conditionStore.getAllConditions().map(condition => (
+                      <option key={condition.id} value={condition.returnText}>
+                        {condition.returnText}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="task-modal-footer">
+                <button 
+                  type="button" 
+                  className="cancel-button"
+                  onClick={() => setTaskModalOpen(false)}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="submit" 
+                  className="create-button"
+                  disabled={!selectedTaskType}
+                >
+                  Créer la tâche
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

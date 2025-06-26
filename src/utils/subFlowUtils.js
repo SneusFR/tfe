@@ -308,41 +308,9 @@ export const calculateSubFlowPosition = (originalNodes) => {
  * @returns {Array} New edges for the sub-flow node
  */
 export const createSubFlowEdges = (subFlow, allEdges) => {
-  const newEdges = [];
-  const subFlowNodeIds = new Set(subFlow.path);
-  
-  // Find incoming edges to any node in the sub-flow (from outside the sub-flow)
-  const incomingEdges = allEdges.filter(edge => 
-    subFlowNodeIds.has(edge.target) && 
-    !subFlowNodeIds.has(edge.source)
-  );
-  
-  // Find outgoing edges from any node in the sub-flow (to outside the sub-flow)
-  const outgoingEdges = allEdges.filter(edge => 
-    subFlowNodeIds.has(edge.source) && 
-    !subFlowNodeIds.has(edge.target)
-  );
-  
-  // Create new edges connecting to the sub-flow node
-  incomingEdges.forEach(edge => {
-    newEdges.push({
-      ...edge,
-      target: subFlow.id,
-      targetHandle: 'execution',
-      id: `${edge.id}-subflow`
-    });
-  });
-  
-  outgoingEdges.forEach(edge => {
-    newEdges.push({
-      ...edge,
-      source: subFlow.id,
-      sourceHandle: 'execution',
-      id: `subflow-${edge.id}`
-    });
-  });
-  
-  return newEdges;
+  // Return an empty array to remove the automatic creation of edges
+  // This removes the edges that were previously connecting to the start and end nodes
+  return [];
 };
 
 /**

@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import SelectionControl from './components/SelectionControl';
 import DeleteConnectionModal from './components/DeleteConnectionModal';
+import ConnectionErrorModal from './components/ConnectionErrorModal';
 import DiagramToolbar from './components/DiagramToolbar';
 import NoFlowOverlay from './components/NoFlowOverlay';
 import LeftPanel from './components/LeftPanel';
@@ -180,7 +181,13 @@ const DiagramEditor = ({
   }, [currentFlow, prevFlowId]);
 
   // Use the edges hook
-  const { handleEdgesChange, handleConnect } = useEdges({
+  const { 
+    handleEdgesChange, 
+    handleConnect, 
+    connectionErrorModalOpen, 
+    errorMessage, 
+    handleCloseErrorModal 
+  } = useEdges({
     nodes,
     edges,
     setNodes,
@@ -387,6 +394,13 @@ const DiagramEditor = ({
         isOpen={deleteConnectionModalOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
+      />
+      
+      {/* Connection Error Modal */}
+      <ConnectionErrorModal 
+        isOpen={connectionErrorModalOpen}
+        onClose={handleCloseErrorModal}
+        message={errorMessage}
       />
     </div>
   );

@@ -55,7 +55,19 @@ export function useNodeDrop({
       if (!nodeType) return;
       
       try {
-        // Create the node using the factory
+        // Special handling for apiNode to preserve its data
+        if (nodeType === 'apiNode') {
+          const apiNodeDataString = event.dataTransfer.getData('application/apiNodeData');
+          const apiNodeData = apiNodeDataString ? JSON.parse(apiNodeDataString) : {};
+          const newNode = createNode('apiNode', position, apiNodeData);
+          
+          const updatedNodes = nodes.concat(newNode);
+          setNodes(updatedNodes);
+          if (onNodesChange) onNodesChange(updatedNodes);
+          return;
+        }
+        
+        // Create the node using the factory for other node types
         const newNode = createNode(nodeType, position);
         
         // Add callbacks for interactive nodes

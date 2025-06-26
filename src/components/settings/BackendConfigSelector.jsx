@@ -38,8 +38,8 @@ export default function BackendConfigSelector() {
     navigate("/settings/backend");
   };
 
-  // Get the active config
-  const activeConfig = backendConfigs.find(config => config.isActive);
+  // No longer using the concept of "active" config
+  // The selected config is the one that will be used
 
   return (
     <Box sx={{ 
@@ -65,22 +65,20 @@ export default function BackendConfigSelector() {
             displayEmpty
             renderValue={(selected) => {
               if (!selected) {
-                return activeConfig ? `${activeConfig.name} (Active)` : "Select configuration";
+                return "Select configuration";
               }
               
               const config = backendConfigs.find(c => c.id === selected);
-              const displayName = config ? config.name : "Unknown configuration";
-              return displayName + (config && config.isActive ? " (Active)" : "");
+              return config ? config.name : "Unknown configuration";
             }}
           >
             <MenuItem value="">
-              <em>{activeConfig ? `${activeConfig.name} (Active)` : "Use active configuration"}</em>
+              <em>Select a configuration</em>
             </MenuItem>
             
             {backendConfigs.map((config) => (
               <MenuItem key={config.id} value={config.id}>
                 {config.name}
-                {config.isActive && " (Active)"}
               </MenuItem>
             ))}
           </Select>

@@ -496,13 +496,14 @@ export const FlowManagerProvider = ({ children }) => {
       const apiFlow = await flowService.switchFlowVariant(currentFlow.id, versionIndex);
       
       // Normalize flow to ensure it has an id property
+      // Create a new object reference to trigger the useEffect in useLoadFlow
       const updatedFlow = { ...apiFlow, id: apiFlow._id || apiFlow.id };
       
       // Préserver le rôle utilisateur et les collaborateurs lors du changement de version
       updatedFlow.userRole = currentFlow.userRole;
       updatedFlow.collaborators = currentFlow.collaborators;
       
-      // Update local state
+      // Update local state with the new reference
       setCurrentFlow(updatedFlow);
       setFlows(flows.map(f => f.id === updatedFlow.id ? updatedFlow : f));
       

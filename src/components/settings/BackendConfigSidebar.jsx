@@ -130,14 +130,6 @@ export default function BackendConfigSidebar({ onSelectConfig, selectedId, refet
                           <Typography variant="body1" fontWeight={500}>
                             {config.name}
                           </Typography>
-                          {config.isActive && (
-                            <Chip 
-                              label="Active" 
-                              color="success" 
-                              size="small" 
-                              sx={{ ml: 1 }}
-                            />
-                          )}
                         </Box>
                       }
                       secondary={config.baseUrl}

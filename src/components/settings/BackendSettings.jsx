@@ -261,21 +261,23 @@ export default function BackendSettings() {
     }
   };
 
-  // Handle setting a configuration as active
-  const handleSetActive = async () => {
+  // Handle deleting a configuration
+  const handleDelete = async () => {
     if (!currentFlowId) return;     // ① attendre que l'ID existe
     
     try {
       if (!form.id) return;
       
+      // Confirm deletion
+      if (!window.confirm(`Are you sure you want to delete the configuration "${form.name}"?`)) {
+        return;
+      }
+      
       // Set the current flow ID in the store
       backendConfigStore.setCurrentFlowId(currentFlowId);
       
-      // Set the config as active
-      await backendConfigStore.setActive(form.id);
-      
-      // Update the form
-      setForm(prev => ({ ...prev, isActive: true }));
+      // Delete the config
+      await backendConfigStore.delete(form.id);
       
       // Refresh the sidebar
       if (refetchConfigs.current) {
@@ -284,11 +286,14 @@ export default function BackendSettings() {
       
       setSnackbar({
         open: true,
-        message: "Backend configuration set as active",
+        message: "Backend configuration deleted successfully",
         severity: "success"
       });
+      
+      // Navigate back
+      navigate(-1);
     } catch (error) {
-      console.error('Error setting active configuration:', error);
+      console.error('Error deleting configuration:', error);
       setSnackbar({
         open: true,
         message: `Error: ${error.response?.data?.message || error.message}`,
@@ -1004,12 +1009,12 @@ export default function BackendSettings() {
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Button
                           variant="outlined"
-                          color={form.isActive ? 'success' : 'primary'}
-                          disabled={form.isActive}
-                          onClick={handleSetActive}
+                          color="error"
+                          onClick={handleDelete}
+                          startIcon={<DeleteIcon />}
                           sx={{ mr: 2 }}
                         >
-                          {form.isActive ? 'Active' : 'Set active'}
+                          Delete
                         </Button>
                       </motion.div>
                     )}

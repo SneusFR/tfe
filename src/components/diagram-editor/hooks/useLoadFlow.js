@@ -19,8 +19,9 @@ export function useLoadFlow(
     expandSubFlowRef
   }
 ) {
-  // Reference to track previous flow ID
+  // References to track previous flow ID and version index
   const prevFlowId = useRef();
+  const prevVersionIndex = useRef();
 
   // Effect to load nodes and edges when the current flow changes
   useEffect(() => {
@@ -31,14 +32,23 @@ export function useLoadFlow(
       if (onNodesChange) onNodesChange([]);
       if (onEdgesChange) onEdgesChange([]);
       prevFlowId.current = null;
+      prevVersionIndex.current = null;
       // Clear subflow data when no flow is active
       setCollapsedSubFlows(new Map());
       setOriginalNodesAndEdges(new Map());
       return;
     }
     
-    if (currentFlow.id === prevFlowId.current) return;
+    if (
+      currentFlow.id === prevFlowId.current &&
+      currentFlow.currentVersionIndex === prevVersionIndex.current
+    ) {
+      // Same flow AND same version - don't reload
+      return;
+    }
+    
     prevFlowId.current = currentFlow.id;
+    prevVersionIndex.current = currentFlow.currentVersionIndex;
     
     // Clear subflow data when changing flows to prevent data corruption
     setCollapsedSubFlows(new Map());
