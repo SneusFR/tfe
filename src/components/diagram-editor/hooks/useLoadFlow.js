@@ -226,6 +226,25 @@ export function useLoadFlow(
               onCollapse: id => console.log('Collapse sub-flow:', id)
             }
           };
+        } else if (n.type === 'mailBodyNode') {
+          const nodeId = n.id;
+          nodeCallbacksRef.current[nodeId] = {
+            onContentChange: json => {
+              setNodes(prev => {
+                const updated = prev.map(nd => nd.id === nodeId ? { ...nd, data: { ...nd.data, content: json } } : nd);
+                nodesRef.current = updated;
+                onNodesChange?.(updated);
+                return updated;
+              });
+            }
+          };
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onContentChange: j => nodeCallbacksRef.current[nodeId].onContentChange(j)
+            }
+          };
         }
         return n;
       });

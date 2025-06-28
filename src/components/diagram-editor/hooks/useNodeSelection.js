@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
  * Custom hook to handle node selection and deletion
@@ -39,51 +39,28 @@ export function useNodeSelection({
         return;
       }
       
-      if (window.confirm('Do you want to delete this node?')) {
-        // Remove all edges connected to this node
-        const updatedEdges = edges.filter(
-          (e) => e.source !== nodeId && e.target !== nodeId
-        );
-        setEdges(updatedEdges);
-        if (onEdgesChange) onEdgesChange(updatedEdges);
-        
-        // Remove the node
-        const updatedNodes = nodes.filter((n) => n.id !== nodeId);
-        setNodes(updatedNodes);
-        if (onNodesChange) onNodesChange(updatedNodes);
-        
-        // Clear selection
-        setSelectedNodeId(null);
-      }
+      if (!window.confirm('Do you want to delete this node?')) return;
+      
+      // Always use functional updates to work with the latest state
+      setEdges(prevEdges => {
+        const newEdges = prevEdges.filter(e => e.source !== nodeId && e.target !== nodeId);
+        onEdgesChange?.(newEdges);
+        return newEdges;
+      });
+      
+      setNodes(prevNodes => {
+        const newNodes = prevNodes.filter(n => n.id !== nodeId);
+        onNodesChange?.(newNodes);
+        return newNodes;
+      });
+      
+      setSelectedNodeId(null);
     },
-    [edges, nodes, setEdges, setNodes, onEdgesChange, onNodesChange, canEdit]
+    [canEdit, setEdges, setNodes, onEdgesChange, onNodesChange]
   );
   
-  // Add onDelete function to all nodes
-  useEffect(() => {
-    if (nodes.length === 0) return;
-    
-    let changed = false;
-    const updatedNodes = nodes.map(node => {
-      // Ensure data object exists
-      const data = node.data || {};
-      
-      // Add onDelete only if it doesn't already exist
-      if (!data.onDelete) {
-        changed = true;
-        return {
-          ...node,
-          data: { ...data, onDelete: handleNodeDelete }
-        };
-      }
-      return node;
-    });
-    
-    // Only update if at least one node was changed
-    if (changed) {
-      setNodes(updatedNodes);
-    }
-  }, [nodes, handleNodeDelete, setNodes]); // Include all dependencies
+  // Note: We no longer inject the delete handler into nodes here.
+  // Instead, it's added at render time in the DiagramEditor component.
 
   return {
     selectedNodeId,

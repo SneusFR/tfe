@@ -223,6 +223,7 @@ export const FlowManagerProvider = ({ children }) => {
       delete cleanData.onInputCountChange;
       delete cleanData.onExpand;
       delete cleanData.onCollapse;
+      delete cleanData.onContentChange;
       
       // For SubFlowNodes, preserve the collapsed state and original data
       if (type === 'subFlowNode') {

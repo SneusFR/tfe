@@ -325,20 +325,34 @@ const DiagramEditor = ({
   flowId={currentFlow?.id}
   subFlowOriginals={originalNodesAndEdges}   
 >
-  <DiagramCanvas
-    nodes={nodes}
-    edges={computedEdges}
-    onNodesChange={throttledApply}
-    onEdgesChange={handleEdgesChange}
-    onConnect={handleConnect}
-    onEdgeClick={handleEdgeClick}
-    onNodeClick={handleNodeClick}
-    nodeTypes={nodeTypes}
-    edgeTypes={edgeTypes}
-    onInit={onInit}
-    selectionMode={selectionMode}
-    throttledSelectionChange={throttledSelectionChange}
-  >
+  {/* Create a memoized version of nodes with the delete handler added */}
+  {(() => {
+    // Use useMemo to prevent unnecessary re-renders
+    const nodesWithDelete = useMemo(() => {
+      return nodes.map(n => ({
+        ...n,
+        data: {
+          ...n.data,
+          onDelete: handleNodeDelete
+        }
+      }));
+    }, [nodes, handleNodeDelete]);
+    
+    return (
+      <DiagramCanvas
+        nodes={nodesWithDelete}
+        edges={computedEdges}
+        onNodesChange={throttledApply}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
+        onEdgeClick={handleEdgeClick}
+        onNodeClick={handleNodeClick}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onInit={onInit}
+        selectionMode={selectionMode}
+        throttledSelectionChange={throttledSelectionChange}
+      >
     {/* Diagram Toolbar */}
     <DiagramToolbar 
       currentFlow={currentFlow}
@@ -354,7 +368,9 @@ const DiagramEditor = ({
     
     {/* Left Panel */}
     <LeftPanel />
-  </DiagramCanvas>
+      </DiagramCanvas>
+    );
+  })()}
           
           {/* FlowMenuButton is now the only UI element for flow management */}
           <FlowMenuButton />
