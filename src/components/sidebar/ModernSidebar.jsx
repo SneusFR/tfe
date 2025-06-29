@@ -46,7 +46,9 @@ const ModernSidebar = ({
   apiInventoryNodes, 
   onApiImport, 
   onCreateCondition,
-  activeTab: parentActiveTab 
+  activeTab: parentActiveTab,
+  isOpen,
+  setIsOpen
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -54,6 +56,22 @@ const ModernSidebar = ({
   // Sidebar state
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  
+  // Update isCollapsed when isOpen prop changes
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setIsCollapsed(!isOpen);
+    }
+  }, [isOpen]);
+  
+  // Update parent isOpen state when isCollapsed changes
+  const handleCollapseToggle = () => {
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    if (setIsOpen) {
+      setIsOpen(!newCollapsedState);
+    }
+  };
   const [activeTab, setActiveTab] = useState(SIDEBAR_TABS.CONDITIONS);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [detailPanelTaskId, setDetailPanelTaskId] = useState(null);
@@ -506,7 +524,7 @@ const ModernSidebar = ({
         conditionsCount={conditions.length}
         isCollapsed={isCollapsed}
         isHidden={isHidden}
-        onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
+        onToggleCollapsed={handleCollapseToggle}
         onToggleHidden={() => setIsHidden(!isHidden)}
       />
 
@@ -524,7 +542,7 @@ const ModernSidebar = ({
             <div className="content-header">
               <IconButton
                 size="small"
-                onClick={() => setIsCollapsed(true)}
+                onClick={handleCollapseToggle}
                 className="collapse-button"
               >
                 <CloseIcon />

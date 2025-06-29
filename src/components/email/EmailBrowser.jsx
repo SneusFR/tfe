@@ -419,9 +419,6 @@ const EmailBrowser = () => {
   if (loading && emails.length === 0) {
     return (
       <div className="email-browser">
-        <div className="email-browser-header">
-          <h2>Emails</h2>
-        </div>
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p className="loading-message">Loading emails...</p>
@@ -434,9 +431,6 @@ const EmailBrowser = () => {
   if (error) {
     return (
       <div className="email-browser">
-        <div className="email-browser-header">
-          <h2>Emails</h2>
-        </div>
         <div className="error-container">
           <p className="error-message">Error: {error}</p>
           <p className="error-details">Using mock data for demonstration.</p>
@@ -451,10 +445,6 @@ const EmailBrowser = () => {
   // Rendu principal avec le nouveau design
   return (
     <div className="email-browser">
-      <div className="email-browser-header">
-        <h2>Emails</h2>
-      </div>
-      
       <div className="email-tabs">
         <div 
           className={`email-tab ${activeTab === 'all' ? 'active' : ''}`}

@@ -43,6 +43,7 @@ const EditorApp = () => {
   const [edges, setEdges] = useState([]);
   const [apiInventoryNodes, setApiInventoryNodes] = useState([]);
   const [activeTab, setActiveTab] = useState('diagram');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // reset on first mount (optional but explicit)
   useEffect(() => {
@@ -186,31 +187,46 @@ const EditorApp = () => {
               <div className="tab-navigation">
                 <button
                   className={`tab-button ${activeTab === 'diagram' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('diagram')}
+                  onClick={() => {
+                    setActiveTab('diagram');
+                    setSidebarOpen(false);
+                  }}
                 >
                   Diagram Editor
                 </button>
                 <button
                   className={`tab-button ${activeTab === 'emails' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('emails')}
+                  onClick={() => {
+                    setActiveTab('emails');
+                    setSidebarOpen(false);
+                  }}
                 >
                   Emails
                 </button>
                 <button
                   className={`tab-button ${activeTab === 'logs' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('logs')}
+                  onClick={() => {
+                    setActiveTab('logs');
+                    setSidebarOpen(false);
+                  }}
                 >
                   Logs
                 </button>
                 <button
                   className={`tab-button ${activeTab === 'metrics' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('metrics')}
+                  onClick={() => {
+                    setActiveTab('metrics');
+                    setSidebarOpen(false);
+                  }}
                 >
                   Metrics
                 </button>
                 <button
                   className={`tab-button ${activeTab === 'collaborations' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('collaborations')}
+                  onClick={() => {
+                    setActiveTab('collaborations');
+                    setSidebarOpen(false);
+                  }}
                 >
                   Collaborations
                 </button>
@@ -228,6 +244,8 @@ const EditorApp = () => {
               onApiImport={handleApiImport}
               onCreateCondition={handleCreateCondition}
               activeTab={activeTab}
+              isOpen={sidebarOpen}
+              setIsOpen={setSidebarOpen}
             />
 
             {/* Content area */}

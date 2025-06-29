@@ -165,6 +165,7 @@ const emailStore = {
       let queryParams = new URLSearchParams({
         account_id: accountId,
         limit: emailsPerPage,
+        role: 'inbox',
       });
       
       if (currentCursor) {
@@ -185,11 +186,10 @@ const emailStore = {
         
         const data = await response.json();
         
-        // Filtrer les e-mails de type inbox et limiter au nombre par page
+        // Les e-mails sont déjà filtrés par le serveur grâce au paramètre role=inbox
         const items = data.items;
-        const inboxEmails = items.filter((e) => e.role === 'inbox').slice(0, emailsPerPage);
         
-        emailsCache.data = inboxEmails;
+        emailsCache.data = items;
         emailsCache.lastFetched = now;
         
         // Récupération du curseur pour la page suivante
@@ -202,7 +202,7 @@ const emailStore = {
         }
         
         // Vérifier quels emails sont déjà dans la base de données
-        await this.checkEmailsInDatabase(inboxEmails);
+        await this.checkEmailsInDatabase(items);
         
         return [...emailsCache.data];
       })
